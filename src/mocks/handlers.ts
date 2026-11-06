@@ -5,6 +5,7 @@ import { http, HttpResponse, type RequestHandler } from 'msw'
 import type { components } from '@/api/schema.gen'
 
 import {
+  mockAdminNotices,
   mockCrawlRuns,
   mockDetails,
   mockMe,
@@ -26,12 +27,22 @@ export const MOCK_PASSWORD = 'password123'
 let details: ScholarshipDetail[] = structuredClone(mockDetails)
 let profile: Schemas['Profile'] | null = structuredClone(mockProfile)
 let me: Me | null = structuredClone(mockMe)
+let adminNotices = structuredClone(mockAdminNotices)
 
 export function resetMockState() {
   details = structuredClone(mockDetails)
   profile = structuredClone(mockProfile)
   me = structuredClone(mockMe)
+  adminNotices = structuredClone(mockAdminNotices)
 }
+
+/** 관리자(ADMIN_EMAILS + Google 확인 계정)로 로그인한 상태로 바꿉니다(7.3). */
+export function signInAsAdmin() {
+  me = { ...mockMe, is_admin: true, google_linked: true }
+}
+
+const forbidden = () =>
+  HttpResponse.json({ detail: '관리자만 접근할 수 있습니다' }, { status: 403 })
 
 /** 로그아웃·프로필 없음 상태로 시작합니다(가입 → 동의 → 프로필 흐름 테스트용). */
 export function startLoggedOut() {
@@ -172,14 +183,27 @@ export const handlers: RequestHandler[] = [
     return new HttpResponse(null, { status: 204 })
   }),
 
-  // 관리자
+  // 관리자: 관리자가 아니면 403. 재추출은 PENDING으로만 바꿉니다(9.3).
   http.get('/api/admin/crawl-runs', () => {
-    const response: Schemas['CrawlRunsResponse'] = { items: mockCrawlRuns }
+    if (!me) return unauthorized()
+    if (!me.is_admin) return forbidden()
+    const response: Schemas['CrawlRunsResponse'] = {
+      items: mockCrawlRuns,
+      notices: [
+        ...adminNotices.filter((n) => n.extract_status !== 'DONE'),
+        ...adminNotices.filter((n) => n.extract_status === 'DONE'),
+      ],
+    }
     return HttpResponse.json(response)
   }),
   http.post('/api/admin/notices/:id/reextract', ({ params }) => {
+    if (!me) return unauthorized()
+    if (!me.is_admin) return forbidden()
+    const notice = adminNotices.find((n) => n.id === Number(params.id))
+    if (!notice) return HttpResponse.json({ detail: '공지를 찾을 수 없습니다' }, { status: 404 })
+    notice.extract_status = 'PENDING'
     const response: Schemas['ReextractResponse'] = {
-      notice_id: Number(params.id),
+      notice_id: notice.id,
       extract_status: 'PENDING',
     }
     return HttpResponse.json(response, { status: 202 })

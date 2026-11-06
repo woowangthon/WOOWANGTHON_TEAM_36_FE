@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from 'react-router'
 
+import { useMe } from '@/api/hooks/auth'
+
 const NAV = [
   { to: '/dashboard', label: '장학금' },
   { to: '/my', label: '내 장학금' },
@@ -8,6 +10,8 @@ const NAV = [
 
 /** 대시보드·상세·내 장학금 화면의 공통 틀. 360px 폭에서도 좌우 여백 16px을 유지합니다. */
 export function AppLayout() {
+  const isAdmin = useMe().data?.is_admin ?? false
+  const nav = isAdmin ? [...NAV, { to: '/admin', label: '관리' } as const] : NAV
   return (
     <div className="min-h-svh bg-muted/40">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
@@ -16,7 +20,7 @@ export function AppLayout() {
             장학금 매칭
           </NavLink>
           <nav aria-label="주요 메뉴" className="flex gap-1">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

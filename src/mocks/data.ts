@@ -8,6 +8,7 @@ export type Profile = Schemas['Profile']
 export type ScholarshipDetail = Schemas['ScholarshipDetail']
 export type ScholarshipSummary = Schemas['ScholarshipSummary']
 export type CrawlRunOut = Schemas['CrawlRunOut']
+export type AdminNotice = Schemas['AdminNotice']
 
 export const mockMe: MeResponse = {
   id: 1,
@@ -278,5 +279,42 @@ export const mockCrawlRuns: CrawlRunOut[] = [
     finished_at: '2026-11-05T09:01:02+09:00',
     new_count: 2,
     error: null,
+  },
+]
+
+/** 관리자 화면 공지: 추출 실패·대기 공지가 먼저, 그다음 최근 공지 (backend 정렬과 같음). */
+export const mockAdminNotices: AdminNotice[] = [
+  {
+    id: 110,
+    source_code: 'KOSAF',
+    title: '2026년 하반기 국가장학금 2차 신청 안내',
+    url: 'https://kosaf.go.kr/ko/notice.do?mode=view&seqNo=21400',
+    posted_at: '2026-10-20T10:00:00+09:00',
+    notice_kind: null,
+    extract_status: 'FAILED',
+    extracted_at: null,
+    scholarship_count: 0,
+  },
+  {
+    id: 104,
+    source_code: 'KOSAF',
+    title: '2026년 푸른등대 기부장학금 신규장학생 선발',
+    url: 'https://kosaf.go.kr/ko/notice.do?mode=view&seqNo=21510',
+    posted_at: '2026-11-01T09:00:00+09:00',
+    notice_kind: '모집',
+    extract_status: 'DONE',
+    extracted_at: '2026-11-01T10:00:00+09:00',
+    scholarship_count: 1,
+  },
+  {
+    id: 101,
+    source_code: 'SW_DEPT',
+    title: '2026학년도 2학기 교외장학금 3종 모집 ( ~11.12 18:00)',
+    url: 'https://software.cbnu.ac.kr/index.php?mid=sub0401&document_srl=1154830',
+    posted_at: '2026-10-30T09:00:00+09:00',
+    notice_kind: '모집',
+    extract_status: 'DONE',
+    extracted_at: '2026-10-30T10:00:00+09:00',
+    scholarship_count: 3,
   },
 ]
