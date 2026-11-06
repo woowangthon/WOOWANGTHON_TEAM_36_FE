@@ -16,14 +16,35 @@ import {
 type Schemas = components['schemas']
 type UserState = NonNullable<Schemas['StateRequest']['state']>
 
+type Me = Schemas['MeResponse']
+
+/** 목 로그인에 쓰는 비밀번호. 다른 값이면 401을 돌려줍니다. */
+export const MOCK_PASSWORD = 'password123'
+
 // 화면에서 상태를 바꿔 볼 수 있게 메모리에 복사본을 둡니다. resetMockState()로 되돌립니다.
+// 기본은 동의·프로필까지 마친 로그인 상태이고, startLoggedOut()으로 가입 흐름을 시작할 수 있습니다.
 let details: ScholarshipDetail[] = structuredClone(mockDetails)
-let profile: Schemas['Profile'] = structuredClone(mockProfile)
+let profile: Schemas['Profile'] | null = structuredClone(mockProfile)
+let me: Me | null = structuredClone(mockMe)
 
 export function resetMockState() {
   details = structuredClone(mockDetails)
   profile = structuredClone(mockProfile)
+  me = structuredClone(mockMe)
 }
+
+/** 로그아웃·프로필 없음 상태로 시작합니다(가입 → 동의 → 프로필 흐름 테스트용). */
+export function startLoggedOut() {
+  me = null
+  profile = null
+}
+
+/** 로그아웃 상태로 바꿉니다. 프로필은 남겨 둡니다(다시 로그인하는 흐름 테스트용). */
+export function signOut() {
+  me = null
+}
+
+const unauthorized = () => HttpResponse.json({ detail: '로그인이 필요합니다' }, { status: 401 })
 
 const RESULT_FILTER = { eligible: 'ELIGIBLE', conditional: 'CONDITIONAL' } as const
 
@@ -64,18 +85,67 @@ const notFound = () => HttpResponse.json({ detail: 'Not Found' }, { status: 404 
 
 export const handlers: RequestHandler[] = [
   // 인증 (7.2, 7.3)
-  http.get('/api/auth/me', () => HttpResponse.json(mockMe)),
-  http.post('/api/auth/signup', () => HttpResponse.json(mockMe, { status: 201 })),
-  http.post('/api/auth/login', () => HttpResponse.json(mockMe)),
-  http.post('/api/auth/logout', () => new HttpResponse(null, { status: 204 })),
-  http.post('/api/auth/consent', () => HttpResponse.json(mockMe)),
-  http.delete('/api/auth/consent/sensitive', () => new HttpResponse(null, { status: 204 })),
-  http.delete('/api/auth/me', () => new HttpResponse(null, { status: 204 })),
+  http.get('/api/auth/me', () => (me ? HttpResponse.json(me) : unauthorized())),
+  http.post('/api/auth/signup', async ({ request }) => {
+    const body = (await request.json()) as Schemas['SignupRequest']
+    me = {
+      ...mockMe,
+      email: body.email.toLowerCase(),
+      privacy_agreed: false,
+      sensitive_agreed: false,
+      profile_completed: false,
+    }
+    profile = null
+    return HttpResponse.json(me, { status: 201 })
+  }),
+  http.post('/api/auth/login', async ({ request }) => {
+    const body = (await request.json()) as Schemas['LoginRequest']
+    if (body.password !== MOCK_PASSWORD) {
+      return HttpResponse.json(
+        { detail: '이메일 또는 비밀번호가 올바르지 않습니다' },
+        { status: 401 },
+      )
+    }
+    me = { ...mockMe, email: body.email.toLowerCase(), profile_completed: profile !== null }
+    return HttpResponse.json(me)
+  }),
+  http.post('/api/auth/logout', () => {
+    me = null
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.post('/api/auth/consent', async ({ request }) => {
+    if (!me) return unauthorized()
+    const body = (await request.json()) as Schemas['ConsentRequest']
+    if (!body.privacy) {
+      return HttpResponse.json({ detail: '개인정보 수집·이용 동의가 필요합니다' }, { status: 400 })
+    }
+    me = { ...me, privacy_agreed: true, sensitive_agreed: body.sensitive }
+    if (!body.sensitive && profile) profile = { ...profile, special_flags: null }
+    return HttpResponse.json(me)
+  }),
+  http.delete('/api/auth/consent/sensitive', () => {
+    if (!me) return unauthorized()
+    me = { ...me, sensitive_agreed: false }
+    if (profile) profile = { ...profile, special_flags: null }
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.delete('/api/auth/me', () => {
+    me = null
+    profile = null
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   // 프로필
-  http.get('/api/profile', () => HttpResponse.json(profile)),
+  http.get('/api/profile', () => {
+    if (!me) return unauthorized()
+    return profile
+      ? HttpResponse.json(profile)
+      : HttpResponse.json({ detail: '프로필을 입력하세요' }, { status: 404 })
+  }),
   http.put('/api/profile', async ({ request }) => {
+    if (!me) return unauthorized()
     profile = (await request.json()) as Schemas['Profile']
+    me = { ...me, profile_completed: true }
     return HttpResponse.json(profile)
   }),
 

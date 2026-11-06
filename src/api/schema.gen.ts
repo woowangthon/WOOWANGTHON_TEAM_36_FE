@@ -32,7 +32,7 @@ export interface paths {
         put?: never;
         /**
          * Signup
-         * @description 가입하고 JWT 쿠키를 발급합니다.
+         * @description 가입하고 JWT 쿠키를 발급합니다. 메일 발송이 없어 이메일 소유 확인은 하지 않습니다(7.3).
          */
         post: operations["signup_auth_signup_post"];
         delete?: never;
@@ -52,7 +52,7 @@ export interface paths {
         put?: never;
         /**
          * Login
-         * @description 로그인하고 JWT 쿠키를 발급합니다. 시도 제한을 넘으면 429.
+         * @description 로그인하고 JWT 쿠키를 발급합니다. 시도 제한을 넘으면 429(7.3).
          */
         post: operations["login_auth_login_post"];
         delete?: never;
@@ -72,7 +72,7 @@ export interface paths {
         put?: never;
         /**
          * Logout
-         * @description JWT 쿠키를 지웁니다.
+         * @description JWT 쿠키를 지웁니다. 로그인하지 않았어도 204.
          */
         post: operations["logout_auth_logout_post"];
         delete?: never;
@@ -92,7 +92,9 @@ export interface paths {
         put?: never;
         /**
          * Consent
-         * @description 개인정보·민감정보 동의를 저장합니다.
+         * @description 개인정보(필수)·민감정보(선택) 동의를 저장합니다(4.2).
+         *
+         *     민감정보를 동의하지 않음으로 보내면 철회와 같게 처리해 특수자격 값을 지웁니다.
          */
         post: operations["consent_auth_consent_post"];
         delete?: never;
@@ -113,7 +115,7 @@ export interface paths {
         post?: never;
         /**
          * Withdraw Sensitive Consent
-         * @description 민감정보 동의를 철회하고 특수자격 값을 지웁니다.
+         * @description 민감정보 동의를 철회하고 특수자격 값을 즉시 지웁니다(4.2).
          */
         delete: operations["withdraw_sensitive_consent_auth_consent_sensitive_delete"];
         options?: never;
@@ -137,7 +139,7 @@ export interface paths {
         post?: never;
         /**
          * Delete Me
-         * @description 회원 탈퇴: 계정·프로필·상태를 즉시 삭제합니다.
+         * @description 회원 탈퇴: 계정·프로필·관심/신청완료 기록을 즉시 삭제합니다(4.2, FK CASCADE).
          */
         delete: operations["delete_me_auth_me_delete"];
         options?: never;
@@ -175,6 +177,8 @@ export interface paths {
         /**
          * Google Callback
          * @description 코드 교환 → ID 토큰 검증 → JWT 쿠키 발급 후 화면으로 이동합니다.
+         *
+         *     동의 전이면 동의 화면, 아니면 로그인 전에 요청한 내부 경로(기본 대시보드)로 갑니다.
          */
         get: operations["google_callback_auth_google_callback_get"];
         put?: never;
@@ -192,9 +196,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Profile */
+        /**
+         * Get Profile
+         * @description 본인 프로필. 아직 입력하지 않았으면 404(프론트는 프로필 입력 화면으로 이동).
+         */
         get: operations["get_profile_profile_get"];
-        /** Put Profile */
+        /**
+         * Put Profile
+         * @description 프로필 전체를 저장합니다(처음 입력과 수정 모두). 선택 항목의 null은 '입력 안 함'입니다.
+         */
         put: operations["put_profile_profile_put"];
         post?: never;
         delete?: never;
@@ -215,6 +225,7 @@ export interface paths {
          * @description 장학금 단위 맞춤 목록(판정 결과·내 상태 포함).
          *
          *     기본은 CLOSED와 숨긴 장학금을 빼고, state를 주면 내 장학금 화면용으로 마감된 것도 포함합니다.
+         *     정렬: deadline = 마감 임박순(마감일 없는 상시는 뒤), latest = 게시일 최신순.
          */
         get: operations["list_scholarships_scholarships_get"];
         put?: never;
@@ -234,7 +245,7 @@ export interface paths {
         };
         /**
          * Get Scholarship
-         * @description 상세 + 조건별 판정 + 같은 공지의 다른 장학금.
+         * @description 상세 + 조건별 판정 + 같은 공지의 다른 장학금. 마감된 장학금도 봅니다(내 장학금 화면).
          */
         get: operations["get_scholarship_scholarships__scholarship_id__get"];
         put?: never;
@@ -255,11 +266,14 @@ export interface paths {
         get?: never;
         /**
          * Put State
-         * @description 관심 / 신청완료 / 숨기기.
+         * @description 관심 / 신청완료 / 숨기기. 장학금마다 상태는 하나이며 새 값으로 바꿉니다.
          */
         put: operations["put_state_scholarships__scholarship_id__state_put"];
         post?: never;
-        /** Delete State */
+        /**
+         * Delete State
+         * @description 상태를 지웁니다. 상태가 없어도 204.
+         */
         delete: operations["delete_state_scholarships__scholarship_id__state_delete"];
         options?: never;
         head?: never;
@@ -315,6 +329,8 @@ export interface paths {
         /**
          * Crawl
          * @description 수집 → 추출 → 저장 → 마감 상태 갱신을 요청 안에서 끝까지 실행합니다.
+         *
+         *     `BackgroundTasks`를 쓰지 않습니다(9.3). 다른 실행이 진행 중이면 skipped=true로 바로 끝납니다.
          */
         post: operations["crawl_internal_crawl_post"];
         delete?: never;
@@ -720,6 +736,13 @@ export interface operations {
                     "application/json": components["schemas"]["MeResponse"];
                 };
             };
+            /** @description 이미 가입된 이메일 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -728,13 +751,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -760,6 +776,20 @@ export interface operations {
                     "application/json": components["schemas"]["MeResponse"];
                 };
             };
+            /** @description Google 전용 계정 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 이메일 또는 비밀번호 불일치 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -769,8 +799,8 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description 로그인 시도 제한 초과 */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -789,13 +819,6 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -825,6 +848,20 @@ export interface operations {
                     "application/json": components["schemas"]["MeResponse"];
                 };
             };
+            /** @description 개인정보 동의 없음 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 로그인이 필요함 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -833,13 +870,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -859,8 +889,8 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description 로그인이 필요함 */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -886,8 +916,8 @@ export interface operations {
                     "application/json": components["schemas"]["MeResponse"];
                 };
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description 로그인이 필요함 */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -911,8 +941,8 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description 로그인이 필요함 */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -936,9 +966,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": unknown;
-                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -949,8 +977,8 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description Google 로그인 미설정 */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -975,9 +1003,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": unknown;
-                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -988,8 +1014,8 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description Google 로그인 미설정 */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1015,8 +1041,22 @@ export interface operations {
                     "application/json": components["schemas"]["Profile"];
                 };
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 미입력 */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1046,6 +1086,27 @@ export interface operations {
                     "application/json": components["schemas"]["Profile"];
                 };
             };
+            /** @description 민감정보 동의 없음 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1054,13 +1115,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -1088,6 +1142,27 @@ export interface operations {
                     "application/json": components["schemas"]["ScholarshipListResponse"];
                 };
             };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 장학금 없음 또는 프로필 미입력 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1096,13 +1171,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -1126,6 +1194,27 @@ export interface operations {
                     "application/json": components["schemas"]["ScholarshipDetail"];
                 };
             };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 장학금 없음 또는 프로필 미입력 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1134,13 +1223,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -1168,6 +1250,27 @@ export interface operations {
                     "application/json": components["schemas"]["StateResponse"];
                 };
             };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 장학금 없음 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1176,13 +1279,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -1204,6 +1300,20 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1212,13 +1322,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -1307,6 +1410,13 @@ export interface operations {
                     "application/json": components["schemas"]["CrawlResponse"];
                 };
             };
+            /** @description X-Cron-Token 불일치 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1315,13 +1425,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

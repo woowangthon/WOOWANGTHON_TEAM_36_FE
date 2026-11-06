@@ -1,0 +1,115 @@
+// 인증·동의·탈퇴 훅 (계획서 7.2, 7.3, 4.2). 라우팅 가드는 useMe 결과로 이동할 화면을 정합니다.
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+
+import type { components } from '@/api/schema.gen'
+
+import { ApiError, apiRequest } from './request'
+
+type Schemas = components['schemas']
+export type Me = Schemas['MeResponse']
+
+export const meKey = ['me'] as const
+
+/** 로그인 사용자. 로그인하지 않았으면 null. */
+export function useMe() {
+  return useQuery({
+    queryKey: meKey,
+    queryFn: async (): Promise<Me | null> => {
+      try {
+        return await apiRequest<Me>('/auth/me')
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) return null
+        throw error
+      }
+    },
+    retry: false,
+  })
+}
+
+/** 로그인 상태에 따라 가야 할 화면 (frontend CLAUDE.md 라우팅 가드). */
+export function nextPathFor(me: Me | null | undefined): string {
+  if (!me) return '/login'
+  if (!me.privacy_agreed) return '/consent'
+  if (!me.profile_completed) return '/profile'
+  return '/dashboard'
+}
+
+/** 로그인 후 돌아갈 주소는 내부 경로만 허용합니다(오픈 리다이렉트 방지, 7.3). */
+export function safeNext(next: string | null): string | null {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return null
+  return next
+}
+
+export function googleLoginUrl(next: string | null): string {
+  const target = safeNext(next)
+  return target
+    ? `/api/auth/google/login?next=${encodeURIComponent(target)}`
+    : '/api/auth/google/login'
+}
+
+function useSetMe() {
+  const queryClient = useQueryClient()
+  return (me: Me) => queryClient.setQueryData(meKey, me)
+}
+
+export function useSignup() {
+  const setMe = useSetMe()
+  return useMutation({
+    mutationFn: (body: Schemas['SignupRequest']) => apiRequest<Me>('/auth/signup', 'POST', body),
+    onSuccess: setMe,
+  })
+}
+
+export function useLogin() {
+  const setMe = useSetMe()
+  return useMutation({
+    mutationFn: (body: Schemas['LoginRequest']) => apiRequest<Me>('/auth/login', 'POST', body),
+    onSuccess: setMe,
+  })
+}
+
+export function useConsent() {
+  const setMe = useSetMe()
+  return useMutation({
+    mutationFn: (body: Schemas['ConsentRequest']) => apiRequest<Me>('/auth/consent', 'POST', body),
+    onSuccess: setMe,
+  })
+}
+
+/** 민감정보 동의 철회: backend가 특수자격 값을 즉시 지웁니다(4.2). */
+export function useWithdrawSensitive() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiRequest<void>('/auth/consent/sensitive', 'DELETE'),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: meKey }),
+        queryClient.invalidateQueries({ queryKey: ['profile'] }),
+      ]),
+  })
+}
+
+/** 로그아웃·탈퇴 뒤에는 이전 사용자의 캐시를 모두 지웁니다. */
+function useClearSession() {
+  const queryClient = useQueryClient()
+  return () => {
+    queryClient.clear()
+    queryClient.setQueryData(meKey, null)
+  }
+}
+
+export function useLogout() {
+  const clear = useClearSession()
+  return useMutation({
+    mutationFn: () => apiRequest<void>('/auth/logout', 'POST'),
+    onSuccess: clear,
+  })
+}
+
+export function useDeleteAccount() {
+  const clear = useClearSession()
+  return useMutation({
+    mutationFn: () => apiRequest<void>('/auth/me', 'DELETE'),
+    onSuccess: clear,
+  })
+}

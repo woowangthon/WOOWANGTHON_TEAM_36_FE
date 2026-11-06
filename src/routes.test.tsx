@@ -1,21 +1,27 @@
-import { render, screen } from '@testing-library/react'
-import { createMemoryRouter, RouterProvider } from 'react-router'
+import { screen, waitFor } from '@testing-library/react'
 
-import { routes } from '@/routes'
+import { resetMockState, startLoggedOut } from '@/mocks/handlers'
+import { renderApp } from '@/test/renderApp'
 
-function renderAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] })
-  render(<RouterProvider router={router} />)
-}
+beforeEach(() => resetMockState())
 
 describe('routes', () => {
-  it('첫 화면을 보여 준다', () => {
-    renderAt('/')
-    expect(screen.getByRole('heading', { name: '장학금 매칭' })).toBeInTheDocument()
+  it('첫 화면은 로그인 상태에 맞는 화면으로 보낸다', async () => {
+    const app = renderApp('/')
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
   })
 
-  it('없는 경로는 404 화면을 보여 준다', () => {
-    renderAt('/no-such-page')
-    expect(screen.getByRole('heading', { name: '페이지를 찾을 수 없습니다' })).toBeInTheDocument()
+  it('비로그인으로 첫 화면에 오면 로그인 화면으로 보낸다', async () => {
+    startLoggedOut()
+    const app = renderApp('/')
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(app.path()).toBe('/login')
+  })
+
+  it('없는 경로는 404 화면을 보여 준다', async () => {
+    renderApp('/no-such-page')
+    expect(
+      await screen.findByRole('heading', { name: '페이지를 찾을 수 없습니다' }),
+    ).toBeInTheDocument()
   })
 })
