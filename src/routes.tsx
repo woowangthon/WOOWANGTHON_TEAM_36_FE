@@ -1,16 +1,18 @@
 import type { RouteObject } from 'react-router'
 
 import { GuestOnly, RequireAuth, RootRedirect } from '@/components/auth/RouteGuard'
+import { AppLayout } from '@/components/layout/AppLayout'
 import ConsentPage from '@/pages/ConsentPage'
-import HomePage from '@/pages/HomePage'
+import DashboardPage from '@/pages/DashboardPage'
+import DetailPage from '@/pages/DetailPage'
 import LoginPage from '@/pages/LoginPage'
+import MyListPage from '@/pages/MyListPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import PrivacyPage from '@/pages/PrivacyPage'
 import ProfilePage from '@/pages/ProfilePage'
 import SignupPage from '@/pages/SignupPage'
 
 // 라우팅 가드(frontend CLAUDE.md): 비로그인 → /login, 동의 전 → /consent, 프로필 미입력 → /profile.
-// 대시보드·상세·내 장학금 화면은 T25에서 /dashboard 자리에 넣습니다.
 export const routes: RouteObject[] = [
   { path: '/', element: <RootRedirect /> },
   { path: '/privacy', element: <PrivacyPage /> },
@@ -31,7 +33,16 @@ export const routes: RouteObject[] = [
   },
   {
     element: <RequireAuth requirement="profile" />,
-    children: [{ path: '/dashboard', element: <HomePage /> }],
+    children: [
+      {
+        element: <AppLayout />,
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/scholarships/:id', element: <DetailPage /> },
+          { path: '/my', element: <MyListPage /> },
+        ],
+      },
+    ],
   },
   { path: '*', element: <NotFoundPage /> },
 ]

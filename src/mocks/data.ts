@@ -205,6 +205,32 @@ export const mockDetails: ScholarshipDetail[] = [
     },
     siblings: [],
   },
+  {
+    id: 7,
+    name: '희망사다리 장학금 II유형',
+    ...kosaf,
+    benefit_amount_text: '등록금 전액',
+    benefit_type: '등록금성',
+    apply_start: '2026-11-05T09:00:00+09:00',
+    apply_end: '2026-12-31T18:00:00+09:00',
+    status: 'OPEN',
+    deadline_conflict: false,
+    posted_at: '2026-11-05T09:00:00+09:00',
+    result: 'ELIGIBLE',
+    my_state: null,
+    conditions: [
+      { condition: 'max_income_bracket', outcome: 'MET', evidence: '학자금지원 8구간 이하' },
+    ],
+    extra_conditions: [],
+    required_documents: ['취업 약정서'],
+    notice: {
+      id: 105,
+      title: '2026년 희망사다리 장학금 II유형 신청 안내',
+      url: 'https://kosaf.go.kr/ko/notice.do?mode=view&seqNo=21530',
+      posted_at: '2026-11-05T09:00:00+09:00',
+    },
+    siblings: [],
+  },
 ]
 
 export function toSummary(d: ScholarshipDetail): ScholarshipSummary {
