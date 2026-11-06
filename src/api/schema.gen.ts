@@ -344,6 +344,39 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AdminNotice
+         * @description 관리자 화면의 공지 1건. 재추출 버튼을 붙일 대상입니다(7.1).
+         */
+        AdminNotice: {
+            /** Id */
+            id: number;
+            /**
+             * Source Code
+             * @enum {string}
+             */
+            source_code: "SW_DEPT" | "AIBC" | "KOSAF";
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /**
+             * Posted At
+             * Format: date-time
+             */
+            posted_at: string;
+            /** Notice Kind */
+            notice_kind: ("모집" | "결과" | "기준안내" | "기타") | null;
+            /**
+             * Extract Status
+             * @enum {string}
+             */
+            extract_status: "PENDING" | "DONE" | "FAILED";
+            /** Extracted At */
+            extracted_at: string | null;
+            /** Scholarship Count */
+            scholarship_count: number;
+        };
+        /**
          * ConditionCheck
          * @description 조건 1개의 판정. 화면에서 ✓(MET) ✗(UNMET) ?(UNKNOWN)로 표시합니다(5.3).
          */
@@ -409,11 +442,16 @@ export interface components {
         };
         /**
          * CrawlRunsResponse
-         * @description 사이트별 마지막 수집 시각·오류를 보여 줄 최근 수집 기록 (최신순).
+         * @description 관리자 화면 한 번에 필요한 값 (화면 하나에 API 한 번, 9.8).
+         *
+         *     - items: 사이트별 마지막 수집 시각·결과·오류를 보여 줄 최근 수집 기록 (최신순)
+         *     - notices: 추출 실패·대기 공지 전부(먼저) + 최근 공지 (재추출 대상)
          */
         CrawlRunsResponse: {
             /** Items */
             items: components["schemas"]["CrawlRunOut"][];
+            /** Notices */
+            notices: components["schemas"]["AdminNotice"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1343,8 +1381,15 @@ export interface operations {
                     "application/json": components["schemas"]["CrawlRunsResponse"];
                 };
             };
-            /** @description 아직 구현되지 않음 */
-            501: {
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 관리자 아님 */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1372,6 +1417,27 @@ export interface operations {
                     "application/json": components["schemas"]["ReextractResponse"];
                 };
             };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 관리자 아님 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 공지 없음 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1380,13 +1446,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
-            };
-            /** @description 아직 구현되지 않음 */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
