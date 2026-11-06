@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://BACKEND_SERVICE.run.app/:path*" },
+    { "source": "/api/:path*", "destination": "https://scholarship-backend-401491382807.asia-southeast1.run.app/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
