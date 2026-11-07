@@ -385,7 +385,7 @@ export interface components {
              * Condition
              * @enum {string}
              */
-            condition: "target_grades" | "excludes_extra_semester" | "enrollment_status" | "min_gpa" | "min_credits" | "gender" | "max_age" | "max_income_bracket" | "regions" | "required_special" | "excludes_full_tuition" | "target_department" | "target_program";
+            condition: "target_grades" | "excludes_extra_semester" | "enrollment_status" | "min_gpa" | "min_score_100" | "min_credits" | "gender" | "max_age" | "max_income_bracket" | "regions" | "required_special" | "excludes_full_tuition" | "target_department" | "target_program";
             /**
              * Outcome
              * @enum {string}
@@ -522,8 +522,6 @@ export interface components {
             birth_year: number;
             /** Gpa */
             gpa: number;
-            /** Credits */
-            credits: number;
             /** Grade */
             grade: number;
             /** Extra Semester */
@@ -540,6 +538,14 @@ export interface components {
             department: "소프트웨어학부" | "기타";
             /** Aibc Member */
             aibc_member: boolean;
+            /** Score 100 */
+            score_100?: number | null;
+            /** Credits */
+            credits?: number | null;
+            /** Gpa Total */
+            gpa_total?: number | null;
+            /** Score 100 Total */
+            score_100_total?: number | null;
             /** Income Bracket */
             income_bracket?: number | null;
             self_region?: components["schemas"]["Region"] | null;

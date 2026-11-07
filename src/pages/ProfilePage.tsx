@@ -9,6 +9,7 @@ import { Field, FormError } from '@/components/form/Field'
 import {
   ENROLLMENT_STATUSES,
   INCOME_OPTIONS,
+  optionalNumberInput,
   profileSchema,
   SPECIAL_FLAGS,
   toFormValues,
@@ -107,27 +108,6 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
                 <option value="기타">기타</option>
               </NativeSelect>
             </Field>
-            <Field id="gpa" label="직전학기 평점" error={errors.gpa?.message} hint="4.5 만점">
-              <Input
-                id="gpa"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                placeholder="3.75"
-                aria-invalid={!!errors.gpa}
-                {...register('gpa', number)}
-              />
-            </Field>
-            <Field id="credits" label="직전학기 이수학점" error={errors.credits?.message}>
-              <Input
-                id="credits"
-                type="number"
-                inputMode="numeric"
-                placeholder="18"
-                aria-invalid={!!errors.credits}
-                {...register('credits', number)}
-              />
-            </Field>
             <Field id="grade" label="학년" error={errors.grade?.message}>
               <NativeSelect id="grade" aria-invalid={!!errors.grade} {...register('grade')}>
                 <option value="">선택</option>
@@ -189,6 +169,100 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               </p>
             )}
           </fieldset>
+        </section>
+
+        <section className="grid gap-4" aria-labelledby="grades-heading">
+          <div className="grid gap-1">
+            <h2 id="grades-heading" className="text-sm font-semibold">
+              성적
+            </h2>
+            <p className="text-muted-foreground text-xs">
+              포털 성적 조회의 숫자를 그대로 적어 주세요. 직전학기 = 계절학기를 뺀 가장 최근
+              정규학기(1·2학기)입니다. 비워 둔 칸이 필요한 장학금은 &lsquo;확인 필요&rsquo;로
+              보여요.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              id="gpa"
+              label="직전학기 평점"
+              error={errors.gpa?.message}
+              hint="4.5 만점 · 학기별 성적의 평점평균"
+            >
+              <Input
+                id="gpa"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                placeholder="3.75"
+                aria-invalid={!!errors.gpa}
+                {...register('gpa', number)}
+              />
+            </Field>
+            <Field
+              id="score_100"
+              label="직전학기 100점 환산 (선택)"
+              error={errors.score_100?.message}
+              hint="같은 학기의 실점평균"
+            >
+              <Input
+                id="score_100"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                placeholder="88.5"
+                aria-invalid={!!errors.score_100}
+                {...register('score_100', optionalNumberInput)}
+              />
+            </Field>
+            <Field
+              id="credits"
+              label="직전학기 이수학점 (선택)"
+              error={errors.credits?.message}
+              hint="같은 학기의 신청학점"
+            >
+              <Input
+                id="credits"
+                type="number"
+                inputMode="numeric"
+                placeholder="18"
+                aria-invalid={!!errors.credits}
+                {...register('credits', optionalNumberInput)}
+              />
+            </Field>
+            <Field
+              id="gpa_total"
+              label="전체 평점평균 (선택)"
+              error={errors.gpa_total?.message}
+              hint="4.5 만점 · 성적 내역의 평점평균"
+            >
+              <Input
+                id="gpa_total"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                placeholder="3.60"
+                aria-invalid={!!errors.gpa_total}
+                {...register('gpa_total', optionalNumberInput)}
+              />
+            </Field>
+            <Field
+              id="score_100_total"
+              label="전체 100점 환산 (선택)"
+              error={errors.score_100_total?.message}
+              hint="성적 내역의 100점환산"
+            >
+              <Input
+                id="score_100_total"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                placeholder="87.2"
+                aria-invalid={!!errors.score_100_total}
+                {...register('score_100_total', optionalNumberInput)}
+              />
+            </Field>
+          </div>
         </section>
 
         <section className="grid gap-4 border-t pt-5">

@@ -67,6 +67,7 @@ export const CONDITION_LABEL = {
   excludes_extra_semester: '초과학기 제외',
   enrollment_status: '재학상태',
   min_gpa: '평점',
+  min_score_100: '100점 환산 성적',
   min_credits: '이수학점',
   gender: '성별',
   max_age: '나이',
