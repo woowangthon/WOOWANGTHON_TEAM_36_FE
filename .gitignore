@@ -27,3 +27,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Playwright 결과물
+test-results
+playwright-report

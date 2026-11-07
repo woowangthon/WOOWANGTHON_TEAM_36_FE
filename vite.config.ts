@@ -32,5 +32,6 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    exclude: ['**/node_modules/**', 'e2e/**'], // e2e는 Playwright가 실행
   },
 })
