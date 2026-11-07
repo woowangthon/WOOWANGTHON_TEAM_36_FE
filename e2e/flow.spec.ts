@@ -30,7 +30,7 @@ test('가입부터 관심 표시까지', async ({ page }) => {
     await page.getByLabel('출생연도').fill('2004')
     await page.getByLabel('소속 학과').selectOption('소프트웨어학부')
     await page.getByLabel('직전학기 평점').fill('3.8')
-    await page.getByLabel('직전학기 이수학점').fill('18')
+    await page.getByLabel('직전학기 이수학점 (선택)').fill('18')
     await page.getByLabel('학년', { exact: true }).selectOption('3')
     await page.getByLabel('재학상태').selectOption('재학')
     await page.getByLabel('아니오').first().check()

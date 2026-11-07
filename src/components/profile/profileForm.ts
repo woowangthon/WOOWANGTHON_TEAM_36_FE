@@ -23,6 +23,18 @@ const text = () =>
 
 const requiredNumber = (label: string) => z.number({ error: `${label}을(를) 입력하세요` })
 
+// 선택 숫자 칸: 비워 두면 null(입력 안 함). 입력 위젯은 setValueAs로 빈 칸을 null로 바꿉니다.
+const optionalNumber = (schema: z.ZodNumber) =>
+  schema
+    .nullable()
+    .optional()
+    .transform((v) => v ?? null)
+
+/** 선택 숫자 입력용 register 옵션: 빈 칸 → null, 그 밖은 숫자(숫자가 아니면 NaN → 검증 오류) */
+export const optionalNumberInput = {
+  setValueAs: (v: unknown) => (v === '' || v == null ? null : Number(v)),
+} as const
+
 export const profileSchema = z
   .object({
     name: z.string().trim().min(1, '이름을 입력하세요').max(100, '100자 이하로 입력하세요'),
@@ -34,10 +46,32 @@ export const profileSchema = z
     gpa: requiredNumber('평점')
       .min(0, '0 이상으로 입력하세요')
       .max(4.5, '4.5 만점 기준으로 입력하세요'),
-    credits: requiredNumber('이수학점')
-      .int('정수로 입력하세요')
-      .min(0, '0 이상으로 입력하세요')
-      .max(30, '30학점 이하로 입력하세요'),
+    // 선택 성적 (4.1 C안). 성적표 숫자를 그대로 받습니다.
+    score_100: optionalNumber(
+      z
+        .number({ error: '숫자로 입력하세요' })
+        .min(0, '0 이상으로 입력하세요')
+        .max(100, '100점 만점 기준으로 입력하세요'),
+    ),
+    credits: optionalNumber(
+      z
+        .number({ error: '숫자로 입력하세요' })
+        .int('정수로 입력하세요')
+        .min(0, '0 이상으로 입력하세요')
+        .max(30, '30학점 이하로 입력하세요'),
+    ),
+    gpa_total: optionalNumber(
+      z
+        .number({ error: '숫자로 입력하세요' })
+        .min(0, '0 이상으로 입력하세요')
+        .max(4.5, '4.5 만점 기준으로 입력하세요'),
+    ),
+    score_100_total: optionalNumber(
+      z
+        .number({ error: '숫자로 입력하세요' })
+        .min(0, '0 이상으로 입력하세요')
+        .max(100, '100점 만점 기준으로 입력하세요'),
+    ),
     grade: z.enum(['1', '2', '3', '4'], { error: '학년을 고르세요' }),
     extra_semester: z.boolean(),
     enrollment_status: z.enum(ENROLLMENT_STATUSES, { error: '재학상태를 고르세요' }),
@@ -73,7 +107,10 @@ export function toProfile(v: ProfileFormValues, sensitiveAgreed: boolean): Profi
     gender: v.gender,
     birth_year: v.birth_year,
     gpa: v.gpa,
+    score_100: v.score_100,
     credits: v.credits,
+    gpa_total: v.gpa_total,
+    score_100_total: v.score_100_total,
     grade: Number(v.grade),
     extra_semester: v.extra_semester,
     enrollment_status: v.enrollment_status,
@@ -100,6 +137,10 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormValues> {
     special_flags: [],
     full_tuition_waiver: '',
     extra_semester: false,
+    score_100: null,
+    credits: null,
+    gpa_total: null,
+    score_100_total: null,
   } satisfies Partial<ProfileFormValues>
   if (!p) return empty
   const same =
@@ -112,7 +153,10 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormValues> {
     gender: p.gender,
     birth_year: p.birth_year,
     gpa: p.gpa,
-    credits: p.credits,
+    score_100: p.score_100 ?? null,
+    credits: p.credits ?? null,
+    gpa_total: p.gpa_total ?? null,
+    score_100_total: p.score_100_total ?? null,
     grade: String(p.grade) as ProfileFormValues['grade'],
     extra_semester: p.extra_semester,
     enrollment_status: p.enrollment_status,

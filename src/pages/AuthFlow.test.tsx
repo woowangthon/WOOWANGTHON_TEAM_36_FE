@@ -23,7 +23,7 @@ async function fillRequiredProfile() {
   type('출생연도', '2004')
   select('소속 학과', '소프트웨어학부')
   type('직전학기 평점', '3.8')
-  type('직전학기 이수학점', '18')
+  type('직전학기 이수학점 (선택)', '18')
   select('학년', '3')
   select('재학상태', '재학')
   fireEvent.click(screen.getByLabelText('아니오'))
@@ -74,7 +74,10 @@ describe('가입 흐름', () => {
       gender: '여',
       birth_year: 2004,
       gpa: 3.8,
+      score_100: null,
       credits: 18,
+      gpa_total: null,
+      score_100_total: null,
       grade: 3,
       extra_semester: false,
       enrollment_status: '재학',
@@ -219,11 +222,14 @@ describe('프로필 화면', () => {
     renderApp('/profile')
     await screen.findByRole('heading', { name: '프로필 입력' })
     type('직전학기 평점', '4.6')
-    type('직전학기 이수학점', '31')
+    type('직전학기 이수학점 (선택)', '31')
+    type('전체 100점 환산 (선택)', '100.5')
     fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
     expect(await screen.findByText('이름을 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('4.5 만점 기준으로 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('30학점 이하로 입력하세요')).toBeInTheDocument()
+    expect(screen.getByText('100점 만점 기준으로 입력하세요')).toBeInTheDocument()
+    expect(screen.getByText(/계절학기를 뺀 가장 최근/)).toBeInTheDocument()
     expect(screen.getByText('성별을 고르세요')).toBeInTheDocument()
     expect(screen.getByText('양성인재 여부를 고르세요')).toBeInTheDocument()
   })
