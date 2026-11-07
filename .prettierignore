@@ -3,3 +3,8 @@ node_modules
 package-lock.json
 public/mockServiceWorker.js
 src/api/schema.gen.ts
+# docs/git_규칙.md 사본이라 원본과 똑같이 둡니다
+CONTRIBUTING.md
+# Playwright 결과물
+test-results
+playwright-report

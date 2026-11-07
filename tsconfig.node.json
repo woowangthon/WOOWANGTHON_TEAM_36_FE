@@ -16,5 +16,5 @@
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "bundler"
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "playwright.config.ts", "e2e"]
 }
