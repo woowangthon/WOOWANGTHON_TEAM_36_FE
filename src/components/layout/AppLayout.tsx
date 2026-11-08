@@ -13,10 +13,10 @@ export function AppLayout() {
   const isAdmin = useMe().data?.is_admin ?? false
   const nav = isAdmin ? [...NAV, { to: '/admin', label: '관리' } as const] : NAV
   return (
-    <div className="min-h-svh bg-muted/40">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+    <div className="min-h-svh bg-brand-50">
+      <header className="sticky top-0 z-10 bg-brand-800 text-white shadow-sm">
         <div className="mx-auto flex h-12 max-w-3xl items-center justify-between gap-2 px-4">
-          <NavLink to="/dashboard" className="shrink-0 text-sm font-semibold">
+          <NavLink to="/dashboard" className="shrink-0 text-sm font-semibold text-white">
             장학금 매칭
           </NavLink>
           <nav aria-label="주요 메뉴" className="flex gap-1">
@@ -25,7 +25,7 @@ export function AppLayout() {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `rounded-md px-2 py-1 text-sm ${isActive ? 'bg-muted font-medium' : 'text-muted-foreground hover:text-foreground'}`
+                  `rounded-md px-2 py-1 text-sm ${isActive ? 'bg-white/15 font-medium text-white' : 'text-brand-100 hover:text-white'}`
                 }
               >
                 {item.label}

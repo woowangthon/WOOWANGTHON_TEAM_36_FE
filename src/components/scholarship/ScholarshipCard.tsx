@@ -45,7 +45,7 @@ export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
     <li>
       <Link
         to={`/scholarships/${item.id}`}
-        className="block rounded-xl border bg-background p-4 transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="block rounded-xl border border-brand-200 bg-background p-4 transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <div className="flex items-start justify-between gap-3">
           <h3 className="min-w-0 font-medium break-keep">{item.name}</h3>
@@ -59,7 +59,7 @@ export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
           <DeadlineText item={item} />
           {item.deadline_conflict && <DeadlineConflictNote />}
           {item.benefit_amount_text && (
-            <span className="text-sm text-muted-foreground">{item.benefit_amount_text}</span>
+            <span className="text-sm font-medium text-brand-700">{item.benefit_amount_text}</span>
           )}
           {item.my_state && (
             <span className="ml-auto text-xs font-medium text-primary">

@@ -5,6 +5,24 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* 브랜드 색 (딥 블루). bg-brand-50, text-brand-700 처럼 씁니다. */
+@theme {
+  --color-brand-50: #f0f6ff;
+  /* 아이스 블루: 페이지 배경 */
+  --color-brand-100: #eaf1fb;
+  /* 소프트 블루: 카드 배경, 정보 영역 */
+  --color-brand-200: #cfe0f7;
+  --color-brand-300: #9cc0ee;
+  --color-brand-400: #60a5fa;
+  /* 스카이 블루: 장식 요소 */
+  --color-brand-500: #3b7dd8;
+  --color-brand-600: #2f6bc2;
+  --color-brand-700: #2a61b4;
+  --color-brand-800: #2457a6;
+  /* 딥 블루: primary */
+  --color-brand-900: #1a3f7a;
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
@@ -55,18 +73,21 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.467 0.139 259.1);
+  /* 딥 블루 #2457A6 (brand-800) */
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.554 0.041 257.4);
+  /* 블루 그레이 #64748B: 보조 설명 */
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.714 0.143 254.6);
+  /* 스카이 블루 #60A5FA (brand-400) */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -121,9 +142,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }

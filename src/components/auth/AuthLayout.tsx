@@ -5,7 +5,7 @@ type Props = { title: string; description?: string; children: React.ReactNode; w
 /** 로그인·가입·동의·프로필 화면의 공통 틀. 360px 폭에서도 좌우 여백 16px을 유지합니다. */
 export function AuthLayout({ title, description, children, wide }: Props) {
   return (
-    <div className="min-h-svh bg-muted/40">
+    <div className="min-h-svh bg-brand-50">
       <header className="mx-auto flex max-w-3xl items-center px-4 py-4">
         <Link to="/" className="text-sm font-semibold">
           장학금 매칭

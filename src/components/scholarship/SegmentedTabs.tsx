@@ -16,7 +16,7 @@ export function SegmentedTabs<T extends string>({
     <div
       role="tablist"
       aria-label={label}
-      className="grid auto-cols-fr grid-flow-col rounded-lg bg-muted p-1"
+      className="grid auto-cols-fr grid-flow-col rounded-lg bg-brand-100 p-1"
     >
       {options.map((option) => {
         const selected = option.value === value
@@ -27,7 +27,7 @@ export function SegmentedTabs<T extends string>({
             role="tab"
             aria-selected={selected}
             onClick={() => onChange(option.value)}
-            className={`rounded-md px-2 py-1.5 text-sm transition-colors ${selected ? 'bg-background font-medium shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`rounded-md px-2 py-1.5 text-sm transition-colors ${selected ? 'bg-brand-800 font-medium text-white shadow-sm' : 'text-brand-900/70 hover:text-brand-900'}`}
           >
             {option.label}
           </button>
