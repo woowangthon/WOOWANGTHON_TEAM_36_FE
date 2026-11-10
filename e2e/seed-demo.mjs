@@ -14,14 +14,14 @@ if (!PASSWORD || PASSWORD.length < 8) {
   process.exit(1)
 }
 
+// 프로필 모양은 backend `ProfileUpdate`(2026-11-10 기준)를 따릅니다.
+// - 이수학기(completed_semesters)로 학년을 계산하고, 재학상태는 보내지 않으면 재학입니다.
+// - 이수학기 1 이상이면 직전학기 평점·이수학점·전체 평점평균이 필수입니다.
+// - 100점 환산은 서버가 평점 × 10 + 52.5로 계산하므로 보내지 않습니다.
 const base = {
   gender: '여',
   birth_year: 2004,
   credits: 18,
-  score_100: null,
-  gpa_total: null,
-  score_100_total: null,
-  extra_semester: false,
   income_bracket: null,
   self_region: null,
   parent_region: null,
@@ -33,18 +33,14 @@ const base = {
 const DEMOS = [
   {
     email: 'demo-a@cbnu-scholarship.test',
-    note: '소프트웨어학부 3학년 재학, 평점·소득·주소 모두 입력',
+    note: '소프트웨어학부 3학년(5학기 마침) 재학, 평점·소득·주소 모두 입력',
     sensitive: false,
     profile: {
       ...base,
       name: '시연A',
-      gpa: 4.1,
-      score_100: 92.4,
-      gpa_total: 3.95,
-      score_100_total: 90.1,
-      grade: 3,
-      enrollment_status: '재학',
-      department: '소프트웨어학부',
+      completed_semesters: 5,
+      gpa: 4.1, // 100점 환산 93.5
+      gpa_total: 3.95, // 92.0. 관정재단 "총 평점 4.0" 지원 불가 장면
       aibc_member: false,
       income_bracket: 2,
       self_region: { sido: '충청북도', sigungu: '청주시' },
@@ -54,17 +50,16 @@ const DEMOS = [
   },
   {
     email: 'demo-b@cbnu-scholarship.test',
-    note: '다른 학과 1학년 재학, 학부 전용 장학금 지원 불가',
+    note: '1학년(1학기 마침) 재학, 학년 환산 장면',
     sensitive: false,
     profile: {
       ...base,
       name: '시연B',
       gender: '남',
       birth_year: 2007,
+      completed_semesters: 1,
       gpa: 3.2,
-      grade: 1,
-      enrollment_status: '재학',
-      department: '기타',
+      gpa_total: 3.2, // 한 학기만 다녀 직전학기와 같음
       aibc_member: false,
       income_bracket: 6,
       self_region: { sido: '충청남도', sigungu: '논산시' },
@@ -74,20 +69,18 @@ const DEMOS = [
   },
   {
     email: 'demo-c@cbnu-scholarship.test',
-    note: '소프트웨어학부 2학년 휴학·평점 2.3, 재학·평점 조건 불충족',
+    note: '소프트웨어학부 2학년(3학기 마침) 재학·평점 2.3·소득 10구간, 평점·소득 조건 불충족',
     sensitive: false,
     profile: {
       ...base,
       name: '시연C',
       birth_year: 2005,
-      gpa: 2.3,
-      score_100: 71.5,
+      completed_semesters: 3,
+      gpa: 2.3, // 100점 환산 75.5
       credits: 12,
-      grade: 2,
-      enrollment_status: '휴학',
-      department: '소프트웨어학부',
+      gpa_total: 2.3,
       aibc_member: false,
-      income_bracket: 9,
+      income_bracket: 10, // 11/9 결정: 휴학 대신 재학 + 소득 10구간
       self_region: { sido: '서울특별시', sigungu: null },
       parent_region: { sido: '서울특별시', sigungu: null },
       full_tuition_waiver: '아니오',
@@ -95,17 +88,16 @@ const DEMOS = [
   },
   {
     email: 'demo-d@cbnu-scholarship.test',
-    note: 'AI부트캠프 양성인재 4학년, 선택 정보 비움(확인 필요가 많음)',
+    note: 'AI부트캠프 양성인재 4학년(7학기 마침), 선택 정보 비움(확인 필요가 많음)',
     sensitive: true,
     profile: {
       ...base,
       name: '시연D',
       gender: '남',
       birth_year: 2002,
-      gpa: 3.6,
-      grade: 4,
-      enrollment_status: '재학',
-      department: '소프트웨어학부',
+      completed_semesters: 7,
+      gpa: 3.6, // 100점 환산 88.5
+      gpa_total: 3.6,
       aibc_member: true,
     },
   },
