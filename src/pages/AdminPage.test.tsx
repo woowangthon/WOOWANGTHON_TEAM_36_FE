@@ -16,6 +16,8 @@ describe('관리자 화면', () => {
     const app = renderApp('/admin')
     await waitFor(() => expect(app.path()).toBe('/dashboard'))
     expect(await screen.findByRole('heading', { name: '맞춤 장학금' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '메뉴' }))
+    expect(screen.getByRole('link', { name: '내 장학금' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '관리' })).not.toBeInTheDocument()
     expect(adminCalls).toEqual([])
     server.events.removeAllListeners()
@@ -31,6 +33,7 @@ describe('관리자 화면', () => {
     signInAsAdmin()
     renderApp('/admin')
     expect(await screen.findByRole('heading', { name: '관리자' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '메뉴' }))
     expect(screen.getByRole('link', { name: '관리' })).toBeInTheDocument()
 
     const runs = screen.getByRole('heading', { name: '사이트별 마지막 수집' }).parentElement!
