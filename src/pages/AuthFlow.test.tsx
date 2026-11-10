@@ -18,13 +18,12 @@ function select(label: string | RegExp, value: string) {
 }
 
 async function fillRequiredProfile() {
-  type('이름', '김충북')
+  type('닉네임', '김충북')
   select('성별', '여')
   type('출생연도', '2004')
-  select('소속 학과', '소프트웨어학부')
   type('직전학기 평점', '3.8')
   type('직전학기 이수학점 (선택)', '18')
-  select('학년', '3')
+  type('이수학기', '5')
   select('재학상태', '재학')
   fireEvent.click(screen.getByLabelText('아니오'))
 }
@@ -78,10 +77,8 @@ describe('가입 흐름', () => {
       credits: 18,
       gpa_total: null,
       score_100_total: null,
-      grade: 3,
-      extra_semester: false,
+      completed_semesters: 5,
       enrollment_status: '재학',
-      department: '소프트웨어학부',
       aibc_member: false,
       income_bracket: null,
       self_region: { sido: '충청남도', sigungu: '논산시' },
@@ -225,10 +222,10 @@ describe('프로필 화면', () => {
     type('직전학기 이수학점 (선택)', '31')
     type('전체 100점 환산 (선택)', '100.5')
     fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
-    expect(await screen.findByText('이름을 입력하세요')).toBeInTheDocument()
-    expect(screen.getByText('4.5 만점 기준으로 입력하세요')).toBeInTheDocument()
-    expect(screen.getByText('30학점 이하로 입력하세요')).toBeInTheDocument()
-    expect(screen.getByText('100점 만점 기준으로 입력하세요')).toBeInTheDocument()
+    expect(await screen.findByText('닉네임을 입력하세요')).toBeInTheDocument()
+    expect(screen.getByText('0~4.5 사이로 입력하세요')).toBeInTheDocument()
+    expect(screen.getByText('0~30 사이로 입력하세요')).toBeInTheDocument()
+    expect(screen.getByText('0~100 사이로 입력하세요')).toBeInTheDocument()
     expect(screen.getByText(/계절학기를 뺀 가장 최근/)).toBeInTheDocument()
     expect(screen.getByText('성별을 고르세요')).toBeInTheDocument()
     expect(screen.getByText('양성인재 여부를 고르세요')).toBeInTheDocument()
@@ -237,11 +234,71 @@ describe('프로필 화면', () => {
   it('저장된 프로필을 불러오고, 민감정보 미동의면 특수자격을 막는다', async () => {
     renderApp('/profile')
     await screen.findByRole('heading', { name: '내 프로필' })
-    expect(screen.getByLabelText('이름')).toHaveValue('김충북')
+    expect(screen.getByLabelText('닉네임')).toHaveValue('김충북')
     expect(screen.getByLabelText('본인 주소 시/군/구')).toHaveValue('청주시')
     expect(screen.getByLabelText('부모 주소 시/도')).toHaveValue('충청남도')
     expect(screen.queryByLabelText('보훈')).not.toBeInTheDocument()
     expect(screen.getByText(/따로 동의해야 입력할 수 있습니다/)).toBeInTheDocument()
+  })
+
+  it('이수학기가 0이면 성적 칸을 숨기고 성적 없이 저장한다', async () => {
+    let saved: Record<string, unknown> | null = null
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'PUT' && request.url.endsWith('/api/profile')) {
+        saved = await request.clone().json()
+      }
+    })
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    expect(screen.getByLabelText('직전학기 평점')).toHaveValue('3.8')
+    type('이수학기', '0')
+    await waitFor(() => expect(screen.queryByLabelText('직전학기 평점')).not.toBeInTheDocument())
+    expect(screen.getByText(/아직 성적이 없어 입력하지 않아요/)).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('모름'))
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
+
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
+    expect(saved).toMatchObject({
+      completed_semesters: 0,
+      aibc_member: null,
+      gpa: null,
+      score_100: null,
+      credits: null,
+      gpa_total: null,
+      score_100_total: null,
+    })
+    server.events.removeAllListeners()
+  })
+
+  it('본인 주소 없이 "부모 주소가 본인 주소와 같음"을 고르면 막는다', async () => {
+    renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    select('본인 주소 시/도', '')
+    fireEvent.click(screen.getByLabelText('부모 주소가 본인 주소와 같음'))
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
+    expect(await screen.findByText('본인 주소를 먼저 입력하세요')).toBeInTheDocument()
+  })
+
+  it('닉네임이 지워진 기존 사용자에게 닉네임을 다시 받는다', async () => {
+    server.use(
+      http.get('/api/profile', () =>
+        HttpResponse.json({
+          name: null,
+          gender: '여',
+          birth_year: 2004,
+          completed_semesters: 5,
+          enrollment_status: '재학',
+          aibc_member: false,
+          gpa: 3.8,
+        }),
+      ),
+    )
+    renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    expect(screen.getByText(/닉네임을 정하고 저장해 주세요/)).toBeInTheDocument()
+    expect(screen.getByLabelText('닉네임')).toHaveValue('')
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
+    expect(await screen.findByText('닉네임을 입력하세요')).toBeInTheDocument()
   })
 
   it('민감정보 동의 철회는 확인 후 진행한다', async () => {

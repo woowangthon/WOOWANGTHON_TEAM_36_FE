@@ -508,9 +508,53 @@ export interface components {
         };
         /**
          * Profile
-         * @description GET 응답과 PUT 요청에 같은 형식을 씁니다. 선택 항목의 null은 '입력 안 함·모름'입니다.
+         * @description GET 응답·판정용. 선택 항목의 null은 '입력 안 함·모름'입니다.
          */
         Profile: {
+            /** Name */
+            name: string | null;
+            /**
+             * Gender
+             * @enum {string}
+             */
+            gender: "남" | "여";
+            /** Birth Year */
+            birth_year: number;
+            /** Completed Semesters */
+            completed_semesters: number;
+            /**
+             * Enrollment Status
+             * @enum {string}
+             */
+            enrollment_status: "재학" | "휴학";
+            /** Aibc Member */
+            aibc_member?: boolean | null;
+            /** Gpa */
+            gpa?: number | null;
+            /** Score 100 */
+            score_100?: number | null;
+            /** Credits */
+            credits?: number | null;
+            /** Gpa Total */
+            gpa_total?: number | null;
+            /** Score 100 Total */
+            score_100_total?: number | null;
+            /** Income Bracket */
+            income_bracket?: number | null;
+            self_region?: components["schemas"]["Region"] | null;
+            parent_region?: components["schemas"]["Region"] | null;
+            /** Special Flags */
+            special_flags?: ("다자녀" | "보훈" | "장애")[] | null;
+            /** Full Tuition Waiver */
+            full_tuition_waiver?: ("예" | "아니오") | null;
+        };
+        /**
+         * ProfileUpdate
+         * @description PUT 요청. 입력 검증 규칙(4.3)을 여기서 지킵니다.
+         *
+         *     선택 항목의 null은 '입력 안 함·모름'입니다.
+         */
+        ProfileUpdate: {
             /** Name */
             name: string;
             /**
@@ -520,24 +564,17 @@ export interface components {
             gender: "남" | "여";
             /** Birth Year */
             birth_year: number;
-            /** Gpa */
-            gpa: number;
-            /** Grade */
-            grade: number;
-            /** Extra Semester */
-            extra_semester: boolean;
+            /** Completed Semesters */
+            completed_semesters?: number | null;
             /**
              * Enrollment Status
              * @enum {string}
              */
-            enrollment_status: "재학" | "휴학" | "수료" | "졸업유예";
-            /**
-             * Department
-             * @enum {string}
-             */
-            department: "소프트웨어학부" | "기타";
+            enrollment_status: "재학" | "휴학";
             /** Aibc Member */
-            aibc_member: boolean;
+            aibc_member: boolean | null;
+            /** Gpa */
+            gpa?: number | null;
             /** Score 100 */
             score_100?: number | null;
             /** Credits */
@@ -554,6 +591,12 @@ export interface components {
             special_flags?: ("다자녀" | "보훈" | "장애")[] | null;
             /** Full Tuition Waiver */
             full_tuition_waiver?: ("예" | "아니오" | "모름") | null;
+            /** Grade */
+            grade?: number | null;
+            /** Extra Semester */
+            extra_semester?: boolean | null;
+            /** Department */
+            department?: ("소프트웨어학부" | "기타") | null;
         };
         /**
          * ReextractResponse
@@ -1117,7 +1160,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Profile"];
+                "application/json": components["schemas"]["ProfileUpdate"];
             };
         };
         responses: {

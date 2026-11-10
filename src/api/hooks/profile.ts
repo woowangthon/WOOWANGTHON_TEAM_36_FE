@@ -7,6 +7,7 @@ import { meKey, type Me } from './auth'
 import { ApiError, apiRequest } from './request'
 
 export type Profile = components['schemas']['Profile']
+export type ProfileUpdate = components['schemas']['ProfileUpdate']
 
 export const profileKey = ['profile'] as const
 
@@ -29,7 +30,7 @@ export function useProfile() {
 export function useSaveProfile() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (body: Profile) => apiRequest<Profile>('/profile', 'PUT', body),
+    mutationFn: (body: ProfileUpdate) => apiRequest<Profile>('/profile', 'PUT', body),
     onSuccess: (saved) => {
       queryClient.setQueryData(profileKey, saved)
       queryClient.setQueryData<Me | null>(meKey, (me) =>

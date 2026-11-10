@@ -25,15 +25,14 @@ test('가입부터 관심 표시까지', async ({ page }) => {
 
     // 프로필 (필수 항목만)
     await expect(page).toHaveURL(/\/profile$/)
-    await page.getByLabel('이름').fill('E2E 학생')
+    await page.getByLabel('닉네임').fill('E2E학생')
     await page.getByLabel('성별').selectOption('여')
     await page.getByLabel('출생연도').fill('2004')
-    await page.getByLabel('소속 학과').selectOption('소프트웨어학부')
     await page.getByLabel('직전학기 평점').fill('3.8')
     await page.getByLabel('직전학기 이수학점 (선택)').fill('18')
-    await page.getByLabel('학년', { exact: true }).selectOption('3')
+    await page.getByLabel('이수학기').fill('5')
     await page.getByLabel('재학상태').selectOption('재학')
-    await page.getByLabel('아니오').first().check()
+    await page.getByLabel('아니오').check()
     await page.getByRole('button', { name: '저장하고 장학금 보기' }).click()
 
     // 대시보드
