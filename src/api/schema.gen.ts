@@ -585,8 +585,8 @@ export interface components {
             score_100_total?: number | null;
             /** Income Bracket */
             income_bracket?: number | null;
-            self_region?: components["schemas"]["Region"] | null;
-            parent_region?: components["schemas"]["Region"] | null;
+            self_region?: components["schemas"]["RegionUpdate"] | null;
+            parent_region?: components["schemas"]["RegionUpdate"] | null;
             /** Special Flags */
             special_flags?: ("다자녀" | "보훈" | "장애")[] | null;
             /** Full Tuition Waiver */
@@ -616,6 +616,18 @@ export interface components {
          * @description 시/도 + 시/군/구. 상세 주소는 받지 않습니다(4.1).
          */
         Region: {
+            /** Sido */
+            sido: string;
+            /** Sigungu */
+            sigungu?: string | null;
+        };
+        /**
+         * RegionUpdate
+         * @description PUT용 주소. 시/도·시/군/구가 목록(`regions.py`)에 있고 서로 맞는지 봅니다(정의서 15-4·15-5).
+         *
+         *     조회(`Region`)는 검사하지 않아, 목록이 바뀌어도 기존 사용자의 조회가 실패하지 않습니다(15-8).
+         */
+        RegionUpdate: {
             /** Sido */
             sido: string;
             /** Sigungu */

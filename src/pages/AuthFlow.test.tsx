@@ -301,6 +301,42 @@ describe('프로필 화면', () => {
     expect(await screen.findByText('닉네임을 입력하세요')).toBeInTheDocument()
   })
 
+  it('서버가 거부한 칸은 그 칸 아래에 서버 문장을 보여 준다', async () => {
+    server.use(
+      http.put('/api/profile', () =>
+        HttpResponse.json(
+          {
+            detail: [
+              {
+                loc: ['body', 'self_region'],
+                msg: '목록에 있는 시/도를 고르세요',
+                type: 'value_error',
+              },
+              {
+                loc: ['body', 'name'],
+                msg: '닉네임은 숫자만으로 만들 수 없어요',
+                type: 'value_error',
+              },
+              { loc: ['body'], msg: '직전학기 평점을 입력하세요', type: 'value_error' },
+            ],
+          },
+          { status: 422 },
+        ),
+      ),
+    )
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
+
+    expect(await screen.findByText('목록에 있는 시/도를 고르세요')).toBeInTheDocument()
+    expect(screen.getByText('닉네임은 숫자만으로 만들 수 없어요')).toBeInTheDocument()
+    expect(screen.getByLabelText('닉네임')).toHaveAttribute('aria-invalid', 'true')
+    // 칸을 알 수 없는 오류는 폼 아래 문장으로
+    expect(screen.getByText('직전학기 평점을 입력하세요')).toBeInTheDocument()
+    expect(screen.queryByText('입력값을 확인하세요')).not.toBeInTheDocument()
+    expect(app.path()).toBe('/profile')
+  })
+
   it('민감정보 동의 철회는 확인 후 진행한다', async () => {
     server.use(
       http.get(

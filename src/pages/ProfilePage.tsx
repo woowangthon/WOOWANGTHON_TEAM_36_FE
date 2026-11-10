@@ -1,14 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
 
 import { useDeleteAccount, useLogout, useMe, useWithdrawSensitive, type Me } from '@/api/hooks/auth'
 import { useProfile, useSaveProfile, type Profile } from '@/api/hooks/profile'
+import { ApiError } from '@/api/hooks/request'
 import { AuthLayout, PageSkeleton } from '@/components/auth/AuthLayout'
 import { Field, FormError } from '@/components/form/Field'
 import {
   ENROLLMENT_STATUSES,
+  formFieldOf,
   GRADE_FIELDS,
   hasNoGrades,
   INCOME_OPTIONS,
@@ -63,11 +65,27 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
     if (noGrades) GRADE_FIELDS.forEach((name) => setValue(name, ''))
   }, [noGrades, setValue])
 
-  const onSubmit = form.handleSubmit((values) =>
+  // 칸에 붙이지 못한 서버 오류 문장. 없으면 서버의 대표 문장(save.error)을 씁니다.
+  const [serverMessage, setServerMessage] = useState<string | null>(null)
+
+  const onSubmit = form.handleSubmit((values) => {
+    setServerMessage(null)
     save.mutate(toProfile(values, me.sensitive_agreed), {
       onSuccess: () => navigate('/dashboard', { replace: true }),
-    }),
-  )
+      // 화면 검사를 거치지 않은 값(옛 화면, 목록 밖 주소 등)을 서버가 거부하면 그 칸 아래에 보여 줍니다(정의서 18-2).
+      onError: (error) => {
+        if (!(error instanceof ApiError)) return
+        const rest: string[] = []
+        for (const { path, message } of error.fieldErrors) {
+          const field = formFieldOf(path)
+          if (field) form.setError(field, { type: 'server', message }, { shouldFocus: true })
+          else rest.push(message)
+        }
+        if (rest.length) setServerMessage(rest.join(' · '))
+        else if (error.fieldErrors.length) setServerMessage('표시된 칸을 확인하세요')
+      },
+    })
+  })
 
   return (
     <FormProvider {...form}>
@@ -319,6 +337,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               id="income_bracket"
               label="소득분위"
               optional
+              error={errors.income_bracket?.message}
               hint="한국장학재단 학자금 지원구간이에요. 가장 최근 학기 구간을 고르세요"
             >
               <NativeSelect id="income_bracket" {...register('income_bracket')}>
@@ -333,6 +352,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               id="full_tuition_waiver"
               label="등록금 전액 감면"
               optional
+              error={errors.full_tuition_waiver?.message}
               hint="국가장학금 등으로 이번 학기 등록금 전액을 감면받았는지 골라 주세요"
             >
               <NativeSelect id="full_tuition_waiver" {...register('full_tuition_waiver')}>
@@ -354,7 +374,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
           )}
           {!parentSame && (
             <>
-              <RegionSelect prefix="parent" label="부모 주소" />
+              <RegionSelect prefix="parent" label="부모 주소" error={errors.parent_sido?.message} />
               <p className="-mt-2 text-xs text-muted-foreground">해당 없으면 비워 두세요.</p>
             </>
           )}
@@ -380,10 +400,15 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
                 </Link>
               </p>
             )}
+            {errors.special_flags && (
+              <p role="alert" className="text-xs text-destructive">
+                {errors.special_flags.message}
+              </p>
+            )}
           </fieldset>
         </section>
 
-        <FormError message={save.error?.message} />
+        <FormError message={serverMessage ?? save.error?.message} />
         <Button type="submit" size="lg" disabled={save.isPending}>
           {save.isPending ? '저장 중…' : '저장하고 장학금 보기'}
         </Button>

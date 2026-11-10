@@ -215,3 +215,28 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormInput> {
     full_tuition_waiver: p.full_tuition_waiver ?? '',
   }
 }
+
+// 서버 422의 칸(`ProfileUpdate` 기준) → 폼 칸. 주소는 시/도 칸 아래에 보여 줍니다.
+const SERVER_FIELD: Partial<Record<string, keyof ProfileFormInput>> = {
+  self_region: 'self_sido',
+  parent_region: 'parent_sido',
+}
+const SAME_NAME = new Set<string>([
+  'name',
+  'gender',
+  'birth_year',
+  'completed_semesters',
+  'enrollment_status',
+  'aibc_member',
+  ...GRADE_FIELDS,
+  'income_bracket',
+  'special_flags',
+  'full_tuition_waiver',
+])
+
+/** 서버 오류 위치(`['self_region']` 등) → 오류를 보여 줄 폼 칸. 맞는 칸이 없으면 null(폼 아래 문장). */
+export function formFieldOf(path: (string | number)[]): keyof ProfileFormInput | null {
+  const top = String(path[0] ?? '')
+  if (SAME_NAME.has(top)) return top as keyof ProfileFormInput
+  return SERVER_FIELD[top] ?? null
+}
