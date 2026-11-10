@@ -47,13 +47,20 @@ describe('대시보드', () => {
     await waitForCards('두산연강재단 장학금')
     expect(cardNames()).toEqual(['두산연강재단 장학금', '희망사다리 장학금 II유형'])
 
-    fireEvent.change(screen.getByLabelText('정렬'), { target: { value: 'latest' } })
+    const sortGroup = screen.getByRole('group', { name: '정렬' })
+    fireEvent.click(within(sortGroup).getByRole('button', { name: '최신순' }))
+    expect(within(sortGroup).getByRole('button', { name: '최신순' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     await waitFor(() =>
       expect(cardNames()).toEqual(['희망사다리 장학금 II유형', '두산연강재단 장학금']),
     )
     expect(app.router.state.location.search).toBe('?sort=latest')
 
-    fireEvent.change(screen.getByLabelText('교내/교외'), { target: { value: 'internal' } })
+    fireEvent.click(
+      within(screen.getByRole('group', { name: '출처' })).getByRole('button', { name: '교내' }),
+    )
     await waitFor(() => expect(cardNames()).toEqual(['두산연강재단 장학금']))
   })
 
