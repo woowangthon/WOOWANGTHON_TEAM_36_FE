@@ -53,7 +53,7 @@ export default function DashboardPage() {
 
   return (
     <div className="grid gap-4">
-      <h1 className="text-xl font-semibold">맞춤 장학금</h1>
+      <h1 className="text-xl font-semibold text-brand-900">맞춤 장학금</h1>
       <SegmentedTabs
         label="판정 결과"
         options={TABS}
