@@ -131,7 +131,7 @@ describe('상세', () => {
   })
 })
 
-describe('관심·신청완료·숨기기', () => {
+describe('관심·신청완료', () => {
   it('관심을 누르면 바로 반영되고 내 장학금에 나타난다', async () => {
     let release!: () => void
     const gate = new Promise<void>((resolve) => (release = resolve))
@@ -179,32 +179,10 @@ describe('관심·신청완료·숨기기', () => {
     )
   })
 
-  it('목록에서 실패하면 숨긴 장학금이 다시 나타난다', async () => {
-    server.use(
-      http.put('/api/scholarships/:id/state', async () => {
-        await delay(30)
-        return HttpResponse.json({ detail: '오류' }, { status: 500 })
-      }),
-    )
-    const app = renderApp('/dashboard')
-    await waitForCards('두산연강재단 장학금')
-    await app.router.navigate('/scholarships/1')
-    fireEvent.click(await screen.findByRole('button', { name: '숨기기' }))
-    await screen.findByText(/저장하지 못했습니다/)
-    await app.router.navigate('/dashboard')
-    await waitForCards('두산연강재단 장학금')
-  })
-
-  it('숨기면 대시보드에서 빠지고, 다시 누르면 해제된다', async () => {
-    const app = renderApp('/dashboard')
-    await waitForCards('두산연강재단 장학금')
-    await app.router.navigate('/scholarships/1')
-    fireEvent.click(await screen.findByRole('button', { name: '숨기기' }))
-    expect(await screen.findByRole('button', { name: '숨김 해제' })).toBeInTheDocument()
-
-    await app.router.navigate('/dashboard')
-    await waitForCards('희망사다리 장학금 II유형')
-    expect(screen.queryByText('두산연강재단 장학금')).not.toBeInTheDocument()
+  it('상세에 숨기기 버튼이 없다', async () => {
+    renderApp('/scholarships/3')
+    await screen.findByRole('button', { name: '관심' })
+    expect(screen.queryByRole('button', { name: '숨기기' })).not.toBeInTheDocument()
   })
 })
 

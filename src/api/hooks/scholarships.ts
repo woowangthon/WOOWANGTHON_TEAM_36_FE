@@ -60,7 +60,7 @@ function staysInList(params: ListParams, state: UserState | null): boolean {
 }
 
 /**
- * 관심·신청완료·숨기기. state=null이면 지웁니다.
+ * 관심·신청완료. state=null이면 지웁니다.
  * 서버 응답을 기다리지 않고 캐시를 먼저 바꾸고(optimistic update), 실패하면 되돌립니다(9.8).
  */
 export function useSetScholarshipState() {
