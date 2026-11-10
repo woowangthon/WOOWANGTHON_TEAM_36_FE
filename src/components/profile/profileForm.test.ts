@@ -5,6 +5,7 @@ import {
   birthYearOptions,
   maxBirthYear,
   profileSchema,
+  score100FromGpa,
   toFormValues,
   toProfile,
   type ProfileFormInput,
@@ -17,10 +18,8 @@ const valid: ProfileFormInput = {
   completed_semesters: '5',
   aibc_member: 'no',
   gpa: '3.8',
-  score_100: '88.5',
   credits: '18',
   gpa_total: '3.6',
-  score_100_total: '87.2',
   income_bracket: '',
   self_sido: '',
   self_sigungu: '',
@@ -111,16 +110,14 @@ describe('이수학기', () => {
 describe('성적', () => {
   it.each([
     ['gpa', '직전학기 평점을 입력하세요'],
-    ['score_100', '직전학기 100점 환산 점수를 입력하세요'],
     ['credits', '직전학기 이수학점을 입력하세요'],
     ['gpa_total', '전체 평점평균을 입력하세요'],
-    ['score_100_total', '전체 100점 환산 점수를 입력하세요'],
   ] as const)('이수학기가 1 이상이면 %s 는 필수다', (field, message) => {
     expect(errorOf(field, { [field]: '' })).toBe(message)
   })
 
   it('이수학기 0이면 성적을 비워도 통과한다', () => {
-    const empty = { gpa: '', score_100: '', credits: '', gpa_total: '', score_100_total: '' }
+    const empty = { gpa: '', credits: '', gpa_total: '' }
     expect(profileSchema.safeParse({ ...valid, ...empty, completed_semesters: '0' }).success).toBe(
       true,
     )
@@ -135,9 +132,6 @@ describe('성적', () => {
     ['gpa', '-1', '숫자로 입력하세요'],
     ['gpa', '4e0', '숫자로 입력하세요'],
     ['gpa_total', '4.6', '0~4.5 사이로 입력하세요'],
-    ['score_100', '100', undefined],
-    ['score_100', '100.01', '0~100 사이로 입력하세요'],
-    ['score_100_total', '88.123', '소수 둘째 자리까지 입력하세요'],
     ['credits', '30', undefined],
     ['credits', '31', '0~30 사이로 입력하세요'],
     ['credits', '17.5', '정수로 입력하세요'],
@@ -155,11 +149,27 @@ describe('성적', () => {
     expect(toProfile(parsed, false)).toMatchObject({
       completed_semesters: 0,
       gpa: null,
-      score_100: null,
       credits: null,
       gpa_total: null,
-      score_100_total: null,
     })
+  })
+
+  it.each([
+    ['3.6', '88.5'],
+    ['4.5', '97.5'],
+    ['3.45', '87'],
+    ['0', '52.5'],
+    ['', ''],
+    ['4.6', ''],
+    ['abc', ''],
+  ])('100점 환산: 평점 "%s" → "%s" (평점 × 10 + 52.5)', (gpa, score) => {
+    expect(score100FromGpa(gpa)).toBe(score)
+  })
+
+  it('100점 환산은 서버로 보내지 않는다 (서버가 평점으로 계산)', () => {
+    const body = toProfile(profileSchema.parse(valid), false)
+    expect(body).not.toHaveProperty('score_100')
+    expect(body).not.toHaveProperty('score_100_total')
   })
 })
 

@@ -16,6 +16,7 @@ import {
   INCOME_OPTIONS,
   MAX_SEMESTERS,
   profileSchema,
+  score100FromGpa,
   SPECIAL_FLAGS,
   toFormValues,
   toProfile,
@@ -59,6 +60,8 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
   const { errors } = formState
   const parentSame = useWatch({ control, name: 'parent_same' })
   const noGrades = hasNoGrades(useWatch({ control, name: 'completed_semesters' }))
+  const gpa = useWatch({ control, name: 'gpa' })
+  const gpaTotal = useWatch({ control, name: 'gpa_total' })
 
   // 이수학기 0이면 성적 칸을 숨기고, 적어 둔 값도 비웁니다(다시 1 이상으로 바꿔도 옛 값이 되살아나지 않게).
   useEffect(() => {
@@ -252,15 +255,15 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               <Field
                 id="score_100"
                 label="직전학기 100점 환산"
-                error={errors.score_100?.message}
-                hint="같은 학기의 실점평균"
+                hint="평점으로 계산한 값이에요 (평점 × 10 + 52.5)"
               >
                 <Input
                   id="score_100"
-                  inputMode="decimal"
-                  placeholder="88.5"
-                  aria-invalid={!!errors.score_100}
-                  {...register('score_100')}
+                  readOnly
+                  tabIndex={-1}
+                  value={score100FromGpa(gpa)}
+                  placeholder="평점을 입력하면 계산돼요"
+                  className="bg-muted"
                 />
               </Field>
               <Field
@@ -294,15 +297,15 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               <Field
                 id="score_100_total"
                 label="전체 100점 환산"
-                error={errors.score_100_total?.message}
-                hint="성적 내역의 100점환산"
+                hint="평점으로 계산한 값이에요 (평점 × 10 + 52.5)"
               >
                 <Input
                   id="score_100_total"
-                  inputMode="decimal"
-                  placeholder="87.2"
-                  aria-invalid={!!errors.score_100_total}
-                  {...register('score_100_total')}
+                  readOnly
+                  tabIndex={-1}
+                  value={score100FromGpa(gpaTotal)}
+                  placeholder="평점을 입력하면 계산돼요"
+                  className="bg-muted"
                 />
               </Field>
             </div>

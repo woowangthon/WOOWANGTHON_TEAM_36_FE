@@ -19,6 +19,10 @@ type UserState = NonNullable<Schemas['StateRequest']['state']>
 
 type Me = Schemas['MeResponse']
 
+// backend와 같은 식: 평점 × 10 + 52.5 (최대 100)
+const score100 = (gpa: number | null | undefined) =>
+  gpa == null ? null : Math.min(100, Math.round((gpa * 10 + 52.5) * 100) / 100)
+
 /** 목 로그인에 쓰는 비밀번호. 다른 값이면 401을 돌려줍니다. */
 export const MOCK_PASSWORD = 'password123'
 
@@ -165,10 +169,10 @@ export const handlers: RequestHandler[] = [
       enrollment_status: body.enrollment_status ?? '재학', // 화면은 보내지 않음(재학생 대상)
       aibc_member: body.aibc_member,
       gpa: body.gpa,
-      score_100: body.score_100,
+      score_100: score100(body.gpa),
       credits: body.credits,
       gpa_total: body.gpa_total,
-      score_100_total: body.score_100_total,
+      score_100_total: score100(body.gpa_total),
       income_bracket: body.income_bracket,
       self_region: body.self_region,
       parent_region: body.parent_region,

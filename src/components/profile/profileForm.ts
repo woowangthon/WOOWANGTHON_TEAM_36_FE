@@ -61,7 +61,19 @@ export function hasNoGrades(completedSemesters: string | undefined): boolean {
   return INTEGER.test(v) && Number(v) === 0
 }
 
-export const GRADE_FIELDS = ['gpa', 'score_100', 'credits', 'gpa_total', 'score_100_total'] as const
+// 학생이 입력하는 성적 칸. 100점 환산은 평점으로 계산해 보여 주기만 합니다(2026-11-10 결정).
+export const GRADE_FIELDS = ['gpa', 'credits', 'gpa_total'] as const
+
+// 100점 환산 = 평점 × 10 + 52.5 (backend `score_100_from_gpa`와 같은 식, 최대 100)
+const SCORE_100_OFFSET = 52.5
+
+/** 평점 칸 글자 → 100점 환산 표시 글자. 평점이 비었거나 0~4.5 숫자가 아니면 빈 글자. */
+export function score100FromGpa(gpa: string | undefined): string {
+  const v = (gpa ?? '').trim()
+  if (!DECIMAL.test(v) || Number(v) > 4.5) return ''
+  const score = Math.min(100, Math.round((Number(v) * 10 + SCORE_100_OFFSET) * 100) / 100)
+  return String(score)
+}
 
 const fields = z.object({
   name: z
@@ -73,12 +85,10 @@ const fields = z.object({
   completed_semesters: text(),
   aibc_member: z.enum(['yes', 'no', 'unknown'], { error: '양성인재 여부를 고르세요' }),
 
-  // 성적 (4.1 C안). 성적표 숫자를 그대로 받고, 이수학기 1 이상이면 5칸 모두 필수입니다.
+  // 성적 (4.1). 성적표 숫자를 그대로 받고, 이수학기 1 이상이면 3칸 모두 필수입니다.
   gpa: text(),
-  score_100: text(),
   credits: text(),
   gpa_total: text(),
-  score_100_total: text(),
 
   income_bracket: text(),
   self_sido: text(),
@@ -111,14 +121,10 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
   if (!hasNoGrades(v.completed_semesters)) {
     // 서버와 같은 문장 (backend ProfileUpdate)
     if (!v.gpa) issue('gpa', '직전학기 평점을 입력하세요')
-    if (!v.score_100) issue('score_100', '직전학기 100점 환산 점수를 입력하세요')
     if (!v.credits) issue('credits', '직전학기 이수학점을 입력하세요')
     if (!v.gpa_total) issue('gpa_total', '전체 평점평균을 입력하세요')
-    if (!v.score_100_total) issue('score_100_total', '전체 100점 환산 점수를 입력하세요')
     checkDecimal(v.gpa, 'gpa', 4.5, issue)
     checkDecimal(v.gpa_total, 'gpa_total', 4.5, issue)
-    checkDecimal(v.score_100, 'score_100', 100, issue)
-    checkDecimal(v.score_100_total, 'score_100_total', 100, issue)
     if (v.credits !== '') {
       if (!INTEGER.test(v.credits)) issue('credits', '정수로 입력하세요')
       else if (Number(v.credits) > 30) issue('credits', '0~30 사이로 입력하세요')
@@ -158,10 +164,8 @@ export function toProfile(v: ProfileFormValues, sensitiveAgreed: boolean): Profi
     completed_semesters: Number(v.completed_semesters),
     aibc_member: AIBC_TO_API[v.aibc_member],
     gpa: grade(v.gpa),
-    score_100: grade(v.score_100),
     credits: grade(v.credits),
     gpa_total: grade(v.gpa_total),
-    score_100_total: grade(v.score_100_total),
     income_bracket: numberOrNull(v.income_bracket),
     self_region: self,
     parent_region: v.parent_same ? self : region(v.parent_sido, v.parent_sigungu),
@@ -180,10 +184,8 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormInput> {
     birth_year: '',
     completed_semesters: '',
     gpa: '',
-    score_100: '',
     credits: '',
     gpa_total: '',
-    score_100_total: '',
     income_bracket: '',
     self_sido: '',
     self_sigungu: '',
@@ -207,10 +209,8 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormInput> {
     // 저장된 null은 '모름'입니다. 아무것도 고르지 않은 상태와 구분합니다.
     aibc_member: p.aibc_member == null ? 'unknown' : p.aibc_member ? 'yes' : 'no',
     gpa: str(p.gpa),
-    score_100: str(p.score_100),
     credits: str(p.credits),
     gpa_total: str(p.gpa_total),
-    score_100_total: str(p.score_100_total),
     income_bracket: str(p.income_bracket),
     self_sido: p.self_region?.sido ?? '',
     self_sigungu: p.self_region?.sigungu ?? '',

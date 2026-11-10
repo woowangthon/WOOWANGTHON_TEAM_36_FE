@@ -30,10 +30,8 @@ test('가입부터 관심 표시까지', async ({ page }) => {
     await page.getByLabel('출생연도').selectOption('2004')
     await page.getByLabel('이수학기').fill('5')
     await page.getByLabel('직전학기 평점').fill('3.8')
-    await page.getByLabel('직전학기 100점 환산').fill('88.5')
     await page.getByLabel('직전학기 이수학점').fill('18')
     await page.getByLabel('전체 평점평균').fill('3.6')
-    await page.getByLabel('전체 100점 환산').fill('87.2')
     await page.getByLabel('아니오').check()
     await page.getByRole('button', { name: '저장하고 장학금 보기' }).click()
 
