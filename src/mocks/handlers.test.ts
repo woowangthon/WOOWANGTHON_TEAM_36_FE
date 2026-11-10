@@ -33,10 +33,9 @@ describe('MSW 핸들러', () => {
     expect(me.privacy_agreed).toBe(true)
   })
 
-  it('기본 목록은 마감·숨김을 빼고 마감 임박순으로 정렬한다', async () => {
+  it('기본 목록은 마감을 빼고 마감 임박순으로 정렬한다', async () => {
     const items = await list()
     expect(items.map((i) => i.status)).not.toContain('CLOSED')
-    expect(items.map((i) => i.my_state)).not.toContain('HIDDEN')
     expect(items.at(-1)?.status).toBe('ALWAYS') // 마감일 없는 상시 장학금은 뒤로
   })
 

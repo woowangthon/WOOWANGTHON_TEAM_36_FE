@@ -30,10 +30,9 @@ describe('대시보드', () => {
     expect(screen.queryByText('2026년 2학기 국가근로장학금')).not.toBeInTheDocument() // 마감
 
     fireEvent.click(screen.getByRole('tab', { name: '확인 필요' }))
-    await waitForCards('논산시 인재육성 장학금')
+    await waitForCards('논산시 인재육성 장학금', '푸른등대 기부장학금')
     expect(screen.getByRole('tab', { name: '확인 필요' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText('마감일 확인 필요')).toBeInTheDocument() // deadline_conflict
-    expect(screen.queryByText('푸른등대 기부장학금')).not.toBeInTheDocument() // 숨김
     expect(screen.queryByText('두산연강재단 장학금')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('tab', { name: '전체' }))
@@ -117,6 +116,29 @@ describe('상세', () => {
       '_blank',
     )
     expect(screen.getByText(/다른 게시판에도 같은 장학금이 있을 수 있습니다/)).toBeInTheDocument()
+  })
+
+  it('근거 출처와 읽지 못한 첨부를 보여 준다', async () => {
+    renderApp('/scholarships/6')
+    const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
+    expect(
+      within(checklist).getByText('출처: 첨부 업무처리기준.zip / 업무처리기준.pdf'),
+    ).toBeInTheDocument()
+    expect(within(checklist).getByText('출처: 공지 본문')).toBeInTheDocument()
+
+    const unread = screen.getByRole('list', { name: '읽지 못한 첨부' })
+    const link = within(unread).getByRole('link', { name: /추천서 양식\.jpg/ })
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('href', expect.stringContaining('kosaf.go.kr'))
+    expect(within(unread).getByText('읽을 수 없는 파일 형식')).toBeInTheDocument()
+    expect(screen.getByText(/공고문이 길어 뒷부분 일부는 읽지 못했어요/)).toBeInTheDocument()
+  })
+
+  it('첨부를 모두 읽었으면 첨부 안내를 보여 주지 않는다', async () => {
+    renderApp('/scholarships/1')
+    await screen.findByRole('list', { name: '조건 체크리스트' })
+    expect(screen.queryByText('첨부파일을 직접 확인하세요')).not.toBeInTheDocument()
+    expect(screen.queryByText(/^출처:/)).not.toBeInTheDocument()
   })
 
   it('불충족 조건은 ✗로 표시한다', async () => {

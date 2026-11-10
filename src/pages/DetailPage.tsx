@@ -7,15 +7,18 @@ import {
   useSetScholarshipState,
   type ConditionCheck,
   type ScholarshipDetail,
+  type UnreadAttachment,
   type UserState,
 } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
 import {
   CONDITION_LABEL,
+  evidenceSourceLabel,
   formatDateTime,
   formatDate,
   OUTCOME,
+  UNREAD_REASON,
 } from '@/components/scholarship/format'
 import {
   DeadlineConflictNote,
@@ -83,6 +86,10 @@ function Detail({ item }: { item: ScholarshipDetail }) {
       </section>
 
       <Checklist conditions={item.conditions} extra={item.extra_conditions} />
+
+      {(item.unread_attachments.length > 0 || item.input_truncated) && (
+        <UnreadNotice files={item.unread_attachments} truncated={item.input_truncated} />
+      )}
 
       {item.required_documents.length > 0 && (
         <section className="rounded-xl border bg-background p-5">
@@ -177,6 +184,11 @@ function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra:
                     {check.evidence}
                   </blockquote>
                 )}
+                {check.evidence && check.evidence_source && (
+                  <p className="mt-0.5 text-xs text-muted-foreground break-all">
+                    출처: {evidenceSourceLabel(check.evidence_source)}
+                  </p>
+                )}
               </div>
             </li>
           ))}
@@ -199,6 +211,52 @@ function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra:
       <p className="mt-4 text-xs text-muted-foreground">
         ✓ 충족 · ✗ 불충족 · ? 정보가 없거나 공지가 모호해 직접 확인이 필요합니다.
       </p>
+    </section>
+  )
+}
+
+/**
+ * 읽지 못한 첨부와 잘린 공고문 (5.2·5.3). 읽지 못한 첨부에 조건이 있을 수 있어
+ * 서버가 "지원 가능"을 "확인 필요"로 낮춥니다. 학생이 직접 열어 보게 링크를 줍니다.
+ */
+function UnreadNotice({ files, truncated }: { files: UnreadAttachment[]; truncated: boolean }) {
+  return (
+    <section
+      aria-labelledby="unread-title"
+      className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm"
+    >
+      <h2 id="unread-title" className="font-semibold text-amber-900">
+        첨부파일을 직접 확인하세요
+      </h2>
+      {files.length > 0 && (
+        <>
+          <p className="mt-1 text-amber-900/80 break-keep">
+            아래 첨부는 읽지 못해 조건을 확인하지 못했어요. 그래서 다른 조건이 맞아도 ‘확인 필요’로
+            보여요.
+          </p>
+          <ul className="mt-3 grid gap-2" aria-label="읽지 못한 첨부">
+            {files.map((file) => (
+              <li key={`${file.url}#${file.name}`}>
+                <a
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-start gap-1 break-all underline underline-offset-4"
+                >
+                  {file.name}
+                  <ExternalLink aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+                </a>
+                <p className="text-xs text-amber-900/70">{UNREAD_REASON[file.reason]}</p>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {truncated && (
+        <p className={`${files.length > 0 ? 'mt-3' : 'mt-1'} text-amber-900/80 break-keep`}>
+          공고문이 길어 뒷부분 일부는 읽지 못했어요. 원문 공지에서 조건을 확인하세요.
+        </p>
+      )}
     </section>
   )
 }

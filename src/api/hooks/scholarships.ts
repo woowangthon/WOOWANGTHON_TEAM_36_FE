@@ -9,6 +9,7 @@ type Schemas = components['schemas']
 export type ScholarshipSummary = Schemas['ScholarshipSummary']
 export type ScholarshipDetail = Schemas['ScholarshipDetail']
 export type ConditionCheck = Schemas['ConditionCheck']
+export type UnreadAttachment = Schemas['UnreadAttachment']
 export type UserState = Schemas['StateRequest']['state']
 export type ListParams = NonNullable<
   operations['list_scholarships_scholarships_get']['parameters']['query']
@@ -56,7 +57,7 @@ function isListKey(key: QueryKey): key is ReturnType<typeof listKey> {
 /** 상태를 바꾼 뒤 이 목록에 그 장학금이 남아 있어야 하는지 (backend 목록 규칙과 같게, 7.2). */
 function staysInList(params: ListParams, state: UserState | null): boolean {
   if (params.state) return state === params.state.toUpperCase()
-  return state !== 'HIDDEN'
+  return true
 }
 
 /**

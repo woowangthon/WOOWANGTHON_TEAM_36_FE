@@ -70,6 +70,8 @@ export const mockDetails: ScholarshipDetail[] = [
       { condition: 'min_gpa', outcome: 'MET', evidence: '직전학기 평점평균 3.5 이상인 자' },
       { condition: 'max_income_bracket', outcome: 'MET', evidence: '학자금지원구간 8구간 이하' },
     ],
+    unread_attachments: [],
+    input_truncated: false,
     extra_conditions: [],
     required_documents: ['재학증명서', '성적증명서'],
     notice: noticeA,
@@ -99,6 +101,8 @@ export const mockDetails: ScholarshipDetail[] = [
       },
       { condition: 'max_income_bracket', outcome: 'UNKNOWN', evidence: '저소득층 우선 선발' },
     ],
+    unread_attachments: [],
+    input_truncated: false,
     extra_conditions: ['직전학기 봉사활동 20시간 이상'],
     required_documents: ['주민등록등본', '재학증명서'],
     notice: noticeA,
@@ -124,6 +128,8 @@ export const mockDetails: ScholarshipDetail[] = [
       { condition: 'gender', outcome: 'MET', evidence: '여학생' },
       { condition: 'target_grades', outcome: 'UNMET', evidence: '4학년 재학생' },
     ],
+    unread_attachments: [],
+    input_truncated: false,
     extra_conditions: [],
     required_documents: ['재학증명서'],
     notice: noticeA,
@@ -146,6 +152,8 @@ export const mockDetails: ScholarshipDetail[] = [
     result: 'INELIGIBLE',
     my_state: null,
     conditions: [{ condition: 'target_program', outcome: 'UNMET', evidence: 'AIBC 양성인재' }],
+    unread_attachments: [],
+    input_truncated: false,
     extra_conditions: [],
     required_documents: [],
     notice: {
@@ -170,6 +178,8 @@ export const mockDetails: ScholarshipDetail[] = [
     result: 'ELIGIBLE',
     my_state: 'APPLIED',
     conditions: [{ condition: 'max_income_bracket', outcome: 'MET', evidence: '8구간 이하' }],
+    unread_attachments: [],
+    input_truncated: false,
     extra_conditions: [],
     required_documents: [],
     notice: {
@@ -192,11 +202,30 @@ export const mockDetails: ScholarshipDetail[] = [
     deadline_conflict: false,
     posted_at: '2026-11-01T09:00:00+09:00',
     result: 'CONDITIONAL',
-    my_state: 'HIDDEN',
+    my_state: null,
     conditions: [
-      { condition: 'min_gpa', outcome: 'MET', evidence: '직전학기 성적 3.0 이상' },
-      { condition: 'required_special', outcome: 'UNKNOWN', evidence: '한부모가정 우대' },
+      {
+        condition: 'min_gpa',
+        outcome: 'MET',
+        evidence: '직전학기 성적 3.0 이상',
+        evidence_source: '업무처리기준.zip / 업무처리기준.pdf',
+      },
+      {
+        condition: 'required_special',
+        outcome: 'UNKNOWN',
+        evidence: '한부모가정 우대',
+        evidence_source: '본문',
+      },
     ],
+    // 읽지 못한 첨부가 있어 다른 조건이 충족이어도 확인 필요 (계획서 5.3)
+    unread_attachments: [
+      {
+        name: '업무처리기준.zip / 추천서 양식.jpg',
+        url: 'https://www.kosaf.go.kr/ko/download.do?pPath=notice&pSeq_No=21510&pFile_No=1',
+        reason: 'UNSUPPORTED',
+      },
+    ],
+    input_truncated: true,
     extra_conditions: [],
     required_documents: ['가족관계증명서'],
     notice: {
@@ -223,6 +252,8 @@ export const mockDetails: ScholarshipDetail[] = [
     conditions: [
       { condition: 'max_income_bracket', outcome: 'MET', evidence: '학자금지원 8구간 이하' },
     ],
+    unread_attachments: [],
+    input_truncated: false,
     extra_conditions: [],
     required_documents: ['취업 약정서'],
     notice: {
