@@ -25,7 +25,7 @@ import {
 import { Button } from '@/components/ui/button'
 
 // 상세 (7.1): 조건별 체크리스트(✓ ✗ ?), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
-// 관심·신청완료·숨기기 버튼, 중복 안내 문구.
+// 관심·신청완료 버튼, 중복 안내 문구.
 export default function DetailPage() {
   const id = Number(useParams().id)
   const detail = useScholarship(id)
@@ -206,15 +206,14 @@ function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra:
 const STATE_BUTTONS: { state: UserState; on: string; off: string }[] = [
   { state: 'BOOKMARKED', on: '관심 해제', off: '관심' },
   { state: 'APPLIED', on: '신청완료 취소', off: '신청완료' },
-  { state: 'HIDDEN', on: '숨김 해제', off: '숨기기' },
 ]
 
-/** 관심·신청완료·숨기기는 하나만 고를 수 있습니다. 누른 상태를 다시 누르면 지웁니다. */
+/** 관심·신청완료는 하나만 고를 수 있습니다. 누른 상태를 다시 누르면 지웁니다. */
 function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_state'] }) {
   const mutation = useSetScholarshipState()
   return (
     <div className="mt-5 grid gap-2">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {STATE_BUTTONS.map((button) => {
           const active = state === button.state
           return (
