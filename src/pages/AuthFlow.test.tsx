@@ -23,10 +23,8 @@ async function fillRequiredProfile() {
   select('출생연도', '2004')
   type('이수학기', '5')
   type('직전학기 평점', '3.8')
-  type('직전학기 100점 환산', '88.5')
   type('직전학기 이수학점', '18')
   type('전체 평점평균', '3.6')
-  type('전체 100점 환산', '87.2')
   fireEvent.click(screen.getByLabelText('아니오'))
 }
 
@@ -75,10 +73,8 @@ describe('가입 흐름', () => {
       gender: '여',
       birth_year: 2004,
       gpa: 3.8,
-      score_100: 88.5,
       credits: 18,
       gpa_total: 3.6,
-      score_100_total: 87.2,
       completed_semesters: 5,
       aibc_member: false,
       income_bracket: null,
@@ -221,15 +217,25 @@ describe('프로필 화면', () => {
     await screen.findByRole('heading', { name: '프로필 입력' })
     type('직전학기 평점', '4.6')
     type('직전학기 이수학점', '31')
-    type('전체 100점 환산', '100.5')
     fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
     expect(await screen.findByText('닉네임을 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('0~4.5 사이로 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('0~30 사이로 입력하세요')).toBeInTheDocument()
-    expect(screen.getByText('0~100 사이로 입력하세요')).toBeInTheDocument()
     expect(screen.getByText(/계절학기를 뺀 가장 최근/)).toBeInTheDocument()
     expect(screen.getByText('성별을 고르세요')).toBeInTheDocument()
     expect(screen.getByText('양성인재 여부를 고르세요')).toBeInTheDocument()
+  })
+
+  it('100점 환산은 평점으로 계산해 읽기 전용으로 보여 준다', async () => {
+    renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    const score = screen.getByLabelText('직전학기 100점 환산')
+    expect(score).toHaveAttribute('readonly')
+    expect(score).toHaveValue('90.5') // 평점 3.8
+    type('직전학기 평점', '3.6')
+    expect(score).toHaveValue('88.5')
+    type('전체 평점평균', '4.5')
+    expect(screen.getByLabelText('전체 100점 환산')).toHaveValue('97.5')
   })
 
   it('저장된 프로필을 불러오고, 민감정보 미동의면 특수자격을 막는다', async () => {
@@ -263,10 +269,8 @@ describe('프로필 화면', () => {
       completed_semesters: 0,
       aibc_member: null,
       gpa: null,
-      score_100: null,
       credits: null,
       gpa_total: null,
-      score_100_total: null,
     })
     server.events.removeAllListeners()
   })

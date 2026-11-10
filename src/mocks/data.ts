@@ -26,10 +26,10 @@ export const mockProfile: Profile = {
   gender: '여',
   birth_year: 2004,
   gpa: 3.8,
-  score_100: 91.2,
+  score_100: 90.5, // 평점 × 10 + 52.5
   credits: 18,
   gpa_total: 3.7,
-  score_100_total: 90.4,
+  score_100_total: 89.5,
   completed_semesters: 5,
   enrollment_status: '재학',
   aibc_member: false,
