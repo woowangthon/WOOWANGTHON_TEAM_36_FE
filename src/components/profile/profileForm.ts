@@ -9,7 +9,6 @@ export const MIN_AGE = 15
 export const MAX_SEMESTERS = 16
 
 export const SPECIAL_FLAGS = ['다자녀', '보훈', '장애'] as const
-export const ENROLLMENT_STATUSES = ['재학', '휴학'] as const
 export const INCOME_OPTIONS = [
   { value: '', label: '모름 · 입력 안 함' },
   { value: '0', label: '기초생활수급자' },
@@ -31,6 +30,11 @@ export function maxBirthYear(now = new Date()): number {
   return Number(year) - MIN_AGE
 }
 
+/** 출생연도 선택지: 최근 연도부터 1950까지. */
+export function birthYearOptions(now = new Date()): string[] {
+  const max = maxBirthYear(now)
+  return Array.from({ length: max - MIN_BIRTH_YEAR + 1 }, (_, i) => String(max - i))
+}
 /** 맥에서 복사한 분해형 한글(NFD)을 완성형으로 바꾸고 앞뒤 공백을 지웁니다. */
 const cleanName = (v: string) => v.normalize('NFC').trim()
 
@@ -67,10 +71,9 @@ const fields = z.object({
   gender: z.enum(['남', '여'], { error: '성별을 고르세요' }),
   birth_year: text(),
   completed_semesters: text(),
-  enrollment_status: z.enum(ENROLLMENT_STATUSES, { error: '재학상태를 고르세요' }),
   aibc_member: z.enum(['yes', 'no', 'unknown'], { error: '양성인재 여부를 고르세요' }),
 
-  // 성적 (4.1 C안). 성적표 숫자를 그대로 받습니다. 이수학기 0이면 쓰지 않습니다.
+  // 성적 (4.1 C안). 성적표 숫자를 그대로 받고, 이수학기 1 이상이면 5칸 모두 필수입니다.
   gpa: text(),
   score_100: text(),
   credits: text(),
@@ -94,7 +97,7 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
   else if (!NICKNAME.test(v.name)) issue('name', NICKNAME_RULE)
   else if (INTEGER.test(v.name)) issue('name', '닉네임은 숫자만으로 만들 수 없어요')
 
-  if (!v.birth_year) issue('birth_year', '출생연도를 입력하세요')
+  if (!v.birth_year) issue('birth_year', '출생연도를 고르세요')
   else if (!/^\d{4}$/.test(v.birth_year)) issue('birth_year', '연도를 숫자 4자리로 입력하세요')
   else if (Number(v.birth_year) < MIN_BIRTH_YEAR || Number(v.birth_year) > maxBirthYear())
     issue('birth_year', '연도를 확인하세요')
@@ -106,7 +109,12 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
 
   // 이수학기 0이면 성적 칸이 화면에 없고, 남은 값도 저장하지 않으므로 검사하지 않습니다.
   if (!hasNoGrades(v.completed_semesters)) {
-    if (!v.gpa) issue('gpa', '평점을 입력하세요')
+    // 서버와 같은 문장 (backend ProfileUpdate)
+    if (!v.gpa) issue('gpa', '직전학기 평점을 입력하세요')
+    if (!v.score_100) issue('score_100', '직전학기 100점 환산 점수를 입력하세요')
+    if (!v.credits) issue('credits', '직전학기 이수학점을 입력하세요')
+    if (!v.gpa_total) issue('gpa_total', '전체 평점평균을 입력하세요')
+    if (!v.score_100_total) issue('score_100_total', '전체 100점 환산 점수를 입력하세요')
     checkDecimal(v.gpa, 'gpa', 4.5, issue)
     checkDecimal(v.gpa_total, 'gpa_total', 4.5, issue)
     checkDecimal(v.score_100, 'score_100', 100, issue)
@@ -148,7 +156,6 @@ export function toProfile(v: ProfileFormValues, sensitiveAgreed: boolean): Profi
     gender: v.gender,
     birth_year: Number(v.birth_year),
     completed_semesters: Number(v.completed_semesters),
-    enrollment_status: v.enrollment_status,
     aibc_member: AIBC_TO_API[v.aibc_member],
     gpa: grade(v.gpa),
     score_100: grade(v.score_100),
@@ -197,7 +204,6 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormInput> {
     gender: p.gender,
     birth_year: String(p.birth_year),
     completed_semesters: String(p.completed_semesters),
-    enrollment_status: p.enrollment_status,
     // 저장된 null은 '모름'입니다. 아무것도 고르지 않은 상태와 구분합니다.
     aibc_member: p.aibc_member == null ? 'unknown' : p.aibc_member ? 'yes' : 'no',
     gpa: str(p.gpa),
@@ -226,7 +232,6 @@ const SAME_NAME = new Set<string>([
   'gender',
   'birth_year',
   'completed_semesters',
-  'enrollment_status',
   'aibc_member',
   ...GRADE_FIELDS,
   'income_bracket',

@@ -20,11 +20,13 @@ function select(label: string | RegExp, value: string) {
 async function fillRequiredProfile() {
   type('닉네임', '김충북')
   select('성별', '여')
-  type('출생연도', '2004')
-  type('직전학기 평점', '3.8')
-  type('직전학기 이수학점 (선택)', '18')
+  select('출생연도', '2004')
   type('이수학기', '5')
-  select('재학상태', '재학')
+  type('직전학기 평점', '3.8')
+  type('직전학기 100점 환산', '88.5')
+  type('직전학기 이수학점', '18')
+  type('전체 평점평균', '3.6')
+  type('전체 100점 환산', '87.2')
   fireEvent.click(screen.getByLabelText('아니오'))
 }
 
@@ -73,12 +75,11 @@ describe('가입 흐름', () => {
       gender: '여',
       birth_year: 2004,
       gpa: 3.8,
-      score_100: null,
+      score_100: 88.5,
       credits: 18,
-      gpa_total: null,
-      score_100_total: null,
+      gpa_total: 3.6,
+      score_100_total: 87.2,
       completed_semesters: 5,
-      enrollment_status: '재학',
       aibc_member: false,
       income_bracket: null,
       self_region: { sido: '충청남도', sigungu: '논산시' },
@@ -219,8 +220,8 @@ describe('프로필 화면', () => {
     renderApp('/profile')
     await screen.findByRole('heading', { name: '프로필 입력' })
     type('직전학기 평점', '4.6')
-    type('직전학기 이수학점 (선택)', '31')
-    type('전체 100점 환산 (선택)', '100.5')
+    type('직전학기 이수학점', '31')
+    type('전체 100점 환산', '100.5')
     fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
     expect(await screen.findByText('닉네임을 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('0~4.5 사이로 입력하세요')).toBeInTheDocument()

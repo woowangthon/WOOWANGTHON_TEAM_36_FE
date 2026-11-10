@@ -162,7 +162,7 @@ export const handlers: RequestHandler[] = [
       gender: body.gender,
       birth_year: body.birth_year,
       completed_semesters: body.completed_semesters ?? 0,
-      enrollment_status: body.enrollment_status,
+      enrollment_status: body.enrollment_status ?? '재학', // 화면은 보내지 않음(재학생 대상)
       aibc_member: body.aibc_member,
       gpa: body.gpa,
       score_100: body.score_100,

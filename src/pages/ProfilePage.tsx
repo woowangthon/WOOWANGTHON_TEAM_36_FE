@@ -9,7 +9,7 @@ import { ApiError } from '@/api/hooks/request'
 import { AuthLayout, PageSkeleton } from '@/components/auth/AuthLayout'
 import { Field, FormError } from '@/components/form/Field'
 import {
-  ENROLLMENT_STATUSES,
+  birthYearOptions,
   formFieldOf,
   GRADE_FIELDS,
   hasNoGrades,
@@ -126,55 +126,41 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               error={errors.birth_year?.message}
               hint="나이는 자동으로 계산합니다"
             >
-              <Input
+              <NativeSelect
                 id="birth_year"
-                inputMode="numeric"
-                placeholder="2004"
                 aria-invalid={!!errors.birth_year}
                 {...register('birth_year')}
-              />
-            </Field>
-            <Field
-              id="enrollment_status"
-              label="재학상태"
-              error={errors.enrollment_status?.message}
-            >
-              <NativeSelect
-                id="enrollment_status"
-                aria-invalid={!!errors.enrollment_status}
-                {...register('enrollment_status')}
               >
                 <option value="">선택</option>
-                {ENROLLMENT_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
+                {birthYearOptions().map((year) => (
+                  <option key={year} value={year}>
+                    {year}년
                   </option>
                 ))}
               </NativeSelect>
             </Field>
-          </div>
-          {/* 오류가 입력 바로 아래에 오도록, 긴 안내문은 Field 밖에 둡니다. */}
-          <div className="grid gap-1.5">
-            <Field
-              id="completed_semesters"
-              label="이수학기"
-              error={errors.completed_semesters?.message}
-            >
-              <Input
+            {/* 오류가 입력 바로 아래에 오도록, 긴 안내문은 Field 밖에 둡니다. */}
+            <div className="grid content-start gap-1.5">
+              <Field
                 id="completed_semesters"
-                inputMode="numeric"
-                placeholder={`0~${MAX_SEMESTERS}`}
-                className="sm:max-w-40"
-                aria-invalid={!!errors.completed_semesters}
-                aria-describedby="completed_semesters-help"
-                {...register('completed_semesters')}
-              />
-            </Field>
-            <p id="completed_semesters-help" className="text-xs text-muted-foreground">
-              마친 정규학기 수예요. 휴학·계절학기는 빼고 세요. 신입생 첫 학기는 0. 학기가 끝나
-              성적이 나오면 이수학기와 성적을 함께 고쳐 주세요(성적이 나오기 전이면 그 전 값
-              그대로).
-            </p>
+                label="이수학기"
+                error={errors.completed_semesters?.message}
+              >
+                <Input
+                  id="completed_semesters"
+                  inputMode="numeric"
+                  placeholder={`0~${MAX_SEMESTERS}`}
+                  aria-invalid={!!errors.completed_semesters}
+                  aria-describedby="completed_semesters-help"
+                  {...register('completed_semesters')}
+                />
+              </Field>
+              <p id="completed_semesters-help" className="text-xs text-muted-foreground">
+                마친 정규학기 수예요. 휴학·계절학기는 빼고 세요. 신입생 첫 학기는 0. 학기가 끝나
+                성적이 나오면 이수학기와 성적을 함께 고쳐 주세요(성적이 나오기 전이면 그 전 값
+                그대로).
+              </p>
+            </div>
           </div>
           <fieldset className="grid gap-1.5">
             <legend className="mb-1.5 text-sm font-medium">AI부트캠프사업단 양성인재인가요?</legend>
@@ -245,8 +231,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               </h2>
               <p className="text-muted-foreground text-xs">
                 포털 성적 조회의 숫자를 그대로 적어 주세요. 직전학기 = 계절학기를 뺀 가장 최근
-                정규학기(1·2학기)이고, 휴학했다면 휴학 전 마지막 학기입니다. 비워 둔 칸이 필요한
-                장학금은 &lsquo;확인 필요&rsquo;로 보여요.
+                정규학기(1·2학기)이고, 휴학했다면 휴학 전 마지막 학기입니다.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -266,7 +251,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               </Field>
               <Field
                 id="score_100"
-                label="직전학기 100점 환산 (선택)"
+                label="직전학기 100점 환산"
                 error={errors.score_100?.message}
                 hint="같은 학기의 실점평균"
               >
@@ -280,7 +265,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               </Field>
               <Field
                 id="credits"
-                label="직전학기 이수학점 (선택)"
+                label="직전학기 이수학점"
                 error={errors.credits?.message}
                 hint="성적표의 취득학점이에요. F 과목은 빼고 입력하세요"
               >
@@ -294,7 +279,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               </Field>
               <Field
                 id="gpa_total"
-                label="전체 평점평균 (선택)"
+                label="전체 평점평균"
                 error={errors.gpa_total?.message}
                 hint="한 학기만 다녔다면 직전학기와 같은 값"
               >
@@ -308,7 +293,7 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
               </Field>
               <Field
                 id="score_100_total"
-                label="전체 100점 환산 (선택)"
+                label="전체 100점 환산"
                 error={errors.score_100_total?.message}
                 hint="성적 내역의 100점환산"
               >

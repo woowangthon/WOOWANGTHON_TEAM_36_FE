@@ -2,6 +2,7 @@
 import type { Profile } from '@/api/hooks/profile'
 
 import {
+  birthYearOptions,
   maxBirthYear,
   profileSchema,
   toFormValues,
@@ -14,13 +15,12 @@ const valid: ProfileFormInput = {
   gender: '여',
   birth_year: '2004',
   completed_semesters: '5',
-  enrollment_status: '재학',
   aibc_member: 'no',
   gpa: '3.8',
-  score_100: '',
-  credits: '',
-  gpa_total: '',
-  score_100_total: '',
+  score_100: '88.5',
+  credits: '18',
+  gpa_total: '3.6',
+  score_100_total: '87.2',
   income_bracket: '',
   self_sido: '',
   self_sigungu: '',
@@ -80,8 +80,15 @@ describe('출생연도', () => {
     expect(errorOf('birth_year', { birth_year })).toBe('연도를 숫자 4자리로 입력하세요')
   })
 
-  it('비우면 입력하라고 알린다', () => {
-    expect(errorOf('birth_year', { birth_year: '' })).toBe('출생연도를 입력하세요')
+  it('비우면 고르라고 알린다', () => {
+    expect(errorOf('birth_year', { birth_year: '' })).toBe('출생연도를 고르세요')
+  })
+
+  it('선택지는 최근 연도부터 1950까지다', () => {
+    const options = birthYearOptions(new Date('2026-11-10T00:00:00+09:00'))
+    expect(options[0]).toBe('2011')
+    expect(options.at(-1)).toBe('1950')
+    expect(options).toHaveLength(2011 - 1950 + 1)
   })
 })
 
@@ -102,8 +109,21 @@ describe('이수학기', () => {
 })
 
 describe('성적', () => {
-  it('이수학기가 1 이상이면 직전학기 평점이 필수다', () => {
-    expect(errorOf('gpa', { gpa: '' })).toBe('평점을 입력하세요')
+  it.each([
+    ['gpa', '직전학기 평점을 입력하세요'],
+    ['score_100', '직전학기 100점 환산 점수를 입력하세요'],
+    ['credits', '직전학기 이수학점을 입력하세요'],
+    ['gpa_total', '전체 평점평균을 입력하세요'],
+    ['score_100_total', '전체 100점 환산 점수를 입력하세요'],
+  ] as const)('이수학기가 1 이상이면 %s 는 필수다', (field, message) => {
+    expect(errorOf(field, { [field]: '' })).toBe(message)
+  })
+
+  it('이수학기 0이면 성적을 비워도 통과한다', () => {
+    const empty = { gpa: '', score_100: '', credits: '', gpa_total: '', score_100_total: '' }
+    expect(profileSchema.safeParse({ ...valid, ...empty, completed_semesters: '0' }).success).toBe(
+      true,
+    )
   })
 
   it.each([
@@ -165,13 +185,12 @@ describe('API 변환', () => {
       gender: '남',
       birth_year: 2003,
       completed_semesters: 0,
-      enrollment_status: '휴학',
+      enrollment_status: '재학',
       aibc_member: null,
     }
     expect(toFormValues(saved)).toMatchObject({
       name: '',
       completed_semesters: '0',
-      enrollment_status: '휴학',
       aibc_member: 'unknown',
       gpa: '',
       full_tuition_waiver: '',
