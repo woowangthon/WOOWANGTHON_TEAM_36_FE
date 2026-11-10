@@ -12,7 +12,7 @@ type Props = {
 /** 라벨 + 입력 + 안내/오류 문장. 오류는 aria-describedby로 입력과 연결합니다. */
 export function Field({ id, label, error, hint, optional, children }: Props) {
   return (
-    <div className="grid gap-1.5">
+    <div className="grid content-start gap-1.5">
       <Label htmlFor={id}>
         {label}
         {optional && <span className="ml-1 font-normal text-muted-foreground">(선택)</span>}
