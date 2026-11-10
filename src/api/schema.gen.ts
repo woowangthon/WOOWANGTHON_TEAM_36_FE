@@ -224,7 +224,7 @@ export interface paths {
          * List Scholarships
          * @description 장학금 단위 맞춤 목록(판정 결과·내 상태 포함).
          *
-         *     기본은 CLOSED와 숨긴 장학금을 빼고, state를 주면 내 장학금 화면용으로 마감된 것도 포함합니다.
+         *     기본은 CLOSED를 빼고, state를 주면 내 장학금 화면용으로 마감된 것도 포함합니다.
          *     정렬: deadline = 마감 임박순(마감일 없는 상시는 뒤), latest = 게시일 최신순.
          */
         get: operations["list_scholarships_scholarships_get"];
@@ -266,7 +266,7 @@ export interface paths {
         get?: never;
         /**
          * Put State
-         * @description 관심 / 신청완료 / 숨기기. 장학금마다 상태는 하나이며 새 값으로 바꿉니다.
+         * @description 관심 / 신청완료. 장학금마다 상태는 하나이며 새 값으로 바꿉니다.
          */
         put: operations["put_state_scholarships__scholarship_id__state_put"];
         post?: never;
@@ -393,6 +393,8 @@ export interface components {
             outcome: "MET" | "UNMET" | "UNKNOWN";
             /** Evidence */
             evidence: string | null;
+            /** Evidence Source */
+            evidence_source?: string | null;
         };
         /**
          * ConsentRequest
@@ -669,7 +671,7 @@ export interface components {
              */
             result: "ELIGIBLE" | "CONDITIONAL" | "INELIGIBLE";
             /** My State */
-            my_state: ("BOOKMARKED" | "APPLIED" | "HIDDEN") | null;
+            my_state: ("BOOKMARKED" | "APPLIED") | null;
             /** Apply Start */
             apply_start: string | null;
             /** Conditions */
@@ -681,6 +683,10 @@ export interface components {
             notice: components["schemas"]["NoticeRef"];
             /** Siblings */
             siblings: components["schemas"]["SiblingScholarship"][];
+            /** Unread Attachments */
+            unread_attachments: components["schemas"]["UnreadAttachment"][];
+            /** Input Truncated */
+            input_truncated: boolean;
         };
         /** ScholarshipListResponse */
         ScholarshipListResponse: {
@@ -729,7 +735,7 @@ export interface components {
              */
             result: "ELIGIBLE" | "CONDITIONAL" | "INELIGIBLE";
             /** My State */
-            my_state: ("BOOKMARKED" | "APPLIED" | "HIDDEN") | null;
+            my_state: ("BOOKMARKED" | "APPLIED") | null;
         };
         /**
          * SiblingScholarship
@@ -759,14 +765,29 @@ export interface components {
              * State
              * @enum {string}
              */
-            state: "BOOKMARKED" | "APPLIED" | "HIDDEN";
+            state: "BOOKMARKED" | "APPLIED";
         };
         /** StateResponse */
         StateResponse: {
             /** Scholarship Id */
             scholarship_id: number;
             /** State */
-            state: ("BOOKMARKED" | "APPLIED" | "HIDDEN") | null;
+            state: ("BOOKMARKED" | "APPLIED") | null;
+        };
+        /**
+         * UnreadAttachment
+         * @description 읽지 못한 첨부. 화면에서 원문 링크와 함께 "직접 확인"으로 보여 줍니다(D8).
+         */
+        UnreadAttachment: {
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "NO_TEXT" | "UNSUPPORTED" | "FAILED" | "TOO_LARGE";
         };
         /** ValidationError */
         ValidationError: {

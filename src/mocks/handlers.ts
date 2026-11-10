@@ -71,7 +71,7 @@ function listScholarships(url: URL): Schemas['ScholarshipListResponse'] {
     // 내 장학금 화면: 마감된 장학금도 포함
     items = items.filter((d) => d.my_state === state.toUpperCase())
   } else {
-    items = items.filter((d) => d.status !== 'CLOSED' && d.my_state !== 'HIDDEN')
+    items = items.filter((d) => d.status !== 'CLOSED')
   }
   if (result in RESULT_FILTER) {
     items = items.filter((d) => d.result === RESULT_FILTER[result as keyof typeof RESULT_FILTER])
