@@ -29,7 +29,7 @@ export const mockProfile: Profile = {
   score_100: 91.2,
   credits: 18,
   gpa_total: 3.7,
-  score_100_total: null,
+  score_100_total: 90.4,
   completed_semesters: 5,
   enrollment_status: '재학',
   aibc_member: false,

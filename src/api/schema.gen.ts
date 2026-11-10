@@ -566,13 +566,10 @@ export interface components {
             birth_year: number;
             /** Completed Semesters */
             completed_semesters?: number | null;
-            /**
-             * Enrollment Status
-             * @enum {string}
-             */
-            enrollment_status: "재학" | "휴학";
             /** Aibc Member */
             aibc_member: boolean | null;
+            /** Enrollment Status */
+            enrollment_status?: ("재학" | "휴학") | null;
             /** Gpa */
             gpa?: number | null;
             /** Score 100 */
