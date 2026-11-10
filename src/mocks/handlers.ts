@@ -155,7 +155,26 @@ export const handlers: RequestHandler[] = [
   }),
   http.put('/api/profile', async ({ request }) => {
     if (!me) return unauthorized()
-    profile = (await request.json()) as Schemas['Profile']
+    // 전환 기간의 옛 칸(grade·extra_semester·department)은 화면이 보내지 않으므로 목에서는 다루지 않습니다.
+    const body = (await request.json()) as Schemas['ProfileUpdate']
+    profile = {
+      name: body.name,
+      gender: body.gender,
+      birth_year: body.birth_year,
+      completed_semesters: body.completed_semesters ?? 0,
+      enrollment_status: body.enrollment_status,
+      aibc_member: body.aibc_member,
+      gpa: body.gpa,
+      score_100: body.score_100,
+      credits: body.credits,
+      gpa_total: body.gpa_total,
+      score_100_total: body.score_100_total,
+      income_bracket: body.income_bracket,
+      self_region: body.self_region,
+      parent_region: body.parent_region,
+      special_flags: body.special_flags,
+      full_tuition_waiver: body.full_tuition_waiver === '모름' ? null : body.full_tuition_waiver,
+    }
     me = { ...me, profile_completed: true }
     return HttpResponse.json(profile)
   }),
