@@ -64,6 +64,25 @@ describe('대시보드', () => {
     await waitFor(() => expect(cardNames()).toEqual(['두산연강재단 장학금']))
   })
 
+  it('장학금 이름으로 검색한다', async () => {
+    const app = renderApp('/dashboard')
+    await waitForCards('두산연강재단 장학금')
+    const box = screen.getByRole('searchbox', { name: '장학금 검색' })
+
+    fireEvent.change(box, { target: { value: '희망 사다리' } })
+    await waitFor(() => expect(cardNames()).toEqual(['희망사다리 장학금 II유형']))
+    expect(screen.getByText(/검색 결과 1건/)).toBeInTheDocument()
+    await waitFor(() => expect(app.router.state.location.search).toContain('q='))
+
+    fireEvent.change(box, { target: { value: '없는장학금' } })
+    expect(await screen.findByText(/검색 결과가 없습니다/)).toBeInTheDocument()
+
+    fireEvent.change(box, { target: { value: '' } })
+    await waitFor(() =>
+      expect(cardNames()).toEqual(['두산연강재단 장학금', '희망사다리 장학금 II유형']),
+    )
+  })
+
   it('목록을 불러오는 동안 스켈레톤을 보여 준다', async () => {
     server.use(
       http.get('/api/scholarships', async () => {
