@@ -82,6 +82,8 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    basic_conditions: [],
+    notes: [],
     required_documents: ['재학증명서', '성적증명서'],
     notice: noticeA,
     siblings: [
@@ -113,6 +115,8 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: ['직전학기 봉사활동 20시간 이상'],
+    basic_conditions: ['대한민국 국적', '타 장학금과 중복 수혜 불가'],
+    notes: ['면접 점수 석차순 선발'],
     required_documents: ['주민등록등본', '재학증명서'],
     notice: noticeA,
     siblings: [
@@ -140,6 +144,8 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    basic_conditions: [],
+    notes: [],
     required_documents: ['재학증명서'],
     notice: noticeA,
     siblings: [
@@ -164,6 +170,8 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    basic_conditions: [],
+    notes: [],
     required_documents: [],
     notice: {
       id: 102,
@@ -192,6 +200,8 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    basic_conditions: [],
+    notes: [],
     required_documents: [],
     notice: {
       id: 103,
@@ -240,6 +250,8 @@ export const mockDetails: ScholarshipDetail[] = [
     ],
     input_truncated: true,
     extra_conditions: [],
+    basic_conditions: [],
+    notes: [],
     required_documents: ['가족관계증명서'],
     notice: {
       id: 104,
@@ -270,6 +282,8 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    basic_conditions: [],
+    notes: [],
     required_documents: ['취업 약정서'],
     notice: {
       id: 105,

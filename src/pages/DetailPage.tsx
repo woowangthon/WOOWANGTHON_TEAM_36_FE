@@ -7,6 +7,7 @@ import {
   CircleHelp,
   CircleX,
   ClipboardCheck,
+  Info,
   ExternalLink,
   FileText,
   ListChecks,
@@ -108,6 +109,8 @@ function Detail({ item }: { item: ScholarshipDetail }) {
       </section>
 
       <Checklist conditions={item.conditions} extra={item.extra_conditions} />
+
+      <OtherNotes basic={item.basic_conditions ?? []} notes={item.notes ?? []} />
 
       {(item.unread_attachments.length > 0 || item.input_truncated) && (
         <UnreadNotice files={item.unread_attachments} truncated={item.input_truncated} />
@@ -249,6 +252,49 @@ function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra:
         <CircleHelp aria-hidden="true" className="size-3.5 text-amber-600" /> 정보가 없거나 공지가
         모호해 직접 확인이 필요합니다.
       </p>
+    </section>
+  )
+}
+
+/**
+ * 판정에 쓰지 않는 공지 문장 (extract_v5). 국적·중복 수혜처럼 대부분 충족하는 기본 조건은
+ * "지원 전 확인", 선발 방식·의무·예외 규정처럼 자격이 아닌 문장은 "참고 안내"로 보여 줍니다.
+ * v5 이전에 추출한 장학금은 두 목록이 비어 있어 이 상자가 나오지 않습니다.
+ */
+function OtherNotes({ basic, notes }: { basic: string[]; notes: string[] }) {
+  if (basic.length === 0 && notes.length === 0) return null
+  return (
+    <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
+      <h2 className="flex items-center gap-1.5 font-semibold">
+        <Info aria-hidden="true" className="size-5 text-brand-700" />
+        함께 알아 둘 내용
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground break-keep">
+        판정에는 쓰지 않았어요. 신청 전에 한 번 읽어 보세요.
+      </p>
+      {basic.length > 0 && (
+        <>
+          <h3 className="mt-3 font-medium">지원 전 확인</h3>
+          <ul className="mt-1 list-disc space-y-1 pl-5 break-keep" aria-label="지원 전 확인">
+            {basic.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {notes.length > 0 && (
+        <>
+          <h3 className="mt-3 font-medium">참고 안내</h3>
+          <ul
+            className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground break-keep"
+            aria-label="참고 안내"
+          >
+            {notes.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
   )
 }

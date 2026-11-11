@@ -740,6 +740,10 @@ export interface components {
             conditions: components["schemas"]["ConditionCheck"][];
             /** Extra Conditions */
             extra_conditions: string[];
+            /** Basic Conditions */
+            basic_conditions: string[];
+            /** Notes */
+            notes: string[];
             /** Required Documents */
             required_documents: string[];
             notice: components["schemas"]["NoticeRef"];

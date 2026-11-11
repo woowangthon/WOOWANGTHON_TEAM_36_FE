@@ -104,6 +104,13 @@ describe('상세', () => {
     expect(within(items[1]).getByRole('img', { name: '확인 필요' })).toBeInTheDocument()
     expect(within(items[2]).getByText('직전학기 봉사활동 20시간 이상')).toBeInTheDocument()
 
+    // 판정에 쓰지 않는 기본 조건·안내는 체크리스트 밖에 따로 (extract_v5)
+    const basic = screen.getByRole('list', { name: '지원 전 확인' })
+    expect(within(basic).getByText('대한민국 국적')).toBeInTheDocument()
+    expect(within(basic).getByText('타 장학금과 중복 수혜 불가')).toBeInTheDocument()
+    const notes = screen.getByRole('list', { name: '참고 안내' })
+    expect(within(notes).getByText('면접 점수 석차순 선발')).toBeInTheDocument()
+
     expect(screen.getByText('주민등록등본')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '두산연강재단 장학금' })).toHaveAttribute(
       'href',
