@@ -1,33 +1,40 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 
 import { resetMockState } from '@/mocks/handlers'
 import { renderApp } from '@/test/renderApp'
 
 beforeEach(() => resetMockState())
 
-describe('상단 더보기 메뉴', () => {
-  it('메뉴를 열어 항목을 누르면 이동하고 메뉴가 닫힌다', async () => {
+describe('상단 프로필 아이콘과 내 정보 화면', () => {
+  it('프로필 아이콘을 누르면 내 정보 화면으로 간다', async () => {
     const app = renderApp('/dashboard')
-    const button = await screen.findByRole('button', { name: '메뉴' })
-    expect(button).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByRole('navigation', { name: '주요 메뉴' })).not.toBeInTheDocument()
-
-    fireEvent.click(button)
-    expect(button).toHaveAttribute('aria-expanded', 'true')
-    fireEvent.click(screen.getByRole('link', { name: '내 장학금' }))
-
+    fireEvent.click(await screen.findByRole('link', { name: '내 정보' }))
     await waitFor(() => expect(app.path()).toBe('/my'))
-    expect(screen.queryByRole('navigation', { name: '주요 메뉴' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '내 정보' })).toBeInTheDocument()
   })
 
-  it('Esc를 누르면 닫히고 더보기 버튼으로 초점이 돌아간다', async () => {
-    renderApp('/dashboard')
-    const button = await screen.findByRole('button', { name: '메뉴' })
-    fireEvent.click(button)
-    expect(screen.getByRole('navigation', { name: '주요 메뉴' })).toBeInTheDocument()
+  it('내 정보 화면에 프로필 요약과 내 장학금이 함께 보인다', async () => {
+    renderApp('/my')
+    const summary = await screen.findByRole('region', { name: '프로필 요약' })
+    expect(await within(summary).findByText('김충북')).toBeInTheDocument()
+    expect(within(summary).getByText(/5학기 이수/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '내 장학금' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '관심' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '관리자 화면' })).not.toBeInTheDocument()
+  })
 
-    fireEvent.keyDown(document, { key: 'Escape' })
-    expect(screen.queryByRole('navigation', { name: '주요 메뉴' })).not.toBeInTheDocument()
-    expect(button).toHaveFocus()
+  it('프로필 수정을 누르면 입력 폼으로 가고, 이전 버튼으로 내 정보에 돌아온다', async () => {
+    const app = renderApp('/my')
+    fireEvent.click(await screen.findByRole('link', { name: '프로필 수정' }))
+    await screen.findByRole('heading', { name: '내 프로필' })
+    expect(app.path()).toBe('/profile')
+    fireEvent.click(screen.getByRole('link', { name: '내 정보로' }))
+    await waitFor(() => expect(app.path()).toBe('/my'))
+  })
+
+  it('로그아웃하면 로그인 화면으로 간다', async () => {
+    const app = renderApp('/my')
+    fireEvent.click(await screen.findByRole('button', { name: '로그아웃' }))
+    await waitFor(() => expect(app.path()).toBe('/login'))
   })
 })
