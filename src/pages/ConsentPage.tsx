@@ -41,10 +41,13 @@ export default function ConsentPage() {
           </label>
           <ul id="privacy-detail" className="mt-3 grid gap-1 pl-7 text-xs text-muted-foreground">
             <li>
-              항목: 이메일, 닉네임, 성별, 출생연도, 성적(평점·100점 환산·이수학점), 이수학기,
-              소득분위, 주소(시/군/구까지)
+              항목: 이메일, 닉네임, 성별, 출생연도, 성적(평점·이수학점, 100점 환산은 평점으로 자동
+              계산), 이수학기, 소득분위, 주소(시/군/구까지)
             </li>
-            <li>목적: 장학금 지원 조건과 비교해 맞춤 목록 제공</li>
+            <li>
+              목적: 장학금 지원 조건과 비교해 맞춤 목록 제공. 이메일은 로그인과 가입 인증번호
+              발송에도 사용
+            </li>
             <li>보관: 회원 탈퇴 시 즉시 삭제</li>
           </ul>
         </section>

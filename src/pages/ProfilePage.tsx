@@ -422,7 +422,7 @@ function AccountActions({ me }: { me: Me }) {
   const navigate = useNavigate()
   const withdraw = useWithdrawSensitive()
   const deleteAccount = useDeleteAccount()
-  const toLogin = () => navigate('/login', { replace: true })
+  const toLogin = () => navigate('/login?withdrawn=1', { replace: true })
 
   return (
     <section className="mt-8 grid gap-3 border-t pt-5">

@@ -34,10 +34,16 @@ export default function LoginPage() {
     }),
   )
   const googleFailed = params.get('error') === 'google'
+  const withdrawn = params.get('withdrawn') === '1'
 
   return (
     <AuthLayout title="로그인" description="내 조건에 맞는 장학금을 한 화면에서 확인하세요.">
       <div className="grid gap-4">
+        {withdrawn && (
+          <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">
+            회원 탈퇴가 끝났어요. 계정과 입력한 정보를 모두 지웠어요.
+          </p>
+        )}
         <TargetNotice />
         {googleFailed && (
           <FormError message="Google 로그인에 실패했습니다. 다시 시도하거나 이메일로 로그인하세요." />

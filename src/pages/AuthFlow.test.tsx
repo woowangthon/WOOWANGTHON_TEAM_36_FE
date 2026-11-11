@@ -138,6 +138,12 @@ describe('가입 흐름', () => {
     fireEvent.click(screen.getByRole('button', { name: '확인' }))
     expect(await screen.findByText('인증번호가 맞지 않아요')).toBeInTheDocument()
     expect(screen.getByLabelText('비밀번호')).toBeDisabled()
+
+    // 다시 형식 오류가 나면 이전 서버 오류는 지워 두 문구가 함께 보이지 않게 함
+    type('인증번호', '12345')
+    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+    expect(await screen.findByText('인증번호 6자리 숫자를 입력하세요')).toBeInTheDocument()
+    expect(screen.queryByText('인증번호가 맞지 않아요')).not.toBeInTheDocument()
   })
 
   it('이미 가입된 이메일이면 로그인으로 안내하고 번호 칸을 열지 않는다', async () => {
@@ -529,6 +535,7 @@ describe('프로필 화면', () => {
     expect(within(dialog).getByText(/되돌릴 수 없습니다/)).toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole('button', { name: '탈퇴' }))
     await waitFor(() => expect(app.path()).toBe('/login'))
+    expect(await screen.findByText(/회원 탈퇴가 끝났어요/)).toBeInTheDocument()
   })
 })
 
@@ -540,5 +547,12 @@ describe('대상 안내 (T42)', () => {
     expect(screen.getByText('충북대 소프트웨어학부 재학생을 위한 장학금 매칭')).toBeInTheDocument()
     const sources = screen.getByRole('list', { name: '공지 수집 출처' })
     expect(within(sources).getAllByRole('listitem')).toHaveLength(3)
+  })
+
+  it('회원가입 화면에도 같은 대상 안내를 보여 준다', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    expect(screen.getByText('충북대 소프트웨어학부 재학생을 위한 장학금 매칭')).toBeInTheDocument()
   })
 })
