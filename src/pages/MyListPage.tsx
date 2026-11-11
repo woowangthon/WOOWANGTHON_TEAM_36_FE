@@ -1,8 +1,7 @@
-import { LogOut, Pencil, Settings } from 'lucide-react'
+import { ArrowLeft, LogOut, Pencil, Settings } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
-import { useLogout, useMe } from '@/api/hooks/auth'
-import { useProfile, type Profile } from '@/api/hooks/profile'
+import { useLogout, useMe, type Me } from '@/api/hooks/auth'
 import { useScholarships } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
@@ -23,7 +22,7 @@ const EMPTY: Record<Tab, string> = {
 
 // 내 정보 (T52): 프로필 요약 + 내 장학금(관심 / 신청완료) + 로그아웃.
 // 마감된 장학금도 포함합니다(backend가 state 조회 때 포함).
-// 프로필 요약 때문에 이 화면은 프로필·목록 API를 함께 부릅니다(계획서 9.8 예외, 11/11 회의에서 결정).
+// 프로필 요약은 모든 화면이 이미 불러오는 /auth/me 값을 써서, 이 화면은 목록 API만 부릅니다(계획서 9.8, BE #44).
 export default function MyListPage() {
   const [search, setSearch] = useSearchParams()
   const tab: Tab = search.get('tab') === 'applied' ? 'applied' : 'bookmarked'
@@ -31,7 +30,16 @@ export default function MyListPage() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="text-xl font-semibold text-brand-900">내 정보</h1>
+      <div className="grid gap-3">
+        <Link
+          to="/dashboard"
+          className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-brand-800"
+        >
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          장학금 목록으로
+        </Link>
+        <h1 className="text-xl font-semibold text-brand-900">내 정보</h1>
+      </div>
       <ProfileSummary />
       <section aria-labelledby="my-scholarships" className="grid gap-4">
         <h2 id="my-scholarships" className="text-lg font-semibold">
@@ -64,13 +72,7 @@ export default function MyListPage() {
  */
 function ProfileSummary() {
   const me = useMe().data
-  const profile = useProfile()
-
-  if (profile.isPending) {
-    return <div className="h-28 animate-pulse rounded-xl bg-muted" aria-label="불러오는 중" />
-  }
-  const data = profile.data
-  const facts = data ? summaryFacts(data) : []
+  const facts = me ? summaryFacts(me) : []
 
   return (
     <section
@@ -78,12 +80,9 @@ function ProfileSummary() {
       className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-brand-200 bg-background p-4"
     >
       <div className="grid min-w-0 gap-1">
-        <p className="text-lg font-semibold text-brand-900">{data?.name ?? '닉네임 없음'}</p>
+        <p className="text-lg font-semibold text-brand-900">{me?.nickname ?? '닉네임 없음'}</p>
         <p className="truncate text-xs text-muted-foreground">{me?.email}</p>
         {facts.length > 0 && <p className="text-sm">{facts.join(' · ')}</p>}
-        {profile.isError && (
-          <p className="text-sm text-muted-foreground">프로필을 불러오지 못했습니다.</p>
-        )}
       </div>
       <Button asChild variant="outline">
         <Link to="/profile">
@@ -95,9 +94,10 @@ function ProfileSummary() {
   )
 }
 
-function summaryFacts(profile: Profile): string[] {
-  const facts = [`${profile.completed_semesters}학기 이수`]
-  if (profile.gpa != null) facts.push(`직전학기 평점 ${profile.gpa}`)
+function summaryFacts(me: Me): string[] {
+  const facts: string[] = []
+  if (me.completed_semesters != null) facts.push(`${me.completed_semesters}학기 이수`)
+  if (me.gpa != null) facts.push(`직전학기 평점 ${me.gpa}`)
   return facts
 }
 
