@@ -220,3 +220,24 @@ describe('내 장학금', () => {
     expect(screen.queryByText('두산연강재단 장학금')).not.toBeInTheDocument()
   })
 })
+
+describe('사이드바 (T40)', () => {
+  it('초기화를 누르면 정렬·출처·지원 형태가 기본값으로 돌아간다', async () => {
+    const app = renderApp('/dashboard?sort=latest&source=internal&q=장학')
+    const reset = await screen.findByRole('button', { name: '초기화' })
+    fireEvent.click(reset)
+    await waitFor(() => expect(app.router.state.location.search).toBe('?q=%EC%9E%A5%ED%95%99'))
+    expect(screen.getByRole('button', { name: '초기화' })).toBeDisabled()
+  })
+
+  it('공지 출처와 학사·서류 바로가기를 새 창 링크로 보여 준다', async () => {
+    renderApp('/dashboard')
+    const sources = await screen.findByRole('region', { name: '공지 출처 바로가기' })
+    expect(within(sources).getAllByRole('link')).toHaveLength(3)
+    const academic = screen.getByRole('region', { name: '학사·서류' })
+    for (const link of within(academic).getAllByRole('link')) {
+      expect(link).toHaveAttribute('target', '_blank')
+    }
+  })
+})
+
