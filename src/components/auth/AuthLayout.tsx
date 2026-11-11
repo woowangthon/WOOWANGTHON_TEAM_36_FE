@@ -1,9 +1,16 @@
 import { Link } from 'react-router'
 
-type Props = { title: string; description?: string; children: React.ReactNode; wide?: boolean }
+type Props = {
+  title: string
+  description?: string
+  children: React.ReactNode
+  wide?: boolean
+  /** 카드 위 왼쪽에 놓을 이전 버튼 (프로필 수정 화면, T49) */
+  back?: React.ReactNode
+}
 
 /** 로그인·가입·동의·프로필 화면의 공통 틀. 360px 폭에서도 좌우 여백 16px을 유지합니다. */
-export function AuthLayout({ title, description, children, wide }: Props) {
+export function AuthLayout({ title, description, children, wide, back }: Props) {
   return (
     <div className="min-h-svh bg-brand-50">
       <header className="mx-auto flex max-w-3xl items-center px-4 py-4">
@@ -12,6 +19,7 @@ export function AuthLayout({ title, description, children, wide }: Props) {
         </Link>
       </header>
       <main className={`mx-auto px-4 pb-12 ${wide ? 'max-w-2xl' : 'max-w-sm'}`}>
+        {back && <div className="mb-3">{back}</div>}
         <div className="rounded-xl border bg-background p-5 shadow-sm sm:p-6">
           <h1 className="text-xl font-semibold">{title}</h1>
           {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
