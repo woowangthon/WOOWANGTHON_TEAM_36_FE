@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
@@ -32,24 +33,67 @@ import { Checkbox, Input, NativeSelect } from '@/components/ui/input'
 export default function ProfilePage() {
   const me = useMe().data
   const profile = useProfile()
+  const [dirty, setDirty] = useState(false)
   if (!me || profile.isPending) return <PageSkeleton />
   return (
     <AuthLayout
       wide
       title={profile.data ? '내 프로필' : '프로필 입력'}
       description="입력한 정보로 지원 가능한 장학금을 판정합니다. AI에는 보내지 않습니다."
+      back={profile.data ? <BackToList dirty={dirty} /> : undefined}
     >
       {profile.isError ? (
         <FormError message={profile.error.message} />
       ) : (
-        <ProfileForm me={me} initial={profile.data} />
+        <ProfileForm me={me} initial={profile.data} onDirtyChange={setDirty} />
       )}
       <AccountActions me={me} />
     </AuthLayout>
   )
 }
 
-function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
+// 수정 화면에서만 보이는 이전 버튼(T49). 고친 내용이 있으면 나가기 전에 한 번 묻습니다.
+function BackToList({ dirty }: { dirty: boolean }) {
+  const navigate = useNavigate()
+  const className =
+    'inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-800'
+  const label = (
+    <>
+      <ArrowLeft className="size-4" aria-hidden="true" />
+      장학금 목록으로
+    </>
+  )
+  if (!dirty) {
+    return (
+      <Link to="/dashboard" className={className}>
+        {label}
+      </Link>
+    )
+  }
+  return (
+    <ConfirmDialog
+      trigger={
+        <button type="button" className={className}>
+          {label}
+        </button>
+      }
+      title="저장하지 않고 나갈까요?"
+      description="고친 내용은 저장되지 않습니다."
+      confirmLabel="나가기"
+      onConfirm={() => navigate('/dashboard')}
+    />
+  )
+}
+
+function ProfileForm({
+  me,
+  initial,
+  onDirtyChange,
+}: {
+  me: Me
+  initial: Profile | null
+  onDirtyChange: (dirty: boolean) => void
+}) {
   const navigate = useNavigate()
   const save = useSaveProfile()
   const form = useForm<ProfileFormInput, unknown, ProfileFormValues>({
@@ -57,7 +101,8 @@ function ProfileForm({ me, initial }: { me: Me; initial: Profile | null }) {
     defaultValues: toFormValues(initial),
   })
   const { register, formState, control, setValue } = form
-  const { errors } = formState
+  const { errors, isDirty } = formState
+  useEffect(() => onDirtyChange(isDirty), [isDirty, onDirtyChange])
   const parentSame = useWatch({ control, name: 'parent_same' })
   const noGrades = hasNoGrades(useWatch({ control, name: 'completed_semesters' }))
   const gpa = useWatch({ control, name: 'gpa' })

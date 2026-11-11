@@ -193,6 +193,34 @@ describe('라우팅 가드', () => {
 })
 
 describe('프로필 화면', () => {
+  it('수정 화면에서 이전 버튼으로 장학금 목록에 돌아간다', async () => {
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    fireEvent.click(screen.getByRole('link', { name: '장학금 목록으로' }))
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
+  })
+
+  it('고친 내용이 있으면 나가기 전에 묻는다', async () => {
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    type('닉네임', '새닉네임')
+    fireEvent.click(await screen.findByRole('button', { name: '장학금 목록으로' }))
+    const dialog = await screen.findByRole('alertdialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: '나가기' }))
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
+  })
+
+  it('처음 입력하는 화면에는 이전 버튼이 없다', async () => {
+    server.use(
+      http.get('/api/profile', () =>
+        HttpResponse.json({ detail: '프로필을 입력하세요' }, { status: 404 }),
+      ),
+    )
+    renderApp('/profile')
+    await screen.findByRole('heading', { name: '프로필 입력' })
+    expect(screen.queryByText('장학금 목록으로')).not.toBeInTheDocument()
+  })
+
   it('필수 항목과 범위를 검증한다', async () => {
     server.use(
       http.get('/api/profile', () =>
