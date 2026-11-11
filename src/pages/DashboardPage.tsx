@@ -6,6 +6,7 @@ import { useScholarships, type ListParams } from '@/api/hooks/scholarships'
 import { ErrorBox } from '@/components/layout/AppLayout'
 import { SidePanel } from '@/components/layout/SidePanel'
 import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
+import { DeadlineSoon, ResultGuide } from '@/components/scholarship/SideExtras'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
 
 const TABS = [
@@ -213,8 +214,10 @@ export default function DashboardPage() {
             </>
           )}
         </div>
-        <aside aria-label="바로가기" className="hidden content-start lg:grid">
+        <aside aria-label="바로가기" className="hidden content-start gap-4 lg:grid">
           <SidePanel className="grid" />
+          <DeadlineSoon items={items} />
+          <ResultGuide />
         </aside>
       </div>
     </div>
