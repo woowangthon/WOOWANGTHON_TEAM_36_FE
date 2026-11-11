@@ -4,12 +4,13 @@ import {
   CircleCheck,
   CircleHelp,
   CircleX,
+  Heart,
   School,
   Wallet,
 } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { ScholarshipSummary } from '@/api/hooks/scholarships'
+import { useSetScholarshipState, type ScholarshipSummary } from '@/api/hooks/scholarships'
 
 import { deadlineOf, RESULT_LABEL, STATE_LABEL } from './format'
 
@@ -76,46 +77,76 @@ export function DeadlineConflictNote() {
   )
 }
 
-/** 대시보드·내 장학금 카드 1장 (장학금 단위, 7.1). */
+/**
+ * 대시보드·내 정보 카드 1장 (장학금 단위, 7.1). 넓은 화면에서는 한 줄에 2장씩 놓습니다.
+ * 카드 전체를 누르면 상세로 가고(제목 링크를 카드 크기로 넓힘), 하트는 따로 눌러 관심을 켜고 끕니다.
+ */
 export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
   return (
-    <li>
-      <Link
-        to={`/scholarships/${item.id}`}
-        className="block rounded-xl border border-brand-200 bg-background p-3 transition sm:p-4 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="min-w-0 font-medium break-keep">{item.name}</h3>
+    <li className="relative flex flex-col rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="grid min-w-0 gap-1">
+          <h3 className="font-medium break-keep">
+            <Link
+              to={`/scholarships/${item.id}`}
+              className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
+            >
+              {item.name}
+            </Link>
+          </h3>
+          <SourceLine item={item} className="text-xs" />
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
           <ResultBadge result={item.result} />
+          <BookmarkHeart item={item} />
         </div>
-        <SourceLine item={item} className="mt-1 text-xs" />
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="inline-flex items-center gap-1">
-            <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
-            <DeadlineText item={item} />
+      </div>
+      <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-3">
+        <span className="inline-flex items-center gap-1">
+          <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
+          <DeadlineText item={item} />
+        </span>
+        {item.deadline_conflict && <DeadlineConflictNote />}
+        {item.benefit_amount_text && (
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-700">
+            <Wallet aria-hidden="true" className="size-4" />
+            {item.benefit_amount_text}
           </span>
-          {item.deadline_conflict && <DeadlineConflictNote />}
-          {item.benefit_amount_text && (
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-700">
-              <Wallet aria-hidden="true" className="size-4" />
-              {item.benefit_amount_text}
-            </span>
-          )}
-          {item.my_state && (
-            <span className="ml-auto text-xs font-medium text-primary">
-              {STATE_LABEL[item.my_state]}
-            </span>
-          )}
-        </div>
-      </Link>
+        )}
+        {item.my_state === 'APPLIED' && (
+          <span className="ml-auto text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
+        )}
+      </div>
     </li>
+  )
+}
+
+/**
+ * 관심 하트 (T54). 누르면 바로 채워지고(optimistic update) 실패하면 되돌아갑니다.
+ * 신청완료한 장학금은 관심과 함께 둘 수 없어 하트를 숨기고 '신청완료'만 보여 줍니다.
+ */
+function BookmarkHeart({ item }: { item: ScholarshipSummary }) {
+  const mutation = useSetScholarshipState()
+  if (item.my_state === 'APPLIED') return null
+  const on = item.my_state === 'BOOKMARKED'
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={on ? '관심 해제' : '관심'}
+      title={on ? '관심 해제' : '관심'}
+      onClick={() => mutation.mutate({ id: item.id, state: on ? null : 'BOOKMARKED' })}
+      className="relative z-10 -mr-1 grid size-8 place-items-center rounded-full text-rose-500 transition-colors hover:bg-rose-50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
+      <Heart aria-hidden="true" className={`size-5 ${on ? 'fill-current' : ''}`} />
+    </button>
   )
 }
 
 export function ListSkeleton() {
   return (
-    <ul className="grid gap-3" aria-busy="true" aria-label="불러오는 중">
-      {[0, 1, 2].map((i) => (
+    <ul className="grid gap-3 sm:grid-cols-2" aria-busy="true" aria-label="불러오는 중">
+      {[0, 1, 2, 3].map((i) => (
         <li key={i} className="h-28 animate-pulse rounded-xl border border-brand-200 bg-muted/60" />
       ))}
     </ul>
@@ -137,7 +168,7 @@ export function ScholarshipList({
     )
   }
   return (
-    <ul className="grid gap-3">
+    <ul className="grid gap-3 sm:grid-cols-2">
       {items.map((item) => (
         <ScholarshipCard key={item.id} item={item} />
       ))}

@@ -46,20 +46,17 @@ describe('대시보드', () => {
     await waitForCards('두산연강재단 장학금')
     expect(cardNames()).toEqual(['두산연강재단 장학금', '희망사다리 장학금 II유형'])
 
-    const sortGroup = screen.getByRole('group', { name: '정렬' })
-    fireEvent.click(within(sortGroup).getByRole('button', { name: '최신순' }))
-    expect(within(sortGroup).getByRole('button', { name: '최신순' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    const sortSelect = screen.getByRole('combobox', { name: '정렬' })
+    fireEvent.change(sortSelect, { target: { value: 'latest' } })
+    expect(sortSelect).toHaveValue('latest')
     await waitFor(() =>
       expect(cardNames()).toEqual(['희망사다리 장학금 II유형', '두산연강재단 장학금']),
     )
     expect(app.router.state.location.search).toBe('?sort=latest')
 
-    fireEvent.click(
-      within(screen.getByRole('group', { name: '출처' })).getByRole('button', { name: '교내' }),
-    )
+    fireEvent.change(screen.getByRole('combobox', { name: '출처' }), {
+      target: { value: 'internal' },
+    })
     await waitFor(() => expect(cardNames()).toEqual(['두산연강재단 장학금']))
   })
 
@@ -163,10 +160,13 @@ describe('관심·신청완료', () => {
         await gate
       }),
     )
-    const app = renderApp('/scholarships/3')
-    fireEvent.click(await screen.findByRole('button', { name: '관심' }))
+    // 관심은 목록 카드의 하트로 켭니다 (T54)
+    const app = renderApp('/dashboard?tab=all')
+    await waitForCards('여성공학인 장학금')
+    const card = () => screen.getByText('여성공학인 장학금').closest('li')!
+    fireEvent.click(within(card()).getByRole('button', { name: '관심' }))
     // 서버 응답 전에 이미 반영됨 (optimistic update)
-    expect(await screen.findByRole('button', { name: '관심 해제' })).toHaveAttribute(
+    expect(within(card()).getByRole('button', { name: '관심 해제' })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
@@ -203,8 +203,10 @@ describe('관심·신청완료', () => {
 
   it('상세에 숨기기 버튼이 없다', async () => {
     renderApp('/scholarships/3')
-    await screen.findByRole('button', { name: '관심' })
+    await screen.findByRole('button', { name: '신청완료' })
     expect(screen.queryByRole('button', { name: '숨기기' })).not.toBeInTheDocument()
+    // 관심은 목록 카드 하트로 옮겨 상세에는 없음 (T54)
+    expect(screen.queryByRole('button', { name: '관심' })).not.toBeInTheDocument()
   })
 })
 
@@ -240,4 +242,3 @@ describe('사이드바 (T40)', () => {
     }
   })
 })
-
