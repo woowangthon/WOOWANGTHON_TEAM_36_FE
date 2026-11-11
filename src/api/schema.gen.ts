@@ -493,6 +493,12 @@ export interface components {
             google_linked: boolean;
             /** Has Password */
             has_password: boolean;
+            /** Nickname */
+            nickname?: string | null;
+            /** Completed Semesters */
+            completed_semesters?: number | null;
+            /** Gpa */
+            gpa?: number | null;
         };
         /** NoticeRef */
         NoticeRef: {
@@ -574,12 +580,12 @@ export interface components {
             enrollment_status?: ("재학" | "휴학") | null;
             /** Gpa */
             gpa?: number | null;
-            /** Score 100 */
-            score_100?: number | null;
             /** Credits */
             credits?: number | null;
             /** Gpa Total */
             gpa_total?: number | null;
+            /** Score 100 */
+            score_100?: number | null;
             /** Score 100 Total */
             score_100_total?: number | null;
             /** Income Bracket */
