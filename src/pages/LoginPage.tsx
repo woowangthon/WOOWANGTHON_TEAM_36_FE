@@ -12,8 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const schema = z.object({
-  email: z.string().trim().email('이메일 형식이 아닙니다'),
-  password: z.string().min(1, '비밀번호를 입력하세요'),
+  email: z.string().trim().min(1, '이메일을 입력해 주세요').email('이메일 형식이 아니에요'),
+  password: z.string().min(1, '비밀번호를 입력해 주세요'),
 })
 type Values = z.infer<typeof schema>
 

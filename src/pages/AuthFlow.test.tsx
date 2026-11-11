@@ -123,7 +123,7 @@ describe('가입 흐름', () => {
     fireEvent.click(screen.getByRole('button', { name: '확인' }))
     await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
     expect(screen.getByLabelText('이메일')).toHaveAttribute('readonly')
-    expect(screen.getByText('인증을 마친 이메일입니다')).toBeInTheDocument()
+    expect(screen.getByText('인증을 마친 이메일이에요')).toBeInTheDocument()
     expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
   })
 
@@ -163,8 +163,17 @@ describe('가입 흐름', () => {
     await screen.findByRole('heading', { name: '회원가입' })
     type('이메일', 'not-email')
     fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
-    expect(await screen.findByText('이메일 형식이 아닙니다')).toBeInTheDocument()
+    expect(await screen.findByText('이메일 형식이 아니에요')).toBeInTheDocument()
     expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
+  })
+
+  it('이메일을 비우고 인증번호를 받으려 하면 입력하라고 알린다', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+    expect(await screen.findByText('이메일을 입력해 주세요')).toBeInTheDocument()
+    expect(screen.queryByText('이메일 형식이 아니에요')).not.toBeInTheDocument()
   })
 
   it('다시 받기는 1분 뒤에만 누를 수 있다', async () => {
@@ -195,8 +204,8 @@ describe('가입 흐름', () => {
     type('비밀번호', 'short')
     type('비밀번호 확인', 'other')
     fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
-    expect(await screen.findByText('비밀번호는 8자 이상이어야 합니다')).toBeInTheDocument()
-    expect(screen.getByText('비밀번호가 서로 다릅니다')).toBeInTheDocument()
+    expect(await screen.findByText('비밀번호는 8자 이상이어야 해요')).toBeInTheDocument()
+    expect(screen.getByText('비밀번호가 서로 달라요')).toBeInTheDocument()
   })
 
   it('인증 시간이 지나 가입이 거부되면 처음 단계로 돌아간다', async () => {
