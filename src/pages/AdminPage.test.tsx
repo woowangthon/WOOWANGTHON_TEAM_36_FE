@@ -8,7 +8,7 @@ import { renderApp } from '@/test/renderApp'
 beforeEach(() => resetMockState())
 
 describe('관리자 화면', () => {
-  it('관리자가 아니면 화면과 메뉴를 숨기고 관리자 API를 부르지 않는다', async () => {
+  it('관리자가 아니면 화면과 관리자 링크를 숨기고 관리자 API를 부르지 않는다', async () => {
     const adminCalls: string[] = []
     server.events.on('request:start', ({ request }) => {
       if (new URL(request.url).pathname.startsWith('/api/admin')) adminCalls.push(request.url)
@@ -16,11 +16,18 @@ describe('관리자 화면', () => {
     const app = renderApp('/admin')
     await waitFor(() => expect(app.path()).toBe('/dashboard'))
     expect(await screen.findByRole('heading', { name: '맞춤 장학금' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: '메뉴' }))
-    expect(screen.getByRole('link', { name: '내 장학금' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: '관리' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: '내 정보' }))
+    expect(await screen.findByRole('heading', { name: '내 정보' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '관리자 화면' })).not.toBeInTheDocument()
     expect(adminCalls).toEqual([])
     server.events.removeAllListeners()
+  })
+
+  it('관리자는 내 정보 화면에서 관리자 화면으로 갈 수 있다', async () => {
+    signInAsAdmin()
+    const app = renderApp('/my')
+    fireEvent.click(await screen.findByRole('link', { name: '관리자 화면' }))
+    await waitFor(() => expect(app.path()).toBe('/admin'))
   })
 
   it('비로그인이면 로그인 화면으로 보낸다', async () => {
@@ -33,8 +40,6 @@ describe('관리자 화면', () => {
     signInAsAdmin()
     renderApp('/admin')
     expect(await screen.findByRole('heading', { name: '관리자' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: '메뉴' }))
-    expect(screen.getByRole('link', { name: '관리' })).toBeInTheDocument()
 
     const runs = screen.getByRole('heading', { name: '사이트별 마지막 수집' }).parentElement!
     expect(within(runs).getByText('HTTP 503')).toBeInTheDocument() // KOSAF 실패 오류

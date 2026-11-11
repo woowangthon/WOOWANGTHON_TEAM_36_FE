@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
 
-import { useDeleteAccount, useLogout, useMe, useWithdrawSensitive, type Me } from '@/api/hooks/auth'
+import { useDeleteAccount, useMe, useWithdrawSensitive, type Me } from '@/api/hooks/auth'
 import { useProfile, useSaveProfile, type Profile } from '@/api/hooks/profile'
 import { ApiError } from '@/api/hooks/request'
 import { AuthLayout, PageSkeleton } from '@/components/auth/AuthLayout'
@@ -52,20 +52,19 @@ export default function ProfilePage() {
   )
 }
 
-// 수정 화면에서만 보이는 이전 버튼(T49). 고친 내용이 있으면 나가기 전에 한 번 묻습니다.
+// 수정 화면에서만 보이는 이전 버튼(T49 → T52에서 '내 정보'로). 고친 내용이 있으면 나가기 전에 한 번 묻습니다.
 function BackToList({ dirty }: { dirty: boolean }) {
   const navigate = useNavigate()
   const className =
     'inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-800'
   const label = (
     <>
-      <ArrowLeft className="size-4" aria-hidden="true" />
-      장학금 목록으로
+      <ArrowLeft className="size-4" aria-hidden="true" />내 정보로
     </>
   )
   if (!dirty) {
     return (
-      <Link to="/dashboard" className={className}>
+      <Link to="/my" className={className}>
         {label}
       </Link>
     )
@@ -80,7 +79,7 @@ function BackToList({ dirty }: { dirty: boolean }) {
       title="저장하지 않고 나갈까요?"
       description="고친 내용은 저장되지 않습니다."
       confirmLabel="나가기"
-      onConfirm={() => navigate('/dashboard')}
+      onConfirm={() => navigate('/my')}
     />
   )
 }
@@ -452,7 +451,6 @@ function ProfileForm({
 
 function AccountActions({ me }: { me: Me }) {
   const navigate = useNavigate()
-  const logout = useLogout()
   const withdraw = useWithdrawSensitive()
   const deleteAccount = useDeleteAccount()
   const toLogin = () => navigate('/login', { replace: true })
@@ -462,9 +460,6 @@ function AccountActions({ me }: { me: Me }) {
       <h2 className="text-sm font-semibold">계정</h2>
       <p className="text-xs text-muted-foreground">{me.email}</p>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => logout.mutate(undefined, { onSuccess: toLogin })}>
-          로그아웃
-        </Button>
         {me.sensitive_agreed && (
           <ConfirmDialog
             trigger={<Button variant="outline">민감정보 동의 철회</Button>}
