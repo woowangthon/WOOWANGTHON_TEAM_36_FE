@@ -167,6 +167,11 @@ describe('상세', () => {
       '_blank',
     )
 
+    expect(within(original).getByRole('link', { name: '원문 사이트에서 보기' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('software.cbnu.ac.kr'),
+    )
+
     fireEvent.click(screen.getByRole('button', { name: '원문 접기' }))
     expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
   })

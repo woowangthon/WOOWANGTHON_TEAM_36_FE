@@ -351,6 +351,17 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
               </p>
             </section>
           ))}
+          <div className="border-t pt-3">
+            <a
+              href={notice.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
+            >
+              원문 사이트에서 보기
+              <ExternalLink aria-hidden className="size-3.5 shrink-0" />
+            </a>
+          </div>
         </div>
       )}
     </div>
