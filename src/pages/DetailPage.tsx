@@ -1,11 +1,14 @@
 import {
+  ArrowLeft,
   CalendarClock,
   CalendarDays,
   CircleCheck,
   CircleHelp,
   CircleX,
+  ClipboardCheck,
   ExternalLink,
   FileText,
+  Heart,
   ListChecks,
   Megaphone,
   Wallet,
@@ -288,9 +291,22 @@ function UnreadNotice({ files, truncated }: { files: UnreadAttachment[]; truncat
   )
 }
 
-const STATE_BUTTONS: { state: UserState; on: string; off: string }[] = [
-  { state: 'BOOKMARKED', on: '관심 해제', off: '관심' },
-  { state: 'APPLIED', on: '신청완료 취소', off: '신청완료' },
+// 누른 관심은 하트를 채워 상태를 한눈에 보여 줍니다 (T53).
+const STATE_BUTTONS: {
+  state: UserState
+  on: string
+  off: string
+  Icon: typeof Heart
+  fillWhenOn: boolean
+}[] = [
+  { state: 'BOOKMARKED', on: '관심 해제', off: '관심', Icon: Heart, fillWhenOn: true },
+  {
+    state: 'APPLIED',
+    on: '신청완료 취소',
+    off: '신청완료',
+    Icon: ClipboardCheck,
+    fillWhenOn: false,
+  },
 ]
 
 /** 관심·신청완료는 하나만 고를 수 있습니다. 누른 상태를 다시 누르면 지웁니다. */
@@ -299,7 +315,7 @@ function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_
   return (
     <div className="mt-5 grid gap-2">
       <div className="grid grid-cols-2 gap-2">
-        {STATE_BUTTONS.map((button) => {
+        {STATE_BUTTONS.map(({ Icon, fillWhenOn, ...button }) => {
           const active = state === button.state
           return (
             <Button
@@ -308,6 +324,7 @@ function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_
               aria-pressed={active}
               onClick={() => mutation.mutate({ id, state: active ? null : button.state })}
             >
+              <Icon aria-hidden="true" className={active && fillWhenOn ? 'fill-current' : ''} />
               {active ? button.on : button.off}
             </Button>
           )
@@ -326,9 +343,10 @@ function BackLink() {
     <button
       type="button"
       onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/dashboard'))}
-      className="w-fit text-sm text-muted-foreground hover:text-foreground"
+      className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
     >
-      ← 목록으로
+      <ArrowLeft aria-hidden="true" className="size-4" />
+      목록으로
     </button>
   )
 }

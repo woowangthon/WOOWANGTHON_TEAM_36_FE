@@ -17,7 +17,6 @@ import {
   INCOME_OPTIONS,
   MAX_SEMESTERS,
   profileSchema,
-  score100FromGpa,
   SPECIAL_FLAGS,
   toFormValues,
   toProfile,
@@ -104,8 +103,6 @@ function ProfileForm({
   useEffect(() => onDirtyChange(isDirty), [isDirty, onDirtyChange])
   const parentSame = useWatch({ control, name: 'parent_same' })
   const noGrades = hasNoGrades(useWatch({ control, name: 'completed_semesters' }))
-  const gpa = useWatch({ control, name: 'gpa' })
-  const gpaTotal = useWatch({ control, name: 'gpa_total' })
 
   // 이수학기 0이면 성적 칸을 숨기고, 적어 둔 값도 비웁니다(다시 1 이상으로 바꿔도 옛 값이 되살아나지 않게).
   useEffect(() => {
@@ -297,20 +294,6 @@ function ProfileForm({
                 />
               </Field>
               <Field
-                id="score_100"
-                label="직전학기 100점 환산"
-                hint="평점으로 계산한 값이에요 (평점 × 10 + 52.5)"
-              >
-                <Input
-                  id="score_100"
-                  readOnly
-                  tabIndex={-1}
-                  value={score100FromGpa(gpa)}
-                  placeholder="평점을 입력하면 계산돼요"
-                  className="bg-muted"
-                />
-              </Field>
-              <Field
                 id="credits"
                 label="직전학기 이수학점"
                 error={errors.credits?.message}
@@ -336,20 +319,6 @@ function ProfileForm({
                   placeholder="3.60"
                   aria-invalid={!!errors.gpa_total}
                   {...register('gpa_total')}
-                />
-              </Field>
-              <Field
-                id="score_100_total"
-                label="전체 100점 환산"
-                hint="평점으로 계산한 값이에요 (평점 × 10 + 52.5)"
-              >
-                <Input
-                  id="score_100_total"
-                  readOnly
-                  tabIndex={-1}
-                  value={score100FromGpa(gpaTotal)}
-                  placeholder="평점을 입력하면 계산돼요"
-                  className="bg-muted"
                 />
               </Field>
             </div>
