@@ -5,22 +5,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* 브랜드 색 (딥 블루). bg-brand-50, text-brand-700 처럼 씁니다. */
+/* 브랜드 색 (팀 로고 오렌지, 11/11 딥 블루에서 변경). bg-brand-50, text-brand-700 처럼 씁니다.
+   흰 글자를 올리는 brand-800은 대비 5.3:1, 글자색 brand-700은 4.9:1로 WCAG AA를 지킵니다. */
 @theme {
-  --color-brand-50: #f0f6ff;
-  /* 아이스 블루: 페이지 배경 */
-  --color-brand-100: #eaf1fb;
-  /* 소프트 블루: 카드 배경, 정보 영역 */
-  --color-brand-200: #cfe0f7;
-  --color-brand-300: #9cc0ee;
-  --color-brand-400: #60a5fa;
-  /* 스카이 블루: 장식 요소 */
-  --color-brand-500: #3b7dd8;
-  --color-brand-600: #2f6bc2;
-  --color-brand-700: #2a61b4;
-  --color-brand-800: #2457a6;
-  /* 딥 블루: primary */
-  --color-brand-900: #1a3f7a;
+  --color-brand-50: #fff8f0;
+  /* 크림: 페이지 배경 */
+  --color-brand-100: #ffefdc;
+  /* 연한 살구: 탭 묶음·정보 영역 */
+  --color-brand-200: #fddcb8;
+  /* 카드 테두리 */
+  --color-brand-300: #fac287;
+  --color-brand-400: #f7a04c;
+  /* 밝은 오렌지: 포커스 테두리, hover 테두리 */
+  --color-brand-500: #f7952f;
+  /* 로고 오렌지 (장식용, 흰 글자 올리지 않음) */
+  --color-brand-600: #e2770f;
+  --color-brand-700: #b5560a;
+  /* 금액 등 강조 글자 */
+  --color-brand-800: #b14e08;
+  /* 진한 오렌지: primary 버튼, 선택된 탭 */
+  --color-brand-900: #6b2e0e;
+  /* 다크 브라운: 페이지 제목 (로고 테두리 색 계열) */
 }
 
 @theme inline {
@@ -73,21 +78,21 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.467 0.139 259.1);
-  /* 딥 블루 #2457A6 (brand-800) */
+  --primary: oklch(0.543 0.146 47.2);
+  /* 진한 오렌지 #B14E08 (brand-800) */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.554 0.041 257.4);
-  /* 블루 그레이 #64748B: 보조 설명 */
+  --muted-foreground: oklch(0.553 0.012 58.1);
+  /* 웜 그레이 #78716C: 보조 설명 */
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.714 0.143 254.6);
-  /* 스카이 블루 #60A5FA (brand-400) */
+  --ring: oklch(0.778 0.143 61.9);
+  /* 밝은 오렌지 #F7A04C (brand-400) */
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
