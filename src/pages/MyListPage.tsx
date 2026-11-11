@@ -6,7 +6,6 @@ import { useProfile, type Profile } from '@/api/hooks/profile'
 import { useScholarships } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
-import { INCOME_OPTIONS } from '@/components/profile/profileForm'
 import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
 import { Button } from '@/components/ui/button'
@@ -59,7 +58,10 @@ export default function MyListPage() {
   )
 }
 
-/** 프로필 주요 정보를 읽기 전용으로 보여 주고, 세부 입력은 '프로필 수정'에서만 합니다. */
+/**
+ * 프로필 주요 정보(닉네임·이메일·이수학기·직전학기 평점)를 읽기 전용으로 보여 주고,
+ * 세부 입력은 '프로필 수정'에서만 합니다. 소득분위는 민감정보라 요약에 넣지 않습니다 (T53).
+ */
 function ProfileSummary() {
   const me = useMe().data
   const profile = useProfile()
@@ -96,10 +98,6 @@ function ProfileSummary() {
 function summaryFacts(profile: Profile): string[] {
   const facts = [`${profile.completed_semesters}학기 이수`]
   if (profile.gpa != null) facts.push(`직전학기 평점 ${profile.gpa}`)
-  if (profile.income_bracket != null) {
-    const option = INCOME_OPTIONS.find((item) => item.value === String(profile.income_bracket))
-    if (option) facts.push(profile.income_bracket >= 1 ? `소득 ${option.label}` : option.label)
-  }
   return facts
 }
 

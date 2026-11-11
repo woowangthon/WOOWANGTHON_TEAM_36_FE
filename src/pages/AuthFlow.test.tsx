@@ -254,16 +254,12 @@ describe('프로필 화면', () => {
     expect(screen.getByText('양성인재 여부를 고르세요')).toBeInTheDocument()
   })
 
-  it('100점 환산은 평점으로 계산해 읽기 전용으로 보여 준다', async () => {
+  it('100점 환산 칸은 화면에 보이지 않는다 (서버가 평점으로 계산, T53)', async () => {
     renderApp('/profile')
     await screen.findByRole('heading', { name: '내 프로필' })
-    const score = screen.getByLabelText('직전학기 100점 환산')
-    expect(score).toHaveAttribute('readonly')
-    expect(score).toHaveValue('90.5') // 평점 3.8
-    type('직전학기 평점', '3.6')
-    expect(score).toHaveValue('88.5')
-    type('전체 평점평균', '4.5')
-    expect(screen.getByLabelText('전체 100점 환산')).toHaveValue('97.5')
+    expect(screen.getByLabelText('직전학기 평점')).toBeInTheDocument()
+    expect(screen.queryByLabelText('직전학기 100점 환산')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('전체 100점 환산')).not.toBeInTheDocument()
   })
 
   it('저장된 프로필을 불러오고, 민감정보 미동의면 특수자격을 막는다', async () => {
