@@ -33,8 +33,17 @@ export function useSaveProfile() {
     mutationFn: (body: ProfileUpdate) => apiRequest<Profile>('/profile', 'PUT', body),
     onSuccess: (saved) => {
       queryClient.setQueryData(profileKey, saved)
+      // 내 정보 요약 카드(T52)가 /auth/me 값을 쓰므로 저장한 값으로 바로 바꿉니다.
       queryClient.setQueryData<Me | null>(meKey, (me) =>
-        me ? { ...me, profile_completed: true } : me,
+        me
+          ? {
+              ...me,
+              profile_completed: true,
+              nickname: saved.name,
+              completed_semesters: saved.completed_semesters,
+              gpa: saved.gpa ?? null,
+            }
+          : me,
       )
       // 프로필이 바뀌면 판정 결과가 달라집니다(5.3).
       return queryClient.invalidateQueries({ queryKey: ['scholarships'] })

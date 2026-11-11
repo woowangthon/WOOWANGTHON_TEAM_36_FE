@@ -59,6 +59,16 @@ export function signOut() {
   me = null
 }
 
+/** backend `_me()`처럼 프로필의 닉네임·이수학기·직전학기 평점을 함께 돌려줍니다 (T52, BE #44). */
+function withSummary(value: Me): Me {
+  return {
+    ...value,
+    nickname: profile?.name ?? null,
+    completed_semesters: profile?.completed_semesters ?? null,
+    gpa: profile?.gpa ?? null,
+  }
+}
+
 const unauthorized = () => HttpResponse.json({ detail: '로그인이 필요합니다' }, { status: 401 })
 
 const RESULT_FILTER = { eligible: 'ELIGIBLE', conditional: 'CONDITIONAL' } as const
@@ -100,7 +110,7 @@ const notFound = () => HttpResponse.json({ detail: 'Not Found' }, { status: 404 
 
 export const handlers: RequestHandler[] = [
   // 인증 (7.2, 7.3)
-  http.get('/api/auth/me', () => (me ? HttpResponse.json(me) : unauthorized())),
+  http.get('/api/auth/me', () => (me ? HttpResponse.json(withSummary(me)) : unauthorized())),
   http.post('/api/auth/signup', async ({ request }) => {
     const body = (await request.json()) as Schemas['SignupRequest']
     me = {
@@ -111,7 +121,7 @@ export const handlers: RequestHandler[] = [
       profile_completed: false,
     }
     profile = null
-    return HttpResponse.json(me, { status: 201 })
+    return HttpResponse.json(withSummary(me), { status: 201 })
   }),
   http.post('/api/auth/login', async ({ request }) => {
     const body = (await request.json()) as Schemas['LoginRequest']
@@ -122,7 +132,7 @@ export const handlers: RequestHandler[] = [
       )
     }
     me = { ...mockMe, email: body.email.toLowerCase(), profile_completed: profile !== null }
-    return HttpResponse.json(me)
+    return HttpResponse.json(withSummary(me))
   }),
   http.post('/api/auth/logout', () => {
     me = null
@@ -136,7 +146,7 @@ export const handlers: RequestHandler[] = [
     }
     me = { ...me, privacy_agreed: true, sensitive_agreed: body.sensitive }
     if (!body.sensitive && profile) profile = { ...profile, special_flags: null }
-    return HttpResponse.json(me)
+    return HttpResponse.json(withSummary(me))
   }),
   http.delete('/api/auth/consent/sensitive', () => {
     if (!me) return unauthorized()
