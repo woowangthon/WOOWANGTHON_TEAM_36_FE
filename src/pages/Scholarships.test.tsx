@@ -109,10 +109,9 @@ describe('상세', () => {
       'href',
       '/scholarships/1',
     )
-    expect(screen.getByRole('link', { name: /교외장학금 3종 모집/ })).toHaveAttribute(
-      'target',
-      '_blank',
-    )
+    // 원문 링크는 원문 보기 안에만 있습니다(제목은 글자로만).
+    expect(screen.getByText(/교외장학금 3종 모집/)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /교외장학금 3종 모집/ })).not.toBeInTheDocument()
     expect(screen.getByText(/다른 게시판에도 같은 장학금이 있을 수 있습니다/)).toBeInTheDocument()
   })
 
@@ -189,6 +188,11 @@ describe('상세', () => {
     renderApp('/scholarships/1')
     await screen.findByRole('list', { name: '조건 체크리스트' })
     expect(screen.queryByRole('button', { name: '원문 보기' })).not.toBeInTheDocument()
+    // 원문 보기가 없으면 제목이 원문 링크가 됩니다.
+    expect(screen.getByRole('link', { name: /교외장학금 3종 모집/ })).toHaveAttribute(
+      'target',
+      '_blank',
+    )
   })
 
   it('없는 장학금은 안내를 보여 준다', async () => {

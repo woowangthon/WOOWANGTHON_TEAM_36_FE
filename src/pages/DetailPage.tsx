@@ -132,15 +132,21 @@ function Detail({ item }: { item: ScholarshipDetail }) {
           <Megaphone aria-hidden="true" className="size-5 text-brand-700" />
           원문 공지
         </h2>
-        <a
-          href={item.notice.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 inline-flex items-start gap-1 break-all underline underline-offset-4"
-        >
-          {item.notice.title}
-          <ExternalLink aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-        </a>
+        {hasOriginal(item.notice) ? (
+          // 원문 링크는 원문 보기 안(맨 아래)에 둡니다.
+          <p className="mt-2 break-all">{item.notice.title}</p>
+        ) : (
+          // 저장된 본문·첨부가 없으면 원문 보기가 없으므로 제목을 원문 링크로 둡니다.
+          <a
+            href={item.notice.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-start gap-1 break-all underline underline-offset-4"
+          >
+            {item.notice.title}
+            <ExternalLink aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          </a>
+        )}
         <p className="mt-1 text-xs text-muted-foreground">
           게시일 {formatDate(item.notice.posted_at)}
         </p>
@@ -297,10 +303,14 @@ function UnreadNotice({ files, truncated }: { files: UnreadAttachment[]; truncat
  * 공지 원문 (7.1): 수집 때 저장한 본문과 읽은 첨부의 텍스트를 같은 페이지에서 펼쳐 봅니다.
  * 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다(표는 한 행이 한 줄, 칸은 " | ").
  */
+function hasOriginal(notice: ScholarshipDetail['notice']) {
+  return notice.body_text.trim().length > 0 || notice.attachments.length > 0
+}
+
 function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
   const [open, setOpen] = useState(false)
   const hasBody = notice.body_text.trim().length > 0
-  if (!hasBody && notice.attachments.length === 0) return null
+  if (!hasOriginal(notice)) return null
   return (
     <div className="mt-3">
       <Button
