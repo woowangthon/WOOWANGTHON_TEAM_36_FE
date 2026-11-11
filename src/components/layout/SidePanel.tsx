@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react'
+import { useId } from 'react'
 
 type LinkItem = { label: string; href: string; note?: string }
 
@@ -31,7 +32,8 @@ export function SidePanel({ className = '' }: { className?: string }) {
 }
 
 function LinkGroup({ title, links }: { title: string; links: LinkItem[] }) {
-  const id = `side-${title}`
+  // 제목에 띄어쓰기가 있어 id로 쓰면 aria-labelledby가 여러 id로 나뉘어 이름이 붙지 않습니다. useId로 만듭니다.
+  const id = useId()
   return (
     <section
       aria-labelledby={id}

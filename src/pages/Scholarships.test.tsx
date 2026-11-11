@@ -212,8 +212,8 @@ describe('관심·신청완료', () => {
     await waitForCards('여성공학인 장학금')
     const card = () => screen.getByText('여성공학인 장학금').closest('li')!
     fireEvent.click(within(card()).getByRole('button', { name: '관심' }))
-    // 서버 응답 전에 이미 반영됨 (optimistic update)
-    expect(within(card()).getByRole('button', { name: '관심 해제' })).toHaveAttribute(
+    // 서버 응답 전에 이미 반영됨 (optimistic update). 캐시를 바꾸는 onMutate가 비동기라 기다려서 찾습니다.
+    expect(await within(card()).findByRole('button', { name: '관심 해제' })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
