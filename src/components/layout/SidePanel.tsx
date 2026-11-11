@@ -5,7 +5,10 @@ type LinkItem = { label: string; href: string; note?: string }
 
 // 수집 출처 바로가기 (계획서 2장의 목록 주소, backend 수집기와 같은 곳)
 const SOURCE_LINKS: LinkItem[] = [
-  { label: '소프트웨어학부', href: 'https://software.cbnu.ac.kr/' },
+  {
+    label: '소프트웨어학부 장학 게시판',
+    href: 'https://software.cbnu.ac.kr/index.php?mid=sub0401&category=8409',
+  },
   { label: 'AI부트캠프사업단 공지', href: 'https://aibc.cbnu.ac.kr/menu/1108' },
   { label: '한국장학재단 공지', href: 'https://www.kosaf.go.kr/ko/notice.do' },
 ]
