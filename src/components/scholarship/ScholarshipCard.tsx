@@ -1,3 +1,12 @@
+import {
+  Building2,
+  CalendarClock,
+  CircleCheck,
+  CircleHelp,
+  CircleX,
+  School,
+  Wallet,
+} from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { ScholarshipSummary } from '@/api/hooks/scholarships'
@@ -10,11 +19,19 @@ const RESULT_STYLE = {
   INELIGIBLE: 'bg-muted text-muted-foreground ring-border',
 } as const
 
+const RESULT_ICON = {
+  ELIGIBLE: CircleCheck,
+  CONDITIONAL: CircleHelp,
+  INELIGIBLE: CircleX,
+} as const
+
 export function ResultBadge({ result }: { result: ScholarshipSummary['result'] }) {
+  const Icon = RESULT_ICON[result]
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${RESULT_STYLE[result]}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${RESULT_STYLE[result]}`}
     >
+      <Icon aria-hidden="true" className="size-3.5" />
       {RESULT_LABEL[result]}
     </span>
   )
@@ -29,6 +46,26 @@ const DEADLINE_STYLE = {
 export function DeadlineText({ item }: { item: Pick<ScholarshipSummary, 'status' | 'apply_end'> }) {
   const deadline = deadlineOf(item)
   return <span className={`text-sm ${DEADLINE_STYLE[deadline.tone]}`}>{deadline.label}</span>
+}
+
+/** 출처 · 교내/교외 · 지원 형태 한 줄. 교내는 학교, 교외는 건물 아이콘 (T38). */
+export function SourceLine({
+  item,
+  className = '',
+}: {
+  item: Pick<ScholarshipSummary, 'source_name' | 'is_internal' | 'benefit_type'>
+  className?: string
+}) {
+  const Icon = item.is_internal ? School : Building2
+  return (
+    <p className={`flex items-center gap-1 text-muted-foreground ${className}`}>
+      <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+      <span>
+        {item.source_name} · {item.is_internal ? '교내' : '교외'}
+        {item.benefit_type && ` · ${item.benefit_type}`}
+      </span>
+    </p>
+  )
 }
 
 export function DeadlineConflictNote() {
@@ -51,15 +88,18 @@ export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
           <h3 className="min-w-0 font-medium break-keep">{item.name}</h3>
           <ResultBadge result={item.result} />
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {item.source_name} · {item.is_internal ? '교내' : '교외'}
-          {item.benefit_type && ` · ${item.benefit_type}`}
-        </p>
+        <SourceLine item={item} className="mt-1 text-xs" />
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <DeadlineText item={item} />
+          <span className="inline-flex items-center gap-1">
+            <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
+            <DeadlineText item={item} />
+          </span>
           {item.deadline_conflict && <DeadlineConflictNote />}
           {item.benefit_amount_text && (
-            <span className="text-sm font-medium text-brand-700">{item.benefit_amount_text}</span>
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-700">
+              <Wallet aria-hidden="true" className="size-4" />
+              {item.benefit_amount_text}
+            </span>
           )}
           {item.my_state && (
             <span className="ml-auto text-xs font-medium text-primary">

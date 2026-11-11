@@ -1,4 +1,15 @@
-import { ExternalLink } from 'lucide-react'
+import {
+  CalendarClock,
+  CalendarDays,
+  CircleCheck,
+  CircleHelp,
+  CircleX,
+  ExternalLink,
+  FileText,
+  ListChecks,
+  Megaphone,
+  Wallet,
+} from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { ApiError } from '@/api/hooks/request'
@@ -24,10 +35,11 @@ import {
   DeadlineConflictNote,
   DeadlineText,
   ResultBadge,
+  SourceLine,
 } from '@/components/scholarship/ScholarshipCard'
 import { Button } from '@/components/ui/button'
 
-// 상세 (7.1): 조건별 체크리스트(✓ ✗ ?), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
+// 상세 (7.1): 조건별 체크리스트(충족·불충족·확인 필요 아이콘), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
 // 관심·신청완료 버튼, 중복 안내 문구.
 export default function DetailPage() {
   const id = Number(useParams().id)
@@ -51,12 +63,12 @@ function Detail({ item }: { item: ScholarshipDetail }) {
           <h1 className="min-w-0 text-xl font-semibold break-keep">{item.name}</h1>
           <ResultBadge result={item.result} />
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {item.source_name} · {item.is_internal ? '교내' : '교외'}
-          {item.benefit_type && ` · ${item.benefit_type}`}
-        </p>
+        <SourceLine item={item} className="mt-1 text-sm" />
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="text-muted-foreground">마감</dt>
+          <dt className="flex items-center gap-1 text-muted-foreground">
+            <CalendarClock aria-hidden="true" className="size-4" />
+            마감
+          </dt>
           <dd className="flex flex-wrap items-center gap-2">
             <DeadlineText item={item} />
             {item.apply_end && (
@@ -66,13 +78,19 @@ function Detail({ item }: { item: ScholarshipDetail }) {
           </dd>
           {item.apply_start && (
             <>
-              <dt className="text-muted-foreground">신청 시작</dt>
+              <dt className="flex items-center gap-1 text-muted-foreground">
+                <CalendarDays aria-hidden="true" className="size-4" />
+                신청 시작
+              </dt>
               <dd>{formatDateTime(item.apply_start)}</dd>
             </>
           )}
           {item.benefit_amount_text && (
             <>
-              <dt className="text-muted-foreground">금액</dt>
+              <dt className="flex items-center gap-1 text-muted-foreground">
+                <Wallet aria-hidden="true" className="size-4" />
+                금액
+              </dt>
               <dd>{item.benefit_amount_text}</dd>
             </>
           )}
@@ -93,7 +111,10 @@ function Detail({ item }: { item: ScholarshipDetail }) {
 
       {item.required_documents.length > 0 && (
         <section className="rounded-xl border bg-background p-5">
-          <h2 className="font-semibold">제출 서류</h2>
+          <h2 className="flex items-center gap-1.5 font-semibold">
+            <FileText aria-hidden="true" className="size-5 text-brand-700" />
+            제출 서류
+          </h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             {item.required_documents.map((doc) => (
               <li key={doc}>{doc}</li>
@@ -103,7 +124,10 @@ function Detail({ item }: { item: ScholarshipDetail }) {
       )}
 
       <section className="rounded-xl border bg-background p-5 text-sm">
-        <h2 className="font-semibold">원문 공지</h2>
+        <h2 className="flex items-center gap-1.5 font-semibold">
+          <Megaphone aria-hidden="true" className="size-5 text-brand-700" />
+          원문 공지
+        </h2>
         <a
           href={item.notice.url}
           target="_blank"
@@ -141,21 +165,18 @@ function Detail({ item }: { item: ScholarshipDetail }) {
   )
 }
 
-const OUTCOME_STYLE = {
-  MET: 'bg-emerald-100 text-emerald-700',
-  UNMET: 'bg-red-100 text-red-700',
-  UNKNOWN: 'bg-amber-100 text-amber-800',
+// 조건 결과 아이콘 (T38). 판정 뱃지와 같은 모양·색을 씁니다.
+const OUTCOME_ICON = {
+  MET: { Icon: CircleCheck, color: 'text-emerald-600' },
+  UNMET: { Icon: CircleX, color: 'text-red-600' },
+  UNKNOWN: { Icon: CircleHelp, color: 'text-amber-600' },
 } as const
 
-function Mark({ outcome }: { outcome: ConditionCheck['outcome'] }) {
-  const { mark, label } = OUTCOME[outcome]
+function Mark({ outcome, small }: { outcome: ConditionCheck['outcome']; small?: boolean }) {
+  const { Icon, color } = OUTCOME_ICON[outcome]
   return (
-    <span
-      role="img"
-      aria-label={label}
-      className={`grid size-6 shrink-0 place-items-center rounded-full text-sm font-semibold ${OUTCOME_STYLE[outcome]}`}
-    >
-      {mark}
+    <span role="img" aria-label={OUTCOME[outcome].label} className={`shrink-0 ${color}`}>
+      <Icon aria-hidden="true" className={small ? 'size-3.5' : 'size-6'} />
     </span>
   )
 }
@@ -164,7 +185,10 @@ function Mark({ outcome }: { outcome: ConditionCheck['outcome'] }) {
 function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra: string[] }) {
   return (
     <section className="rounded-xl border bg-background p-5">
-      <h2 className="font-semibold">조건 확인</h2>
+      <h2 className="flex items-center gap-1.5 font-semibold">
+        <ListChecks aria-hidden="true" className="size-5 text-brand-700" />
+        조건 확인
+      </h2>
       {conditions.length === 0 && extra.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">공지에 따로 적힌 지원 조건이 없습니다.</p>
       ) : (
@@ -208,8 +232,11 @@ function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra:
           ))}
         </ul>
       )}
-      <p className="mt-4 text-xs text-muted-foreground">
-        ✓ 충족 · ✗ 불충족 · ? 정보가 없거나 공지가 모호해 직접 확인이 필요합니다.
+      <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+        <CircleCheck aria-hidden="true" className="size-3.5 text-emerald-600" /> 충족 ·
+        <CircleX aria-hidden="true" className="size-3.5 text-red-600" /> 불충족 ·
+        <CircleHelp aria-hidden="true" className="size-3.5 text-amber-600" /> 정보가 없거나 공지가
+        모호해 직접 확인이 필요합니다.
       </p>
     </section>
   )
