@@ -27,7 +27,9 @@ function useIsWide() {
   return wide
 }
 
-const BOX = 'grid gap-2 rounded-xl border border-brand-200 bg-background p-3 sm:p-4'
+// min-w-0·minmax(0,1fr): 긴 장학금 이름이 상자를 넓혀 사이드바 밖으로 잘리지 않게 합니다 (T67, Safari)
+const BOX =
+  'grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-xl border border-brand-200 bg-background p-3 sm:p-4'
 
 /**
  * 곧 마감되는 장학금 3개 (T57). 이미 받은 목록에서 뽑아 API를 더 부르지 않습니다(계획서 9.8).
@@ -71,11 +73,11 @@ export function DeadlineSoon({
           )}
         </div>
       ) : (
-        <ul className="grid gap-1.5 text-sm">
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-1.5 text-sm">
           {soon.map((item) => {
             const deadline = deadlineOf(item)
             return (
-              <li key={item.id}>
+              <li key={item.id} className="min-w-0">
                 <Link
                   to={`/scholarships/${item.id}`}
                   className="flex items-center justify-between gap-2 rounded-md hover:text-brand-800"

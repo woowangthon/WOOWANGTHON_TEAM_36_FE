@@ -61,7 +61,8 @@ export function SourceLine({
   return (
     <p className={`flex items-center gap-1 text-muted-foreground ${className}`}>
       <Icon aria-hidden="true" className="size-3.5 shrink-0" />
-      <span>
+      {/* 단어 중간에서 줄이 바뀌지 않게 ('생활비 / 성' 방지, T67) */}
+      <span className="min-w-0 break-keep">
         {item.source_name} · {item.is_internal ? '교내' : '교외'}
         {item.benefit_type && ` · ${item.benefit_type}`}
       </span>

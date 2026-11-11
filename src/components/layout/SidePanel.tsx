@@ -45,7 +45,7 @@ function LinkGroup({ title, links }: { title: string; links: LinkItem[] }) {
   return (
     <section
       aria-labelledby={id}
-      className="grid gap-2 rounded-xl border border-brand-200 bg-background p-3 sm:p-4"
+      className="grid min-w-0 gap-2 rounded-xl border border-brand-200 bg-background p-3 break-keep sm:p-4"
     >
       <h2 id={id} className="text-sm font-semibold text-brand-900">
         {title}
