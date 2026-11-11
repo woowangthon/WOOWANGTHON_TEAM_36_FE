@@ -16,7 +16,12 @@ const SOURCE_LINKS: LinkItem[] = [
 // 학사·서류: 상세의 '제출 서류'를 어디서 떼는지 안내합니다.
 const ACADEMIC_LINKS: LinkItem[] = [
   { label: '개신누리 (학사 정보)', href: 'https://eis.cbnu.ac.kr/' },
-  { label: '증명서 인터넷 발급', href: 'https://www.certpia.com/', note: '충북대학교 선택' },
+  // 충북대 인터넷 증명발급 (학교 안내문 기준, 개신누리와 같은 아이디·비밀번호)
+  {
+    label: '증명서 인터넷 발급',
+    href: 'https://certi.cbnu.ac.kr/',
+    note: '개신누리 아이디로 로그인',
+  },
   {
     label: '학자금 지원구간 확인',
     href: 'https://www.kosaf.go.kr/',
