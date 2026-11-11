@@ -307,6 +307,9 @@ describe('라우팅 가드', () => {
     const app = renderApp('/privacy')
     expect(await screen.findByRole('heading', { name: '개인정보처리방침' })).toBeInTheDocument()
     expect(app.path()).toBe('/privacy')
+    expect(
+      screen.getByText(/이메일 주소는 로그인과 가입 인증번호 발송에 사용합니다/),
+    ).toBeInTheDocument()
   })
 })
 
