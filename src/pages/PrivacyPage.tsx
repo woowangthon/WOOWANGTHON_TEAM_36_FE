@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 // 개인정보처리방침 (계획서 4.2). 로그인 없이 볼 수 있는 정적 페이지이며 Google OAuth 동의 화면에도 링크합니다.
 // 문안은 운영 담당자가 검토합니다(T24 사람 할 일).
 
-const UPDATED_AT = '2026년 11월 6일'
+const UPDATED_AT = '2026년 11월 11일'
 const CONTACT = 'pgmo0329@naver.com'
 
 const SECTIONS: { title: string; body: React.ReactNode }[] = [
@@ -24,10 +24,17 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
   {
     title: '2. 이용 목적',
     body: (
-      <p>
-        장학금 공지의 지원 조건과 입력한 정보를 비교해 지원 가능 여부를 보여 주기 위해서만 씁니다.
-        비교는 서버의 규칙 코드가 하며, 입력한 정보는 AI(공지 분석에 쓰는 Gemini)에 보내지 않습니다.
-      </p>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>
+          장학금 공지의 지원 조건과 입력한 정보를 비교해 지원 가능 여부를 보여 주기 위해서만 씁니다.
+          비교는 서버의 규칙 코드가 하며, 입력한 정보는 AI(공지 분석에 쓰는 Gemini)에 보내지
+          않습니다.
+        </li>
+        <li>
+          이메일 주소는 로그인과 가입 인증번호 발송에 사용합니다. 그 밖의 안내·광고 메일은 보내지
+          않습니다.
+        </li>
+      </ul>
     ),
   },
   {
@@ -48,6 +55,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
         <li>비밀번호는 Argon2로 해시해 원문을 저장하지 않습니다.</li>
         <li>로그인 정보는 브라우저 스크립트가 읽을 수 없는 쿠키(httpOnly)로만 주고받습니다.</li>
         <li>서버 기록(로그)에는 프로필 값, 비밀번호, 토큰을 남기지 않습니다.</li>
+        <li>가입 인증번호는 저장하지 않으며, 10분이 지나면 쓸 수 없습니다.</li>
       </ul>
     ),
   },
@@ -56,7 +64,8 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     body: (
       <p>
         개인정보를 제3자에게 제공하지 않습니다. 서비스 운영을 위해 Google Cloud(서버·비밀값 보관),
-        Neon(데이터베이스), Vercel(웹 화면 제공)의 인프라를 이용합니다.
+        Gmail(가입 인증번호 메일 발송), Neon(데이터베이스), Vercel(웹 화면 제공)의 인프라를
+        이용합니다.
       </p>
     ),
   },
