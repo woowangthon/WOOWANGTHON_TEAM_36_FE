@@ -14,12 +14,14 @@ export function AuthLayout({ title, description, children, wide, back }: Props) 
   return (
     <div className="min-h-svh bg-brand-50">
       <header className="mx-auto flex max-w-3xl items-center px-4 py-4">
-        <Link to="/" className="flex items-center gap-2 text-sm font-semibold">
-          장학금 매칭
-          {/* 충북대 소프트웨어학부 재학생 대상 표식 (T42) */}
-          <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-brand-800">
-            CBNU SW
-          </span>
+        <Link to="/" aria-label="장학금 매칭 (홈)">
+          <img
+            src="/logo-woowangdon.png"
+            alt="우왕돈이다"
+            width={640}
+            height={197}
+            className="h-8 w-auto"
+          />
         </Link>
       </header>
       <main className={`mx-auto px-4 pb-12 ${wide ? 'max-w-2xl' : 'max-w-sm'}`}>

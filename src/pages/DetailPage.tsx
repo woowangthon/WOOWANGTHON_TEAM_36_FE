@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   ExternalLink,
   FileText,
-  Heart,
   ListChecks,
   Megaphone,
   Wallet,
@@ -59,7 +58,7 @@ export default function DetailPage() {
 
 function Detail({ item }: { item: ScholarshipDetail }) {
   return (
-    <article className="grid gap-4 lg:mx-auto lg:w-full lg:max-w-3xl">
+    <article className="grid gap-4">
       <BackLink />
       <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
@@ -292,21 +291,9 @@ function UnreadNotice({ files, truncated }: { files: UnreadAttachment[]; truncat
 }
 
 // 누른 관심은 하트를 채워 상태를 한눈에 보여 줍니다 (T53).
-const STATE_BUTTONS: {
-  state: UserState
-  on: string
-  off: string
-  Icon: typeof Heart
-  fillWhenOn: boolean
-}[] = [
-  { state: 'BOOKMARKED', on: '관심 해제', off: '관심', Icon: Heart, fillWhenOn: true },
-  {
-    state: 'APPLIED',
-    on: '신청완료 취소',
-    off: '신청완료',
-    Icon: ClipboardCheck,
-    fillWhenOn: false,
-  },
+// 관심은 목록 카드의 하트로 옮겼습니다 (T54). 상세에는 신청완료만 둡니다.
+const STATE_BUTTONS: { state: UserState; on: string; off: string }[] = [
+  { state: 'APPLIED', on: '신청완료 취소', off: '신청완료' },
 ]
 
 /** 관심·신청완료는 하나만 고를 수 있습니다. 누른 상태를 다시 누르면 지웁니다. */
@@ -314,8 +301,8 @@ function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_
   const mutation = useSetScholarshipState()
   return (
     <div className="mt-5 grid gap-2">
-      <div className="grid grid-cols-2 gap-2">
-        {STATE_BUTTONS.map(({ Icon, fillWhenOn, ...button }) => {
+      <div className="grid gap-2">
+        {STATE_BUTTONS.map((button) => {
           const active = state === button.state
           return (
             <Button
@@ -324,7 +311,7 @@ function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_
               aria-pressed={active}
               onClick={() => mutation.mutate({ id, state: active ? null : button.state })}
             >
-              <Icon aria-hidden="true" className={active && fillWhenOn ? 'fill-current' : ''} />
+              <ClipboardCheck aria-hidden="true" />
               {active ? button.on : button.off}
             </Button>
           )

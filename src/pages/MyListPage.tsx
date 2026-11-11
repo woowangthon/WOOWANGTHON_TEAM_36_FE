@@ -29,7 +29,7 @@ export default function MyListPage() {
   const list = useScholarships({ result: 'all', sort: 'deadline', state: tab })
 
   return (
-    <div className="grid gap-4 lg:mx-auto lg:w-full lg:max-w-3xl">
+    <div className="grid gap-4">
       <div className="grid gap-3">
         <Link
           to="/dashboard"
