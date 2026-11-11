@@ -540,6 +540,18 @@ export interface components {
             /** Gpa */
             gpa?: number | null;
         };
+        /**
+         * NoticeAttachmentText
+         * @description 읽은 첨부(OK)의 텍스트. 상세 화면의 "원문 보기"에서 본문 아래에 펼쳐 보여 줍니다.
+         */
+        NoticeAttachmentText: {
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
+            /** Text */
+            text: string;
+        };
         /** NoticeRef */
         NoticeRef: {
             /** Id */
@@ -553,6 +565,10 @@ export interface components {
              * Format: date-time
              */
             posted_at: string;
+            /** Body Text */
+            body_text: string;
+            /** Attachments */
+            attachments: components["schemas"]["NoticeAttachmentText"][];
         };
         /**
          * Profile

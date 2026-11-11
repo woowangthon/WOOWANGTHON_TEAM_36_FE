@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   CalendarClock,
+  ChevronDown,
   CalendarDays,
   CircleCheck,
   CircleHelp,
@@ -12,6 +13,7 @@ import {
   Megaphone,
   Wallet,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { ApiError } from '@/api/hooks/request'
@@ -142,6 +144,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
         <p className="mt-1 text-xs text-muted-foreground">
           게시일 {formatDate(item.notice.posted_at)}
         </p>
+        <NoticeOriginal notice={item.notice} />
         {item.siblings.length > 0 && (
           <div className="mt-4">
             <h3 className="font-medium">같은 공지의 다른 장학금</h3>
@@ -287,6 +290,70 @@ function UnreadNotice({ files, truncated }: { files: UnreadAttachment[]; truncat
         </p>
       )}
     </section>
+  )
+}
+
+/**
+ * 공지 원문 (7.1): 수집 때 저장한 본문과 읽은 첨부의 텍스트를 같은 페이지에서 펼쳐 봅니다.
+ * 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다(표는 한 행이 한 줄, 칸은 " | ").
+ */
+function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
+  const [open, setOpen] = useState(false)
+  const hasBody = notice.body_text.trim().length > 0
+  if (!hasBody && notice.attachments.length === 0) return null
+  return (
+    <div className="mt-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        aria-expanded={open}
+        aria-controls="notice-original"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? '원문 접기' : '원문 보기'}
+        <ChevronDown
+          aria-hidden="true"
+          className={`transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </Button>
+      {open && (
+        <div
+          id="notice-original"
+          role="region"
+          aria-label="공지 원문"
+          className="mt-3 grid max-h-[70vh] gap-4 overflow-y-auto rounded-lg border bg-muted/30 p-3"
+        >
+          {hasBody && (
+            <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+              {notice.body_text}
+            </p>
+          )}
+          {notice.attachments.map((file) => (
+            <section key={`${file.url}#${file.name}`} className="grid gap-2 border-t pt-3">
+              <h3 className="flex items-start gap-1.5 text-sm font-medium break-all">
+                <FileText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-700" />
+                <span className="min-w-0">
+                  첨부 · {file.name}{' '}
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 inline-flex items-center gap-0.5 text-xs font-normal text-muted-foreground underline underline-offset-4"
+                  >
+                    내려받기
+                    <ExternalLink aria-hidden className="size-3" />
+                  </a>
+                </span>
+              </h3>
+              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
+                {file.text}
+              </p>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
