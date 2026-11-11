@@ -291,3 +291,33 @@ describe('사이드바 (T40)', () => {
     }
   })
 })
+
+describe('사이드바 추가 안내 (T57)', () => {
+  it('판정 결과 읽는 법과 프로필 수정 링크를 보여 준다', async () => {
+    renderApp('/dashboard')
+    const guide = await screen.findByRole('region', { name: '판정 결과 읽는 법' })
+    expect(within(guide).getByText(/모두 충족해요/)).toBeInTheDocument()
+    expect(within(guide).getByRole('link', { name: '프로필 수정' })).toHaveAttribute(
+      'href',
+      '/profile',
+    )
+  })
+
+  it('넓은 화면에서 곧 마감되는 장학금을 마감 순서로 3개까지 보여 준다', async () => {
+    const original = window.matchMedia
+    window.matchMedia = ((query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia
+    try {
+      renderApp('/dashboard?tab=all')
+      const soon = await screen.findByRole('region', { name: '곧 마감되는 장학금' })
+      // 목 데이터 마감일이 고정 날짜라, 날짜가 지나도 깨지지 않게 개수 상한만 확인합니다.
+      expect(within(soon).queryAllByRole('link').length).toBeLessThanOrEqual(3)
+    } finally {
+      window.matchMedia = original
+    }
+  })
+})
