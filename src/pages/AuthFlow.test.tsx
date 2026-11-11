@@ -410,3 +410,14 @@ describe('프로필 화면', () => {
     await waitFor(() => expect(app.path()).toBe('/login'))
   })
 })
+
+describe('대상 안내 (T42)', () => {
+  it('로그인 화면에서 서비스 대상과 공지 수집 출처를 보여 준다', async () => {
+    startLoggedOut()
+    renderApp('/login')
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(screen.getByText('충북대 소프트웨어학부 재학생을 위한 장학금 매칭')).toBeInTheDocument()
+    const sources = screen.getByRole('list', { name: '공지 수집 출처' })
+    expect(within(sources).getAllByRole('listitem')).toHaveLength(3)
+  })
+})

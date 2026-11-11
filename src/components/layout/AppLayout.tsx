@@ -12,9 +12,13 @@ export function AppLayout() {
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-2 px-4">
           <NavLink
             to="/dashboard"
-            className="shrink-0 text-base font-bold tracking-tight text-white"
+            className="flex shrink-0 items-center gap-2 text-base font-bold tracking-tight text-white"
           >
             장학금 매칭
+            {/* 충북대 소프트웨어학부 재학생 대상 표식 (T42) */}
+            <span className="rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide">
+              CBNU SW
+            </span>
           </NavLink>
           <NavLink
             to="/my"
