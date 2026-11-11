@@ -300,8 +300,9 @@ function UnreadNotice({ files, truncated }: { files: UnreadAttachment[]; truncat
 }
 
 /**
- * 공지 원문 (7.1): 수집 때 저장한 본문과 읽은 첨부의 텍스트를 같은 페이지에서 펼쳐 봅니다.
- * 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다(표는 한 행이 한 줄, 칸은 " | ").
+ * 공지 원문 (7.1): 수집 때 저장한 본문과 첨부파일 목록을 같은 페이지에서 펼쳐 봅니다.
+ * 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다. 첨부 내용은 PDF 추출 글자라
+ * 읽기 어려워 보여 주지 않고, 파일 이름과 내려받기만 둡니다.
  */
 function hasOriginal(notice: ScholarshipDetail['notice']) {
   return notice.body_text.trim().length > 0 || notice.attachments.length > 0
@@ -339,28 +340,31 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
               {notice.body_text}
             </p>
           )}
-          {notice.attachments.map((file) => (
-            <section key={`${file.url}#${file.name}`} className="grid gap-2 border-t pt-3">
-              <h3 className="flex items-start gap-1.5 text-sm font-medium break-all">
-                <FileText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-700" />
-                <span className="min-w-0">
-                  첨부 · {file.name}{' '}
-                  <a
-                    href={file.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 inline-flex items-center gap-0.5 text-xs font-normal text-muted-foreground underline underline-offset-4"
-                  >
-                    내려받기
-                    <ExternalLink aria-hidden className="size-3" />
-                  </a>
-                </span>
-              </h3>
-              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
-                {file.text}
-              </p>
-            </section>
-          ))}
+          {notice.attachments.length > 0 && (
+            // 첨부 내용은 조건 확인(서버 추출)에만 쓰고, 화면에는 파일 이름과 내려받기만 둡니다.
+            <ul className="grid gap-1.5 border-t pt-3" aria-label="첨부파일">
+              {notice.attachments.map((file) => (
+                <li
+                  key={`${file.url}#${file.name}`}
+                  className="flex items-start gap-1.5 text-sm break-all"
+                >
+                  <FileText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-700" />
+                  <span className="min-w-0">
+                    {file.name}{' '}
+                    <a
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-1 inline-flex items-center gap-0.5 text-xs text-muted-foreground underline underline-offset-4"
+                    >
+                      내려받기
+                      <ExternalLink aria-hidden className="size-3" />
+                    </a>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="border-t pt-3">
             <a
               href={notice.url}

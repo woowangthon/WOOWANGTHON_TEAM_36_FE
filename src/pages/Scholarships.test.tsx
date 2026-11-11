@@ -155,12 +155,10 @@ describe('상세', () => {
     expect(
       within(original).getByText(/교외장학금 3종 장학생을 아래와 같이 모집/),
     ).toBeInTheDocument()
-    expect(
-      within(original).getByRole('heading', { name: /첨부 · 2026-2 교외장학금 공고문\.hwp/ }),
-    ).toBeInTheDocument()
-    expect(
-      within(original).getByText(/두산연강재단 장학금 \| 2명 \| 등록금 전액/),
-    ).toBeInTheDocument()
+    const files = within(original).getByRole('list', { name: '첨부파일' })
+    expect(within(files).getByText(/2026-2 교외장학금 공고문\.hwp/)).toBeInTheDocument()
+    // 첨부 내용(추출 글자)은 화면에 보여 주지 않습니다.
+    expect(within(original).queryByText(/두산연강재단 장학금 \| 2명/)).not.toBeInTheDocument()
     expect(within(original).getByRole('link', { name: '내려받기' })).toHaveAttribute(
       'target',
       '_blank',
