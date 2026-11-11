@@ -10,6 +10,7 @@ import { useSignup, useSignupCode, useSignupVerify } from '@/api/hooks/auth'
 import { ApiError } from '@/api/hooks/request'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { GoogleButton, OrDivider } from '@/components/auth/GoogleButton'
+import { TargetNotice } from '@/components/auth/TargetNotice'
 import { Field, FormError } from '@/components/form/Field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -100,6 +101,7 @@ export default function SignupPage() {
     if (!sent) return
     const code = form.getValues('code').trim()
     if (!CODE_PATTERN.test(code)) {
+      verify.reset()
       form.setError('code', { message: '인증번호 6자리 숫자를 입력하세요' })
       return
     }
@@ -144,6 +146,7 @@ export default function SignupPage() {
       description="가입 후 동의와 프로필 입력을 거쳐 맞춤 목록을 봅니다."
     >
       <div className="grid gap-4">
+        <TargetNotice />
         <GoogleButton next={null} />
         <OrDivider />
         <form onSubmit={onSubmit} className="grid gap-4" noValidate>

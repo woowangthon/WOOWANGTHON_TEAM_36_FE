@@ -336,7 +336,7 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
           className="mt-3 grid max-h-[70vh] gap-4 overflow-y-auto rounded-lg border bg-muted/30 p-3"
         >
           {hasBody && (
-            <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+            <p className="text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap">
               {notice.body_text}
             </p>
           )}

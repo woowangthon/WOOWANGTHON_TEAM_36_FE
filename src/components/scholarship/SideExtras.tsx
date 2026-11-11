@@ -81,7 +81,10 @@ export function DeadlineSoon({ items }: { items: ScholarshipSummary[] | undefine
 
 const GUIDE = [
   { result: 'ELIGIBLE', text: '공지 조건을 내 프로필이 모두 충족해요.' },
-  { result: 'CONDITIONAL', text: '정보가 없거나 공지가 모호해 직접 확인이 필요해요.' },
+  {
+    result: 'CONDITIONAL',
+    text: '정보가 없거나, 공지가 모호하거나, 첨부를 읽지 못해 직접 확인이 필요해요.',
+  },
   { result: 'INELIGIBLE', text: '충족하지 못한 조건이 있어요.' },
 ] as const
 
