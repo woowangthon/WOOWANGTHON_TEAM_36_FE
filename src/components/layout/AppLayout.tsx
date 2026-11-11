@@ -9,7 +9,7 @@ export function AppLayout() {
   return (
     <div className="min-h-svh bg-brand-50">
       <header className="sticky top-0 z-10 bg-brand-800 text-white shadow-sm">
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-2 px-4">
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-2 px-4 lg:max-w-5xl">
           <NavLink
             to="/dashboard"
             className="flex shrink-0 items-center gap-2 text-base font-bold tracking-tight text-white"
@@ -32,7 +32,7 @@ export function AppLayout() {
           </NavLink>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-4 pt-5 pb-12">
+      <main className="mx-auto max-w-3xl px-4 pt-5 pb-12 lg:max-w-5xl">
         <Outlet />
       </main>
     </div>

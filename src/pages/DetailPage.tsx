@@ -59,7 +59,7 @@ export default function DetailPage() {
 
 function Detail({ item }: { item: ScholarshipDetail }) {
   return (
-    <article className="grid gap-4">
+    <article className="grid gap-4 lg:mx-auto lg:w-full lg:max-w-3xl">
       <BackLink />
       <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">

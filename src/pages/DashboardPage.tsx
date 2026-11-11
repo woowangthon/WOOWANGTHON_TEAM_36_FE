@@ -1,9 +1,10 @@
-import { Search } from 'lucide-react'
+import { RotateCcw, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { useScholarships, type ListParams } from '@/api/hooks/scholarships'
 import { ErrorBox } from '@/components/layout/AppLayout'
+import { SidePanel } from '@/components/layout/SidePanel'
 import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
 import { FilterChips } from '@/components/scholarship/FilterChips'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
@@ -47,7 +48,8 @@ function pick<T extends string>(value: string | null, allowed: readonly T[], fal
 }
 
 // 대시보드 (7.1): 탭 지원 가능/확인 필요/전체, 정렬 마감 임박순·최신순, 필터 교내/교외·등록금성/생활비성.
-// 탭·정렬·필터는 한 상자에 모으고, 필터는 제목이 보이는 칩으로 둡니다 (T39).
+// 필터는 제목이 보이는 칩으로 둡니다 (T39). 1024px 이상에서는 정렬·출처·지원 형태 칩과 바로가기를
+// 왼쪽 사이드바에, 검색·탭·목록을 오른쪽에 둡니다 (T40). 휴대폰에서는 위에서 아래로 쌓입니다.
 // 탭·정렬·필터·검색어는 주소(?tab=...&q=...)에 두어 상세에서 뒤로 와도 그대로 남습니다.
 // 검색은 이미 받은 목록에서 장학금명·출처로 거르며 API를 더 부르지 않습니다 (T44, 계획서 9.8).
 export default function DashboardPage() {
@@ -89,6 +91,17 @@ export default function DashboardPage() {
     (item) => !keyword || normalize(`${item.name} ${item.source_name}`).includes(keyword),
   )
 
+  const filtered = sort !== 'deadline' || source !== '' || benefit !== ''
+  const resetFilters = () =>
+    setSearch(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        for (const key of ['sort', 'source', 'benefit']) next.delete(key)
+        return next
+      },
+      { replace: true },
+    )
+
   const update = (key: string, value: string, fallback: string) =>
     setSearch(
       (prev) => {
@@ -101,16 +114,16 @@ export default function DashboardPage() {
     )
 
   return (
-    <div className="grid gap-4">
-      <div className="grid gap-1">
+    <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)] lg:grid-rows-[auto_auto_1fr] lg:items-start">
+      <div className="grid gap-1 lg:col-start-2 lg:row-start-1 lg:self-end">
         <h1 className="text-xl font-semibold text-brand-900">맞춤 장학금</h1>
         <p className="text-sm text-muted-foreground">
           소프트웨어학부 재학생 기준 · 학부·사업단·한국장학재단 공지를 모았어요
         </p>
       </div>
       <section
-        aria-label="목록 필터"
-        className="grid gap-3 rounded-xl border border-brand-200 bg-background p-3 sm:p-4"
+        aria-label="목록 검색"
+        className="grid gap-3 rounded-xl border border-brand-200 bg-background p-3 sm:p-4 lg:col-start-2 lg:row-start-2"
       >
         <div className="relative">
           <Search
@@ -132,6 +145,33 @@ export default function DashboardPage() {
           value={tab}
           onChange={(value) => update('tab', value, 'eligible')}
         />
+      </section>
+
+      {/* 팀 로고: 넓은 화면에서 사이드바 위 빈 칸(제목 줄 옆)에 둡니다 */}
+      <img
+        src="/logo-woowangdon.png"
+        alt="우왕돈이다"
+        width={640}
+        height={197}
+        className="hidden h-auto w-full self-end lg:col-start-1 lg:row-start-1 lg:block"
+      />
+      <aside className="grid gap-4 lg:sticky lg:top-20 lg:col-start-1 lg:row-span-2 lg:row-start-2">
+        <section
+          aria-label="목록 필터"
+          className="grid gap-3 rounded-xl border border-brand-200 bg-background p-3 sm:p-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-brand-900">필터</h2>
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!filtered}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-brand-800 disabled:pointer-events-none disabled:opacity-40"
+            >
+              <RotateCcw aria-hidden="true" className="size-3.5" />
+              초기화
+            </button>
+          </div>
         <FilterChips
           label="정렬"
           options={SORTS}
@@ -150,7 +190,11 @@ export default function DashboardPage() {
           value={benefit}
           onChange={(value) => update('benefit', value, '')}
         />
-      </section>
+        </section>
+        <SidePanel className="hidden lg:grid" />
+      </aside>
+
+      <div className="grid gap-3 lg:col-start-2 lg:row-start-3">
 
       {list.isPending ? (
         <ListSkeleton />
@@ -169,6 +213,7 @@ export default function DashboardPage() {
           />
         </>
       )}
+      </div>
     </div>
   )
 }
