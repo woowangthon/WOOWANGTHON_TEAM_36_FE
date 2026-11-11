@@ -15,7 +15,12 @@ import { Field, FormError } from '@/components/form/Field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-const emailSchema = z.string().trim().min(1, '이메일을 입력해 주세요').email('이메일 형식이 아니에요').max(320)
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, '이메일을 입력해 주세요')
+  .email('이메일 형식이 아니에요')
+  .max(320)
 const CODE_PATTERN = /^[0-9]{6}$/
 
 // backend SignupRequest와 같은 규칙: 비밀번호 8~128자 (7.3)

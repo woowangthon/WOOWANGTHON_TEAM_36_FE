@@ -240,7 +240,7 @@ describe('관심·신청완료', () => {
       }),
     )
     renderApp('/scholarships/2')
-    const button = await screen.findByRole('button', { name: '신청완료' })
+    const button = await screen.findByRole('button', { name: '신청 완료', pressed: false })
     // 실패 뒤 다시 불러오기는 늦게 오게 해서, 되돌림이 캐시 복원으로 일어났는지 확인합니다.
     server.use(
       http.get('/api/scholarships/:id', async () => {
@@ -248,10 +248,12 @@ describe('관심·신청완료', () => {
       }),
     )
     fireEvent.click(button)
-    expect(await screen.findByRole('button', { name: '신청완료 취소' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: '신청 완료', pressed: true }),
+    ).toBeInTheDocument()
 
     expect(await screen.findByText(/저장하지 못했습니다/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '신청완료' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: '신청 완료' })).toHaveAttribute(
       'aria-pressed',
       'false',
     )
@@ -259,7 +261,7 @@ describe('관심·신청완료', () => {
 
   it('상세에 숨기기 버튼이 없다', async () => {
     renderApp('/scholarships/3')
-    await screen.findByRole('button', { name: '신청완료' })
+    await screen.findByRole('button', { name: '신청 완료' })
     expect(screen.queryByRole('button', { name: '숨기기' })).not.toBeInTheDocument()
     // 관심은 목록 카드 하트로 옮겨 상세에는 없음 (T54)
     expect(screen.queryByRole('button', { name: '관심' })).not.toBeInTheDocument()
