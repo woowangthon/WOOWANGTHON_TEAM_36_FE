@@ -1,10 +1,11 @@
 // 시연 계정 시드 (T33, 계획서 10장 5단계)
-// 판정 결과가 서로 다른 시연 프로필 4종을 만들거나 덮어씁니다. 웹 API만 씁니다(가입 → 동의 → 프로필 저장).
+// 판정 결과가 서로 다른 시연 프로필 4종을 만들거나 덮어씁니다. 웹 API만 씁니다(로그인 또는 가입 → 동의 → 프로필 저장).
 //
 //   DEMO_PASSWORD='...' npm run seed:demo                      # 로컬 backend(http://localhost:8000)
 //   DEMO_API_URL=https://cbnu-scholarship.vercel.app/api DEMO_PASSWORD='...' npm run seed:demo
 //
 // - 비밀번호는 환경변수로만 받고 출력하지 않습니다(8자 이상). 이미 있는 계정이면 로그인해서 프로필만 덮어씁니다.
+// - 없는 계정은 이메일 인증번호로 가입하므로 backend가 MAIL_MOCK=1일 때만 새로 만들 수 있습니다.
 // - 출력은 계정별 판정 개수뿐입니다. 프로필 값은 이 파일에 적힌 가상의 값입니다.
 
 const API = (process.env.DEMO_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
@@ -13,6 +14,7 @@ if (!PASSWORD || PASSWORD.length < 8) {
   console.error('DEMO_PASSWORD 환경변수(8자 이상)를 넣어 주세요.')
   process.exit(1)
 }
+const SIGNUP_CODE = process.env.DEMO_SIGNUP_CODE ?? '000000' // backend MAIL_MOCK=1의 고정 번호
 
 // 프로필 모양은 backend `ProfileUpdate`(2026-11-10 기준)를 따릅니다.
 // - 이수학기(completed_semesters)로 학년을 계산하고, 재학상태는 보내지 않으면 재학입니다.
@@ -130,12 +132,26 @@ async function expectOk(res, what) {
   throw new Error(`${what} 실패: HTTP ${res.status} ${text.slice(0, 200)}`)
 }
 
+/**
+ * 새 계정 가입 (계획서 7.3): 인증번호 받기 → 확인 → 가입.
+ * 메일을 읽을 수 없으므로 backend가 MAIL_MOCK=1(번호 000000)일 때만 됩니다.
+ * 운영에서는 시연 계정을 화면에서 한 번 가입해 두고, 이 스크립트는 로그인해서 프로필만 덮어씁니다.
+ */
+async function signup(call, email) {
+  let res = await call('POST', '/auth/signup/code', { email })
+  await expectOk(res, `${email} 인증번호 받기`)
+  const { code_token } = await res.json()
+  res = await call('POST', '/auth/signup/verify', { code_token, code: SIGNUP_CODE })
+  await expectOk(res, `${email} 인증번호 확인 (backend MAIL_MOCK=1인지 확인하세요)`)
+  const { signup_token } = await res.json()
+  return call('POST', '/auth/signup', { signup_token, password: PASSWORD })
+}
+
 async function seed(demo) {
   const call = client()
-  const credentials = { email: demo.email, password: PASSWORD }
-  let res = await call('POST', '/auth/signup', credentials)
-  if (res.status === 409) res = await call('POST', '/auth/login', credentials)
-  await expectOk(res, `${demo.email} 가입·로그인`)
+  let res = await call('POST', '/auth/login', { email: demo.email, password: PASSWORD })
+  if (res.status === 401) res = await signup(call, demo.email)
+  await expectOk(res, `${demo.email} 로그인·가입`)
 
   await expectOk(
     await call('POST', '/auth/consent', { privacy: true, sensitive: demo.sensitive }),

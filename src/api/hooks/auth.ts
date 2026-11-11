@@ -52,6 +52,23 @@ function useSetMe() {
   return (me: Me) => queryClient.setQueryData(meKey, me)
 }
 
+/** 가입 1단계: 인증번호 메일 받기 (7.3). 이미 가입된 이메일은 409. */
+export function useSignupCode() {
+  return useMutation({
+    mutationFn: (body: Schemas['SignupCodeRequest']) =>
+      apiRequest<Schemas['SignupCodeResponse']>('/auth/signup/code', 'POST', body),
+  })
+}
+
+/** 가입 2단계: 메일로 받은 6자리 번호 확인 → signup_token. */
+export function useSignupVerify() {
+  return useMutation({
+    mutationFn: (body: Schemas['SignupVerifyRequest']) =>
+      apiRequest<Schemas['SignupVerifyResponse']>('/auth/signup/verify', 'POST', body),
+  })
+}
+
+/** 가입 3단계: 인증된 이메일(signup_token)과 비밀번호로 계정 만들기. */
 export function useSignup() {
   const setMe = useSetMe()
   return useMutation({
