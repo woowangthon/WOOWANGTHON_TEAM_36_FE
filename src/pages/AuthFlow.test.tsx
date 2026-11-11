@@ -1,9 +1,15 @@
 // T24: 가입 → 동의 → 프로필 → 대시보드 흐름과 라우팅 가드 (MSW 목 API)
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 
 import { googleLoginUrl, safeNext } from '@/api/hooks/auth'
-import { MOCK_PASSWORD, resetMockState, signOut, startLoggedOut } from '@/mocks/handlers'
+import {
+  MOCK_PASSWORD,
+  MOCK_SIGNUP_CODE,
+  resetMockState,
+  signOut,
+  startLoggedOut,
+} from '@/mocks/handlers'
 import { server } from '@/mocks/node'
 import { renderApp } from '@/test/renderApp'
 
@@ -15,6 +21,15 @@ function type(label: string | RegExp, value: string) {
 
 function select(label: string | RegExp, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } })
+}
+
+/** 가입 1·2단계: 인증번호를 받고 확인합니다 (7.3, 목 번호 000000). */
+async function verifyEmail(email: string, code = MOCK_SIGNUP_CODE) {
+  type('이메일', email)
+  fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+  await screen.findByLabelText('인증번호')
+  type('인증번호', code)
+  fireEvent.click(screen.getByRole('button', { name: '확인' }))
 }
 
 async function fillRequiredProfile() {
@@ -46,7 +61,8 @@ describe('가입 흐름', () => {
 
     // 가입
     await screen.findByRole('heading', { name: '회원가입' })
-    type('이메일', 'new@example.com')
+    await verifyEmail('new@example.com')
+    await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
     type('비밀번호', 'password123')
     type('비밀번호 확인', 'password123')
     fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
@@ -86,17 +102,119 @@ describe('가입 흐름', () => {
     server.events.removeAllListeners()
   })
 
-  it('가입 비밀번호 규칙과 확인 불일치를 알려 준다', async () => {
+  it('인증번호를 확인하기 전에는 비밀번호 칸과 가입 버튼이 잠겨 있다', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    expect(screen.getByLabelText('비밀번호')).toBeDisabled()
+    expect(screen.getByLabelText('비밀번호 확인')).toBeDisabled()
+    expect(screen.getByRole('button', { name: '가입하기' })).toBeDisabled()
+
+    type('이메일', 'new@example.com')
+    fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+    await screen.findByLabelText('인증번호')
+    expect(
+      screen.getByText('메일이 안 오면 스팸함을 확인하세요. 1분 뒤 다시 받을 수 있어요.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/남은 시간 10:00|남은 시간 9:5\d/)).toBeInTheDocument()
+    expect(screen.getByLabelText('비밀번호')).toBeDisabled()
+
+    type('인증번호', MOCK_SIGNUP_CODE)
+    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+    await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
+    expect(screen.getByLabelText('이메일')).toHaveAttribute('readonly')
+    expect(screen.getByText('인증을 마친 이메일입니다')).toBeInTheDocument()
+    expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
+  })
+
+  it('틀린 인증번호와 형식 오류를 알려 준다', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    await verifyEmail('new@example.com', '123')
+    expect(await screen.findByText('인증번호 6자리 숫자를 입력하세요')).toBeInTheDocument()
+
+    type('인증번호', '123456')
+    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+    expect(await screen.findByText('인증번호가 맞지 않아요')).toBeInTheDocument()
+    expect(screen.getByLabelText('비밀번호')).toBeDisabled()
+  })
+
+  it('이미 가입된 이메일이면 로그인으로 안내하고 번호 칸을 열지 않는다', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    type('이메일', 'student@example.com')
+    fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+    const alert = await screen.findByText(/이미 가입된 이메일이에요/)
+    expect(within(alert).getByRole('link', { name: '로그인' })).toHaveAttribute('href', '/login')
+    expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
+  })
+
+  it('이메일 형식이 틀리면 인증번호를 보내지 않는다', async () => {
     startLoggedOut()
     renderApp('/signup')
     await screen.findByRole('heading', { name: '회원가입' })
     type('이메일', 'not-email')
+    fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+    expect(await screen.findByText('이메일 형식이 아닙니다')).toBeInTheDocument()
+    expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
+  })
+
+  it('다시 받기는 1분 뒤에만 누를 수 있다', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      startLoggedOut()
+      renderApp('/signup')
+      await screen.findByRole('heading', { name: '회원가입' })
+      type('이메일', 'new@example.com')
+      fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+      await screen.findByLabelText('인증번호')
+      expect(screen.getByRole('button', { name: /다시 받기 \(/ })).toBeDisabled()
+
+      await act(() => vi.advanceTimersByTimeAsync(61_000))
+      const resend = screen.getByRole('button', { name: '다시 받기' })
+      expect(resend).toBeEnabled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('가입 비밀번호 규칙과 확인 불일치를 알려 준다', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    await verifyEmail('new@example.com')
+    await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
     type('비밀번호', 'short')
     type('비밀번호 확인', 'other')
     fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
-    expect(await screen.findByText('이메일 형식이 아닙니다')).toBeInTheDocument()
-    expect(screen.getByText('비밀번호는 8자 이상이어야 합니다')).toBeInTheDocument()
+    expect(await screen.findByText('비밀번호는 8자 이상이어야 합니다')).toBeInTheDocument()
     expect(screen.getByText('비밀번호가 서로 다릅니다')).toBeInTheDocument()
+  })
+
+  it('인증 시간이 지나 가입이 거부되면 처음 단계로 돌아간다', async () => {
+    startLoggedOut()
+    server.use(
+      http.post('/api/auth/signup', () =>
+        HttpResponse.json(
+          { detail: '인증 시간이 지났어요. 이메일 인증을 다시 해 주세요' },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    await verifyEmail('new@example.com')
+    await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
+    type('비밀번호', 'password123')
+    type('비밀번호 확인', 'password123')
+    fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
+    expect(
+      await screen.findByText('인증 시간이 지났어요. 이메일 인증을 다시 해 주세요'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '인증번호 받기' })).toBeInTheDocument()
+    expect(screen.getByLabelText('비밀번호')).toBeDisabled()
   })
 })
 

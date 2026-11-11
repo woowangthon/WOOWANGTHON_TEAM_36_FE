@@ -21,6 +21,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/signup/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signup Code
+         * @description 가입 1단계: 6자리 인증번호를 메일로 보냅니다(7.3). 번호는 저장하지 않습니다.
+         */
+        post: operations["signup_code_auth_signup_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/signup/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signup Verify
+         * @description 가입 2단계: 번호가 맞으면 30분 동안 가입할 수 있는 `signup_token`을 줍니다(7.3).
+         */
+        post: operations["signup_verify_auth_signup_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/signup": {
         parameters: {
             query?: never;
@@ -32,7 +72,7 @@ export interface paths {
         put?: never;
         /**
          * Signup
-         * @description 가입하고 JWT 쿠키를 발급합니다. 메일 발송이 없어 이메일 소유 확인은 하지 않습니다(7.3).
+         * @description 가입 3단계: 인증번호로 확인한 이메일로 계정을 만들고 JWT 쿠키를 발급합니다(7.3).
          */
         post: operations["signup_auth_signup_post"];
         delete?: never;
@@ -758,12 +798,49 @@ export interface components {
              */
             status: "OPEN" | "ALWAYS" | "CLOSED";
         };
-        /** SignupRequest */
-        SignupRequest: {
+        /**
+         * SignupCodeRequest
+         * @description 가입 1단계: 인증번호 메일 받기 (7.3).
+         */
+        SignupCodeRequest: {
             /** Email */
             email: string;
+        };
+        /** SignupCodeResponse */
+        SignupCodeResponse: {
+            /** Code Token */
+            code_token: string;
+            /** Expires In */
+            expires_in: number;
+            /** Resend After */
+            resend_after: number;
+        };
+        /**
+         * SignupRequest
+         * @description 가입 3단계: 확인된 이메일(`signup_token`)로 계정 만들기. 이메일은 따로 받지 않습니다.
+         */
+        SignupRequest: {
+            /** Signup Token */
+            signup_token: string;
             /** Password */
             password: string;
+        };
+        /**
+         * SignupVerifyRequest
+         * @description 가입 2단계: 메일로 받은 6자리 번호 확인.
+         */
+        SignupVerifyRequest: {
+            /** Code Token */
+            code_token: string;
+            /** Code */
+            code: string;
+        };
+        /** SignupVerifyResponse */
+        SignupVerifyResponse: {
+            /** Signup Token */
+            signup_token: string;
+            /** Expires In */
+            expires_in: number;
         };
         /** StateRequest */
         StateRequest: {
@@ -837,6 +914,107 @@ export interface operations {
             };
         };
     };
+    signup_code_auth_signup_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignupCodeResponse"];
+                };
+            };
+            /** @description 이미 가입된 이메일 */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 발송 제한 초과 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 메일 발송 실패 */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    signup_verify_auth_signup_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignupVerifyResponse"];
+                };
+            };
+            /** @description 인증번호 불일치·만료 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 확인 시도 제한 초과 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     signup_auth_signup_post: {
         parameters: {
             query?: never;
@@ -858,6 +1036,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MeResponse"];
                 };
+            };
+            /** @description 인증이 만료됐거나 유효하지 않음 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description 이미 가입된 이메일 */
             409: {

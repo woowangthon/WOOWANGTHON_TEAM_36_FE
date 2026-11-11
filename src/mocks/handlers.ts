@@ -25,6 +25,8 @@ const score100 = (gpa: number | null | undefined) =>
 
 /** 목 로그인에 쓰는 비밀번호. 다른 값이면 401을 돌려줍니다. */
 export const MOCK_PASSWORD = 'password123'
+/** 목 API의 가입 인증번호 (backend MAIL_MOCK=1과 같음) */
+export const MOCK_SIGNUP_CODE = '000000'
 
 // 화면에서 상태를 바꿔 볼 수 있게 메모리에 복사본을 둡니다. resetMockState()로 되돌립니다.
 // 기본은 동의·프로필까지 마친 로그인 상태이고, startLoggedOut()으로 가입 흐름을 시작할 수 있습니다.
@@ -111,11 +113,43 @@ const notFound = () => HttpResponse.json({ detail: 'Not Found' }, { status: 404 
 export const handlers: RequestHandler[] = [
   // 인증 (7.2, 7.3)
   http.get('/api/auth/me', () => (me ? HttpResponse.json(withSummary(me)) : unauthorized())),
+  // 가입 3단계 (7.3). 목에서는 인증번호가 MOCK_SIGNUP_CODE로 고정이고, 토큰에 이메일을 그대로 담습니다.
+  http.post('/api/auth/signup/code', async ({ request }) => {
+    const { email } = (await request.json()) as Schemas['SignupCodeRequest']
+    const normalized = email.trim().toLowerCase()
+    if (normalized === mockMe.email) {
+      return HttpResponse.json({ detail: '이미 가입된 이메일입니다' }, { status: 409 })
+    }
+    return HttpResponse.json({
+      code_token: `mock-code:${normalized}`,
+      expires_in: 600,
+      resend_after: 60,
+    } satisfies Schemas['SignupCodeResponse'])
+  }),
+  http.post('/api/auth/signup/verify', async ({ request }) => {
+    const body = (await request.json()) as Schemas['SignupVerifyRequest']
+    if (!body.code_token.startsWith('mock-code:')) {
+      return HttpResponse.json({ detail: '이메일 인증을 처음부터 다시 해 주세요' }, { status: 400 })
+    }
+    if (body.code !== MOCK_SIGNUP_CODE) {
+      return HttpResponse.json({ detail: '인증번호가 맞지 않아요' }, { status: 400 })
+    }
+    return HttpResponse.json({
+      signup_token: `mock-signup:${body.code_token.slice('mock-code:'.length)}`,
+      expires_in: 1800,
+    } satisfies Schemas['SignupVerifyResponse'])
+  }),
   http.post('/api/auth/signup', async ({ request }) => {
     const body = (await request.json()) as Schemas['SignupRequest']
+    if (!body.signup_token.startsWith('mock-signup:')) {
+      return HttpResponse.json(
+        { detail: '인증 시간이 지났어요. 이메일 인증을 다시 해 주세요' },
+        { status: 400 },
+      )
+    }
     me = {
       ...mockMe,
-      email: body.email.toLowerCase(),
+      email: body.signup_token.slice('mock-signup:'.length),
       privacy_agreed: false,
       sensitive_agreed: false,
       profile_completed: false,
