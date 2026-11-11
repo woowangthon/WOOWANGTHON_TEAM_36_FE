@@ -105,7 +105,7 @@ export default function DashboardPage() {
       <h1 className="text-xl font-semibold text-brand-900">맞춤 장학금</h1>
       <section
         aria-label="목록 필터"
-        className="grid gap-3 rounded-xl border border-brand-200 bg-background p-4"
+        className="grid gap-3 rounded-xl border border-brand-200 bg-background p-3 sm:p-4"
       >
         <div className="relative">
           <Search

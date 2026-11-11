@@ -29,7 +29,7 @@ export default function MyListPage() {
   const list = useScholarships({ result: 'all', sort: 'deadline', state: tab })
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4">
       <div className="grid gap-3">
         <Link
           to="/dashboard"
@@ -77,7 +77,7 @@ function ProfileSummary() {
   return (
     <section
       aria-label="프로필 요약"
-      className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-brand-200 bg-background p-4"
+      className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-brand-200 bg-background p-3 sm:p-4"
     >
       <div className="grid min-w-0 gap-1">
         <p className="text-lg font-semibold text-brand-900">{me?.nickname ?? '닉네임 없음'}</p>
