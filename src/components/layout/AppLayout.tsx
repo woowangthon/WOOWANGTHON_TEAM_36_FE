@@ -8,6 +8,8 @@ import { Link, NavLink, Outlet, useMatch } from 'react-router'
  */
 export function AppLayout() {
   const isDashboard = useMatch('/dashboard') !== null
+  // 내 정보는 왼쪽 프로필 + 오른쪽 내 장학금 2단이라 더 넓게 씁니다 (T58)
+  const isMyPage = useMatch('/my') !== null
   return (
     <div className={`min-h-svh ${isDashboard ? 'bg-white' : 'bg-brand-50'}`}>
       <header className="sticky top-0 z-10 border-b border-brand-100 bg-white/90 backdrop-blur">
@@ -31,7 +33,11 @@ export function AppLayout() {
           </NavLink>
         </div>
       </header>
-      <main className={isDashboard ? 'pb-12' : 'mx-auto max-w-3xl px-4 pt-5 pb-12'}>
+      <main
+        className={
+          isDashboard ? 'pb-12' : `mx-auto px-4 pt-5 pb-12 ${isMyPage ? 'max-w-5xl' : 'max-w-3xl'}`
+        }
+      >
         <Outlet />
       </main>
     </div>

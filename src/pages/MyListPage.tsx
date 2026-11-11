@@ -5,6 +5,7 @@ import { useLogout, useMe, type Me } from '@/api/hooks/auth'
 import { useScholarships } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
+import { Avatar } from '@/components/profile/Avatar'
 import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ const EMPTY: Record<Tab, string> = {
 
 // 내 정보 (T52): 프로필 요약 + 내 장학금(관심 / 신청완료) + 로그아웃.
 // 마감된 장학금도 포함합니다(backend가 state 조회 때 포함).
+// 넓은 화면에서는 왼쪽에 프로필 상자, 오른쪽 큰 상자에 내 장학금(바 형태)을 둡니다 (T58).
 // 프로필 요약은 모든 화면이 이미 불러오는 /auth/me 값을 써서, 이 화면은 목록 API만 부릅니다(계획서 9.8, BE #44).
 export default function MyListPage() {
   const [search, setSearch] = useSearchParams()
@@ -40,28 +42,39 @@ export default function MyListPage() {
         </Link>
         <h1 className="text-xl font-semibold text-brand-900">내 정보</h1>
       </div>
-      <ProfileSummary />
-      <section aria-labelledby="my-scholarships" className="grid gap-4">
-        <h2 id="my-scholarships" className="text-lg font-semibold">
-          내 장학금
-        </h2>
-        <SegmentedTabs
-          label="내 장학금 구분"
-          options={TABS}
-          value={tab}
-          onChange={(value) =>
-            setSearch(value === 'bookmarked' ? {} : { tab: value }, { replace: true })
-          }
-        />
-        {list.isPending ? (
-          <ListSkeleton />
-        ) : list.isError ? (
-          <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />
-        ) : (
-          <ScholarshipList items={list.data} empty={EMPTY[tab]} />
-        )}
-      </section>
-      <AccountFooter />
+      <div className="grid gap-4 lg:grid-cols-[17.5rem_minmax(0,1fr)] lg:items-start">
+        <aside className="grid gap-4 rounded-xl border border-brand-200 bg-background p-4 lg:sticky lg:top-20">
+          <ProfileSummary />
+          <AccountFooter />
+        </aside>
+        <section
+          aria-labelledby="my-scholarships"
+          className="grid gap-4 rounded-xl border border-brand-200 bg-background p-3 sm:p-5"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="my-scholarships" className="text-lg font-semibold text-brand-900">
+              내 장학금
+            </h2>
+            <div className="w-full sm:w-64">
+              <SegmentedTabs
+                label="내 장학금 구분"
+                options={TABS}
+                value={tab}
+                onChange={(value) =>
+                  setSearch(value === 'bookmarked' ? {} : { tab: value }, { replace: true })
+                }
+              />
+            </div>
+          </div>
+          {list.isPending ? (
+            <ListSkeleton variant="row" />
+          ) : list.isError ? (
+            <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />
+          ) : (
+            <ScholarshipList items={list.data} empty={EMPTY[tab]} variant="row" />
+          )}
+        </section>
+      </div>
     </div>
   )
 }
@@ -75,16 +88,18 @@ function ProfileSummary() {
   const facts = me ? summaryFacts(me) : []
 
   return (
-    <section
-      aria-label="프로필 요약"
-      className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-brand-200 bg-background p-3 sm:p-4"
-    >
+    <section aria-label="프로필 요약" className="grid justify-items-center gap-3 text-center">
+      {me && <Avatar userId={me.id} className="size-40" />}
       <div className="grid min-w-0 gap-1">
         <p className="text-lg font-semibold text-brand-900">{me?.nickname ?? '닉네임 없음'}</p>
         <p className="truncate text-xs text-muted-foreground">{me?.email}</p>
-        {facts.length > 0 && <p className="text-sm">{facts.join(' · ')}</p>}
       </div>
-      <Button asChild variant="outline">
+      {facts.length > 0 && (
+        <p className="w-full rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900">
+          {facts.join(' · ')}
+        </p>
+      )}
+      <Button asChild variant="outline" className="w-full">
         <Link to="/profile">
           <Pencil aria-hidden="true" />
           프로필 수정
@@ -107,8 +122,8 @@ function AccountFooter() {
   const logout = useLogout()
 
   return (
-    <section aria-label="계정" className="grid gap-2 border-t border-brand-200 pt-4">
-      <div className="flex flex-wrap items-center gap-2">
+    <section aria-label="계정" className="grid gap-2 border-t border-brand-100 pt-3">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <Button
           variant="outline"
           disabled={logout.isPending}
