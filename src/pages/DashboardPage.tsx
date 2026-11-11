@@ -102,7 +102,12 @@ export default function DashboardPage() {
 
   return (
     <div className="grid gap-4">
-      <h1 className="text-xl font-semibold text-brand-900">맞춤 장학금</h1>
+      <div className="grid gap-1">
+        <h1 className="text-xl font-semibold text-brand-900">맞춤 장학금</h1>
+        <p className="text-sm text-muted-foreground">
+          소프트웨어학부 재학생 기준 · 학부·사업단·한국장학재단 공지를 모았어요
+        </p>
+      </div>
       <section
         aria-label="목록 필터"
         className="grid gap-3 rounded-xl border border-brand-200 bg-background p-3 sm:p-4"

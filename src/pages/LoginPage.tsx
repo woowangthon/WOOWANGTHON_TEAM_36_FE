@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { nextPathFor, safeNext, useLogin } from '@/api/hooks/auth'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { GoogleButton, OrDivider } from '@/components/auth/GoogleButton'
+import { TargetNotice } from '@/components/auth/TargetNotice'
 import { Field, FormError } from '@/components/form/Field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,6 +38,7 @@ export default function LoginPage() {
   return (
     <AuthLayout title="로그인" description="내 조건에 맞는 장학금을 한 화면에서 확인하세요.">
       <div className="grid gap-4">
+        <TargetNotice />
         {googleFailed && (
           <FormError message="Google 로그인에 실패했습니다. 다시 시도하거나 이메일로 로그인하세요." />
         )}
