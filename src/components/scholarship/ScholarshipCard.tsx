@@ -143,9 +143,56 @@ function BookmarkHeart({ item }: { item: ScholarshipSummary }) {
   )
 }
 
-export function ListSkeleton() {
+/**
+ * 바 형태 한 줄 (T58, 내 정보). 이미 고른 장학금을 마감 순으로 훑기 좋게 한 줄에 하나씩 둡니다.
+ * 카드와 같은 정보·하트를 쓰고, 줄 전체를 누르면 상세로 갑니다.
+ */
+export function ScholarshipRow({ item }: { item: ScholarshipSummary }) {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2" aria-busy="true" aria-label="불러오는 중">
+    <li className="relative flex items-start gap-3 rounded-lg px-2 py-3 transition-colors focus-within:ring-3 focus-within:ring-ring/50 hover:bg-brand-50">
+      <div className="grid min-w-0 flex-1 gap-1">
+        <h3 className="font-medium break-keep">
+          <Link
+            to={`/scholarships/${item.id}`}
+            className="after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none"
+          >
+            {item.name}
+          </Link>
+        </h3>
+        <SourceLine item={item} className="text-xs" />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="inline-flex items-center gap-1">
+            <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
+            <DeadlineText item={item} />
+          </span>
+          {item.deadline_conflict && <DeadlineConflictNote />}
+          {item.benefit_amount_text && (
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-700">
+              <Wallet aria-hidden="true" className="size-4" />
+              {item.benefit_amount_text}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <ResultBadge result={item.result} />
+        {item.my_state === 'APPLIED' ? (
+          <span className="text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
+        ) : (
+          <BookmarkHeart item={item} />
+        )}
+      </div>
+    </li>
+  )
+}
+
+export function ListSkeleton({ variant = 'card' }: { variant?: 'card' | 'row' }) {
+  return (
+    <ul
+      className={`grid gap-3 ${variant === 'card' ? 'sm:grid-cols-2' : ''}`}
+      aria-busy="true"
+      aria-label="불러오는 중"
+    >
       {[0, 1, 2, 3].map((i) => (
         <li key={i} className="h-28 animate-pulse rounded-xl border border-brand-200 bg-muted/60" />
       ))}
@@ -156,9 +203,12 @@ export function ListSkeleton() {
 export function ScholarshipList({
   items,
   empty,
+  variant = 'card',
 }: {
   items: ScholarshipSummary[]
   empty: React.ReactNode
+  /** card: 대시보드 2열 카드, row: 내 정보 바 형태 */
+  variant?: 'card' | 'row'
 }) {
   if (items.length === 0) {
     return (
@@ -167,7 +217,13 @@ export function ScholarshipList({
       </p>
     )
   }
-  return (
+  return variant === 'row' ? (
+    <ul className="grid divide-y divide-brand-100">
+      {items.map((item) => (
+        <ScholarshipRow key={item.id} item={item} />
+      ))}
+    </ul>
+  ) : (
     <ul className="grid gap-3 sm:grid-cols-2">
       {items.map((item) => (
         <ScholarshipCard key={item.id} item={item} />

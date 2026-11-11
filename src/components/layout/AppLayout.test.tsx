@@ -20,6 +20,10 @@ describe('상단 프로필 아이콘과 내 정보 화면', () => {
     expect(await within(summary).findByText('김충북')).toBeInTheDocument()
     expect(within(summary).getByText(/5학기 이수/)).toBeInTheDocument()
     expect(within(summary).queryByText(/소득/)).not.toBeInTheDocument() // 민감정보는 요약에서 뺌
+    // 회원 번호로 고른 우왕이 캐릭터 (T58, 목 회원 번호 1 → 기본 우왕이)
+    expect(
+      within(summary).getByRole('img', { name: '프로필 캐릭터: 기본 우왕이' }),
+    ).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '내 장학금' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: '관심' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: '관리자 화면' })).not.toBeInTheDocument()
