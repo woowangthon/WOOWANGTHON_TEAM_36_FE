@@ -1,4 +1,4 @@
-import { ArrowUpDown, School, Search, Wallet, type LucideIcon } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, School, Search, Wallet, type LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -220,9 +220,9 @@ export default function DashboardPage() {
         {/* 스크롤해도 따라오는 사이드바. 화면보다 길면 사이드바 안에서만 스크롤됩니다 (상단 바 64px + 여백) */}
         <aside
           aria-label="바로가기"
-          className="hidden content-start gap-4 [scrollbar-width:thin] lg:sticky lg:top-20 lg:grid lg:max-h-[calc(100svh-6rem)] lg:self-start lg:overflow-y-auto lg:pb-1"
+          className="hidden min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 [scrollbar-width:thin] lg:sticky lg:top-20 lg:grid lg:max-h-[calc(100svh-6rem)] lg:self-start lg:overflow-y-auto lg:pb-1"
         >
-          <SidePanel className="grid" />
+          <SidePanel className="grid min-w-0 grid-cols-[minmax(0,1fr)]" />
           <DeadlineSoon
             items={items}
             onShowAll={tab === 'all' ? undefined : () => update('tab', 'all', 'eligible')}
@@ -234,7 +234,11 @@ export default function DashboardPage() {
   )
 }
 
-/** 토스형 드롭다운. 휴대폰 폭에서는 아이콘을 숨겨 글자 자리를 확보합니다 (T51). */
+/**
+ * 토스형 드롭다운. 휴대폰 폭에서는 왼쪽 아이콘을 숨겨 글자 자리를 확보합니다 (T51).
+ * Safari는 기본 모양 select(appearance-auto)의 왼쪽 여백을 무시해 아이콘과 글자가 겹치므로,
+ * 기본 모양을 끄고(appearance-none) 오른쪽 화살표를 직접 그립니다 (T67).
+ */
 function FilterSelect<T extends string>({
   label,
   icon: Icon,
@@ -258,7 +262,7 @@ function FilterSelect<T extends string>({
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
-        className={`${FIELD} appearance-auto pr-1 pl-2 sm:pl-9`}
+        className={`${FIELD} cursor-pointer appearance-none truncate pr-6 pl-2 sm:pr-8 sm:pl-9`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -266,6 +270,10 @@ function FilterSelect<T extends string>({
           </option>
         ))}
       </select>
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-muted-foreground sm:right-2.5 sm:size-4"
+      />
     </div>
   )
 }
