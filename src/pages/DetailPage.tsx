@@ -61,7 +61,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
   return (
     <article className="grid gap-4">
       <BackLink />
-      <section className="rounded-xl border bg-background p-5">
+      <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <h1 className="min-w-0 text-xl font-semibold break-keep">{item.name}</h1>
           <ResultBadge result={item.result} />
@@ -113,7 +113,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
       )}
 
       {item.required_documents.length > 0 && (
-        <section className="rounded-xl border bg-background p-5">
+        <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
           <h2 className="flex items-center gap-1.5 font-semibold">
             <FileText aria-hidden="true" className="size-5 text-brand-700" />
             제출 서류
@@ -126,7 +126,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
         </section>
       )}
 
-      <section className="rounded-xl border bg-background p-5 text-sm">
+      <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
         <h2 className="flex items-center gap-1.5 font-semibold">
           <Megaphone aria-hidden="true" className="size-5 text-brand-700" />
           원문 공지
@@ -187,7 +187,7 @@ function Mark({ outcome, small }: { outcome: ConditionCheck['outcome']; small?: 
 /** 조건별 ✓ ✗ ? 와 공지 원문 근거 (5.3). extra_conditions는 코드로 비교할 수 없어 ?로 둡니다. */
 function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra: string[] }) {
   return (
-    <section className="rounded-xl border bg-background p-5">
+    <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
       <h2 className="flex items-center gap-1.5 font-semibold">
         <ListChecks aria-hidden="true" className="size-5 text-brand-700" />
         조건 확인
@@ -253,7 +253,7 @@ function UnreadNotice({ files, truncated }: { files: UnreadAttachment[]; truncat
   return (
     <section
       aria-labelledby="unread-title"
-      className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm"
+      className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm sm:p-4"
     >
       <h2 id="unread-title" className="font-semibold text-amber-900">
         첨부파일을 직접 확인하세요
@@ -353,7 +353,7 @@ function BackLink() {
 
 function NotFound() {
   return (
-    <div className="rounded-xl border bg-background p-6 text-center text-sm">
+    <div className="rounded-xl border border-brand-200 bg-background p-6 text-center text-sm">
       <p className="text-muted-foreground">장학금을 찾을 수 없습니다.</p>
       <Link to="/dashboard" className="mt-3 inline-block underline underline-offset-4">
         목록으로

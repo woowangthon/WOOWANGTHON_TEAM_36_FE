@@ -82,7 +82,7 @@ export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
     <li>
       <Link
         to={`/scholarships/${item.id}`}
-        className="block rounded-xl border border-brand-200 bg-background p-4 transition hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="block rounded-xl border border-brand-200 bg-background p-3 transition sm:p-4 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <div className="flex items-start justify-between gap-3">
           <h3 className="min-w-0 font-medium break-keep">{item.name}</h3>
@@ -116,7 +116,7 @@ export function ListSkeleton() {
   return (
     <ul className="grid gap-3" aria-busy="true" aria-label="불러오는 중">
       {[0, 1, 2].map((i) => (
-        <li key={i} className="h-28 animate-pulse rounded-xl border bg-muted/60" />
+        <li key={i} className="h-28 animate-pulse rounded-xl border border-brand-200 bg-muted/60" />
       ))}
     </ul>
   )
@@ -131,7 +131,7 @@ export function ScholarshipList({
 }) {
   if (items.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+      <p className="rounded-xl border border-dashed border-brand-200 p-8 text-center text-sm text-muted-foreground">
         {empty}
       </p>
     )

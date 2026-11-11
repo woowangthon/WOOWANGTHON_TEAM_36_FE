@@ -37,7 +37,10 @@ export function AppLayout() {
 
 export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div role="alert" className="rounded-xl border bg-background p-6 text-center text-sm">
+    <div
+      role="alert"
+      className="rounded-xl border border-brand-200 bg-background p-6 text-center text-sm"
+    >
       <p className="text-muted-foreground">{message}</p>
       {onRetry && (
         <button type="button" onClick={onRetry} className="mt-3 underline underline-offset-4">
