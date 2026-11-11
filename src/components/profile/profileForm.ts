@@ -16,8 +16,8 @@ export const INCOME_OPTIONS = [
   ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}구간` })),
 ]
 
-const NICKNAME = /^[가-힣A-Za-z0-9]{2,10}$/
-const NICKNAME_RULE = '닉네임은 한글·영문·숫자로 2~10자 입력하세요'
+// 닉네임 규칙(4.3): 2~10자, 한글(완성형)·영문·숫자, 숫자만은 불가. 어긴 이유마다 다른 문장을 보여 줍니다.
+const NICKNAME_CHARS = /^[가-힣A-Za-z0-9]+$/
 const INTEGER = /^\d+$/
 const DECIMAL = /^\d+(\.\d+)?$/
 const TWO_DECIMALS = /^\d+(\.\d{1,2})?$/
@@ -104,7 +104,10 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
   const issue: Issue = (path, message) => ctx.addIssue({ code: 'custom', path: [path], message })
 
   if (!v.name) issue('name', '닉네임을 입력하세요')
-  else if (!NICKNAME.test(v.name)) issue('name', NICKNAME_RULE)
+  else if (/\s/.test(v.name)) issue('name', '닉네임에는 띄어쓰기를 쓸 수 없어요')
+  else if (!NICKNAME_CHARS.test(v.name))
+    issue('name', '닉네임은 한글·영문·숫자만 쓸 수 있어요 (특수기호·이모지·ㅋㅋ 같은 자음 불가)')
+  else if (v.name.length < 2 || v.name.length > 10) issue('name', '닉네임은 2~10자로 입력하세요')
   else if (INTEGER.test(v.name)) issue('name', '닉네임은 숫자만으로 만들 수 없어요')
 
   if (!v.birth_year) issue('birth_year', '출생연도를 고르세요')
