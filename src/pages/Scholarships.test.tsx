@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
 
+import { mockDetails } from '@/mocks/data'
 import { resetMockState } from '@/mocks/handlers'
 import { server } from '@/mocks/node'
 import { renderApp } from '@/test/renderApp'
@@ -142,6 +143,47 @@ describe('상세', () => {
     renderApp('/scholarships/3')
     const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
     expect(within(checklist).getByRole('img', { name: '불충족' })).toBeInTheDocument()
+  })
+
+  it('원문 보기를 누르면 공지 본문과 읽은 첨부를 같은 페이지에서 보여 준다', async () => {
+    renderApp('/scholarships/1')
+    const toggle = await screen.findByRole('button', { name: '원문 보기' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
+
+    fireEvent.click(toggle)
+    const original = screen.getByRole('region', { name: '공지 원문' })
+    expect(
+      within(original).getByText(/교외장학금 3종 장학생을 아래와 같이 모집/),
+    ).toBeInTheDocument()
+    expect(
+      within(original).getByRole('heading', { name: /첨부 · 2026-2 교외장학금 공고문\.hwp/ }),
+    ).toBeInTheDocument()
+    expect(
+      within(original).getByText(/두산연강재단 장학금 \| 2명 \| 등록금 전액/),
+    ).toBeInTheDocument()
+    expect(within(original).getByRole('link', { name: '내려받기' })).toHaveAttribute(
+      'target',
+      '_blank',
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '원문 접기' }))
+    expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
+  })
+
+  it('저장된 본문과 첨부가 모두 없으면 원문 보기를 숨긴다', async () => {
+    const [first] = mockDetails
+    server.use(
+      http.get('/api/scholarships/:id', () =>
+        HttpResponse.json({
+          ...first,
+          notice: { ...first.notice, body_text: '', attachments: [] },
+        }),
+      ),
+    )
+    renderApp('/scholarships/1')
+    await screen.findByRole('list', { name: '조건 체크리스트' })
+    expect(screen.queryByRole('button', { name: '원문 보기' })).not.toBeInTheDocument()
   })
 
   it('없는 장학금은 안내를 보여 준다', async () => {

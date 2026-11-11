@@ -49,6 +49,15 @@ const noticeA = {
   title: '2026학년도 2학기 교외장학금 3종 모집 ( ~11.12 18:00)',
   url: 'https://software.cbnu.ac.kr/index.php?mid=sub0401&document_srl=1154830',
   posted_at: '2026-10-30T09:00:00+09:00',
+  body_text:
+    '2026학년도 2학기 교외장학금 3종 장학생을 아래와 같이 모집하오니 희망하는 학생은 기한 내 신청하기 바랍니다.\n\n1. 신청 기간: 2026. 11. 3.(월) ~ 11. 12.(수) 18:00\n2. 신청 방법: 학부 사무실 방문 제출\n3. 장학금별 자격 요건은 첨부 공고문을 확인하세요.\n\n문의: 소프트웨어학부 행정실 043-000-0000',
+  attachments: [
+    {
+      name: '2026-2 교외장학금 공고문.hwp',
+      url: 'https://software.cbnu.ac.kr/files/notice-1154830.hwp',
+      text: '장학금명 | 선발 인원 | 지원 금액\n두산연강재단 장학금 | 2명 | 등록금 전액\n논산시 인재육성 장학금 | 1명 | 200만 원\n여성공학인 장학금 | 1명 | 150만 원\n\n지원 자격: 직전학기 평점평균 3.0 이상, 직전학기 12학점 이상 이수',
+    },
+  ],
 }
 
 export const mockDetails: ScholarshipDetail[] = [
@@ -161,6 +170,8 @@ export const mockDetails: ScholarshipDetail[] = [
       title: '[장학금] 양성인재 학업장려금 지급 기준 안내',
       url: 'https://aibc.cbnu.ac.kr/menu/1108/aq74eFJIirVMESsaQS7qtM',
       posted_at: '2026-03-02T10:00:00+09:00',
+      body_text: '공지 본문입니다. 자세한 내용은 원문 링크를 확인하세요.',
+      attachments: [],
     },
     siblings: [],
   },
@@ -187,6 +198,8 @@ export const mockDetails: ScholarshipDetail[] = [
       title: '2026년 2학기 국가근로장학금 신청 안내',
       url: 'https://kosaf.go.kr/ko/notice.do?mode=view&seqNo=21449',
       posted_at: '2026-07-28T14:00:00+09:00',
+      body_text: '공지 본문입니다. 자세한 내용은 원문 링크를 확인하세요.',
+      attachments: [],
     },
     siblings: [],
   },
@@ -233,6 +246,8 @@ export const mockDetails: ScholarshipDetail[] = [
       title: '2026년 푸른등대 기부장학금 신규장학생 선발',
       url: 'https://kosaf.go.kr/ko/notice.do?mode=view&seqNo=21510',
       posted_at: '2026-11-01T09:00:00+09:00',
+      body_text: '공지 본문입니다. 자세한 내용은 원문 링크를 확인하세요.',
+      attachments: [],
     },
     siblings: [],
   },
@@ -261,6 +276,8 @@ export const mockDetails: ScholarshipDetail[] = [
       title: '2026년 희망사다리 장학금 II유형 신청 안내',
       url: 'https://kosaf.go.kr/ko/notice.do?mode=view&seqNo=21530',
       posted_at: '2026-11-05T09:00:00+09:00',
+      body_text: '공지 본문입니다. 자세한 내용은 원문 링크를 확인하세요.',
+      attachments: [],
     },
     siblings: [],
   },
