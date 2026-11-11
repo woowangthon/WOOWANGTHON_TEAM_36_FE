@@ -273,11 +273,12 @@ describe('내 장학금', () => {
 })
 
 describe('사이드바 (T40)', () => {
-  it('초기화를 누르면 정렬·출처·지원 형태가 기본값으로 돌아간다', async () => {
+  it('초기화를 누르면 정렬·출처·지원 형태와 검색어가 기본값으로 돌아간다', async () => {
     const app = renderApp('/dashboard?sort=latest&source=internal&q=장학')
     const reset = await screen.findByRole('button', { name: '초기화' })
     fireEvent.click(reset)
-    await waitFor(() => expect(app.router.state.location.search).toBe('?q=%EC%9E%A5%ED%95%99'))
+    await waitFor(() => expect(app.router.state.location.search).toBe(''))
+    expect(screen.getByRole('searchbox', { name: '장학금 검색' })).toHaveValue('')
     expect(screen.getByRole('button', { name: '초기화' })).toBeDisabled()
   })
 

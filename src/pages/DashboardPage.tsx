@@ -94,16 +94,19 @@ export default function DashboardPage() {
     (item) => !keyword || normalize(`${item.name} ${item.source_name}`).includes(keyword),
   )
 
-  const filtered = sort !== 'deadline' || source !== '' || benefit !== ''
-  const resetFilters = () =>
+  // 초기화는 정렬·출처·지원 형태와 검색어를 함께 지웁니다 (판정 탭은 그대로)
+  const filtered = sort !== 'deadline' || source !== '' || benefit !== '' || text !== ''
+  const resetFilters = () => {
+    setText('')
     setSearch(
       (prev) => {
         const next = new URLSearchParams(prev)
-        for (const key of ['sort', 'source', 'benefit']) next.delete(key)
+        for (const key of ['sort', 'source', 'benefit', 'q']) next.delete(key)
         return next
       },
       { replace: true },
     )
+  }
 
   const update = (key: string, value: string, fallback: string) =>
     setSearch(

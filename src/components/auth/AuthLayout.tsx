@@ -18,7 +18,7 @@ export function AuthLayout({ title, description, children, wide, back }: Props) 
           <img
             src="/logo-woowangdon.png"
             alt="우왕돈이다"
-            width={640}
+            width={679}
             height={197}
             className="h-8 w-auto"
           />
