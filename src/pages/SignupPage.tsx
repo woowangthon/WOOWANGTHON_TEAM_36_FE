@@ -15,7 +15,7 @@ import { Field, FormError } from '@/components/form/Field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-const emailSchema = z.string().trim().email('이메일 형식이 아닙니다').max(320)
+const emailSchema = z.string().trim().min(1, '이메일을 입력해 주세요').email('이메일 형식이 아니에요').max(320)
 const CODE_PATTERN = /^[0-9]{6}$/
 
 // backend SignupRequest와 같은 규칙: 비밀번호 8~128자 (7.3)
@@ -25,13 +25,13 @@ const schema = z
     code: z.string(),
     password: z
       .string()
-      .min(8, '비밀번호는 8자 이상이어야 합니다')
-      .max(128, '비밀번호는 128자 이하여야 합니다'),
+      .min(8, '비밀번호는 8자 이상이어야 해요')
+      .max(128, '비밀번호는 128자 이하여야 해요'),
     passwordConfirm: z.string(),
   })
   .refine((v) => v.password === v.passwordConfirm, {
     path: ['passwordConfirm'],
-    message: '비밀번호가 서로 다릅니다',
+    message: '비밀번호가 서로 달라요',
   })
 type Values = z.infer<typeof schema>
 
@@ -154,7 +154,7 @@ export default function SignupPage() {
             id="email"
             label="이메일"
             error={errors.email?.message}
-            hint={verified ? '인증을 마친 이메일입니다' : undefined}
+            hint={verified ? '인증을 마친 이메일이에요' : undefined}
           >
             <div className="flex gap-2">
               <Input
