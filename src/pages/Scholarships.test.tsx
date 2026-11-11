@@ -321,3 +321,25 @@ describe('사이드바 추가 안내 (T57)', () => {
     }
   })
 })
+
+describe('곧 마감 빈 상태 (QA 사이드-1)', () => {
+  it('지금 목록에 가까운 마감이 없으면 전체 탭으로 바꾸는 버튼을 보여 준다', async () => {
+    const original = window.matchMedia
+    window.matchMedia = ((query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia
+    server.use(http.get('/api/scholarships', () => HttpResponse.json({ items: [] })))
+    try {
+      const app = renderApp('/dashboard')
+      const soon = await screen.findByRole('region', { name: '곧 마감되는 장학금' })
+      fireEvent.click(within(soon).getByRole('button', { name: '전체 탭에서 보기 →' }))
+      await waitFor(() => expect(app.router.state.location.search).toBe('?tab=all'))
+      expect(screen.getByRole('tab', { name: '전체' })).toHaveAttribute('aria-selected', 'true')
+    } finally {
+      window.matchMedia = original
+    }
+  })
+})

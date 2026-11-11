@@ -216,7 +216,10 @@ export default function DashboardPage() {
         </div>
         <aside aria-label="바로가기" className="hidden content-start gap-4 lg:grid">
           <SidePanel className="grid" />
-          <DeadlineSoon items={items} />
+          <DeadlineSoon
+            items={items}
+            onShowAll={tab === 'all' ? undefined : () => update('tab', 'all', 'eligible')}
+          />
           <ResultGuide />
         </aside>
       </div>

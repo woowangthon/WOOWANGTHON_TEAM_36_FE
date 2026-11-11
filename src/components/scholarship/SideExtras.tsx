@@ -33,7 +33,14 @@ const BOX = 'grid gap-2 rounded-xl border border-brand-200 bg-background p-3 sm:
  * 곧 마감되는 장학금 3개 (T57). 이미 받은 목록에서 뽑아 API를 더 부르지 않습니다(계획서 9.8).
  * 같은 장학금 이름이 목록과 겹쳐 보이므로 넓은 화면에서만 그립니다.
  */
-export function DeadlineSoon({ items }: { items: ScholarshipSummary[] | undefined }) {
+export function DeadlineSoon({
+  items,
+  onShowAll,
+}: {
+  items: ScholarshipSummary[] | undefined
+  /** 비어 있을 때 '전체' 탭으로 바꾸는 버튼 (이미 전체 탭이면 넘기지 않음, QA 사이드-1) */
+  onShowAll?: () => void
+}) {
   const id = useId()
   const wide = useIsWide()
   if (!wide || !items) return null
@@ -51,7 +58,18 @@ export function DeadlineSoon({ items }: { items: ScholarshipSummary[] | undefine
         <AlarmClock aria-hidden="true" className="size-4 text-brand-700" />곧 마감되는 장학금
       </h2>
       {soon.length === 0 ? (
-        <p className="text-xs text-muted-foreground">지금 목록에는 가까운 마감이 없어요.</p>
+        <div className="grid gap-2 rounded-lg bg-brand-50 p-3 text-xs text-muted-foreground">
+          <p>지금 목록에는 가까운 마감이 없어요.</p>
+          {onShowAll && (
+            <button
+              type="button"
+              onClick={onShowAll}
+              className="w-fit font-medium text-brand-800 underline underline-offset-4"
+            >
+              전체 탭에서 보기 →
+            </button>
+          )}
+        </div>
       ) : (
         <ul className="grid gap-1.5 text-sm">
           {soon.map((item) => {
