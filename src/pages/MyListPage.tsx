@@ -95,9 +95,12 @@ function ProfileSummary() {
         <p className="truncate text-xs text-muted-foreground">{me?.email}</p>
       </div>
       {facts.length > 0 && (
-        <p className="w-full rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900">
-          {facts.join(' · ')}
-        </p>
+        // 학년·평점을 한 줄씩 (좁은 상자에서 글자 중간에 줄이 바뀌지 않게)
+        <ul className="grid w-full gap-0.5 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900 break-keep">
+          {facts.map((fact) => (
+            <li key={fact}>{fact}</li>
+          ))}
+        </ul>
       )}
       <Button asChild variant="outline" className="w-full">
         <Link to="/profile">
@@ -109,9 +112,19 @@ function ProfileSummary() {
   )
 }
 
+/**
+ * 이수학기로 학년 표시 (T65). 백엔드 grade_of와 같은 규칙(계획서 4.1):
+ * 학년 = min(이수학기 ÷ 2(버림) + 1, 4), 8학기 이상은 초과학기.
+ */
+function gradeLabel(semesters: number): string {
+  if (semesters >= 8) return `4학년 초과학기 (${semesters}학기 이수)`
+  const grade = Math.min(Math.floor(semesters / 2) + 1, 4)
+  return `${grade}학년 (${semesters}학기 이수)`
+}
+
 function summaryFacts(me: Me): string[] {
   const facts: string[] = []
-  if (me.completed_semesters != null) facts.push(`${me.completed_semesters}학기 이수`)
+  if (me.completed_semesters != null) facts.push(gradeLabel(me.completed_semesters))
   if (me.gpa != null) facts.push(`직전학기 평점 ${me.gpa}`)
   return facts
 }
@@ -124,8 +137,10 @@ function AccountFooter() {
   return (
     <section aria-label="계정" className="grid gap-2 border-t border-brand-100 pt-3">
       <div className="flex flex-wrap items-center justify-center gap-2">
+        {/* 투명 버튼이 약해 보여 연한 살구색으로 채움 (T64) */}
         <Button
-          variant="outline"
+          variant="ghost"
+          className="bg-brand-100 text-brand-800 hover:bg-brand-200! hover:text-brand-900!"
           disabled={logout.isPending}
           onClick={() =>
             logout.mutate(undefined, { onSuccess: () => navigate('/login', { replace: true }) })

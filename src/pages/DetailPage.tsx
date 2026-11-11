@@ -6,12 +6,13 @@ import {
   CircleCheck,
   CircleHelp,
   CircleX,
-  ClipboardCheck,
   Info,
   ExternalLink,
   FileText,
   ListChecks,
   Megaphone,
+  Square,
+  SquareCheckBig,
   Wallet,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -24,7 +25,6 @@ import {
   type ConditionCheck,
   type ScholarshipDetail,
   type UnreadAttachment,
-  type UserState,
 } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
@@ -428,33 +428,35 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
   )
 }
 
-// 누른 관심은 하트를 채워 상태를 한눈에 보여 줍니다 (T53).
-// 관심은 목록 카드의 하트로 옮겼습니다 (T54). 상세에는 신청완료만 둡니다.
-const STATE_BUTTONS: { state: UserState; on: string; off: string }[] = [
-  { state: 'APPLIED', on: '신청완료 취소', off: '신청완료' },
-]
-
-/** 관심·신청완료는 하나만 고를 수 있습니다. 누른 상태를 다시 누르면 지웁니다. */
+/**
+ * 신청 완료 체크박스 (T63). 관심은 목록 카드의 하트로 옮겼고(T54), 상세에는 신청 완료만 둡니다.
+ * 글자는 항상 '신청 완료'이고 체크 여부(aria-pressed)로 상태를 보여 줍니다. 다시 누르면 체크가 풀립니다.
+ * 우리 서비스가 대신 신청하지 않으므로, 원문 공지에서 신청한 뒤 표시해 두는 용도입니다.
+ */
 function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_state'] }) {
   const mutation = useSetScholarshipState()
+  const applied = state === 'APPLIED'
+  const Icon = applied ? SquareCheckBig : Square
   return (
-    <div className="mt-5 grid gap-2">
-      <div className="grid gap-2">
-        {STATE_BUTTONS.map((button) => {
-          const active = state === button.state
-          return (
-            <Button
-              key={button.state}
-              variant={active ? 'default' : 'outline'}
-              aria-pressed={active}
-              onClick={() => mutation.mutate({ id, state: active ? null : button.state })}
-            >
-              <ClipboardCheck aria-hidden="true" />
-              {active ? button.on : button.off}
-            </Button>
-          )
-        })}
-      </div>
+    <div className="mt-5 grid gap-1.5">
+      <button
+        type="button"
+        aria-pressed={applied}
+        onClick={() => mutation.mutate({ id, state: applied ? null : 'APPLIED' })}
+        className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
+          applied
+            ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            : 'border-brand-200 bg-white text-foreground hover:border-brand-400 hover:bg-brand-50'
+        }`}
+      >
+        <Icon aria-hidden="true" className="size-5" />
+        신청 완료
+      </button>
+      <p className="text-center text-xs text-muted-foreground break-keep">
+        {applied
+          ? '내 정보 > 신청완료에 모아 뒀어요. 다시 누르면 체크가 풀려요.'
+          : '원문 공지에서 신청을 마쳤다면 체크해 두세요.'}
+      </p>
       <FormError
         message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
       />
