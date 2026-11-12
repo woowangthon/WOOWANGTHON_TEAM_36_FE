@@ -100,8 +100,14 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
       </p>
       <p className="mt-2 text-xs text-muted-foreground">이 조건에 맞나요?</p>
       <p className="mt-0.5 text-base font-semibold text-brand-900 break-keep">
-        {question.condition.text}
+        {question.condition.summary ?? question.condition.text}
       </p>
+      {question.condition.summary && (
+        // 요약이 틀렸을 때 대조할 수 있게 공지 원문을 2줄까지 함께 보여 줍니다(T44)
+        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground break-keep">
+          {question.condition.text}
+        </p>
+      )}
       <p className="mt-1.5 text-xs text-muted-foreground break-keep">{questionNote(question)}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" onClick={() => void next('YES')} disabled={saving} className={BUTTON}>

@@ -48,7 +48,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { conditionLabel } from '@/lib/conditionLabel'
 
-// 상세 (7.1): 조건별 체크리스트(충족·불충족·확인 필요 아이콘), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
+// 상세 (7.1): 조건별 체크리스트(충족·미충족·확인 필요 아이콘), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
 // 관심·신청완료 버튼, 중복 안내 문구.
 export default function DetailPage() {
   const id = Number(useParams().id)
@@ -125,7 +125,13 @@ function Detail({ item }: { item: ScholarshipDetail }) {
 
       <Checklist id={item.id} conditions={item.conditions} extra={item.extra_checks ?? []} />
 
-      <OtherNotes basic={item.basic_conditions ?? []} notes={item.notes ?? []} />
+      <OtherNotes
+        // basic_items가 없는 backend(T43 이전) 응답이면 원문 목록을 요약 없이 보여 줍니다
+        basic={
+          item.basic_items ?? (item.basic_conditions ?? []).map((text) => ({ text, summary: null }))
+        }
+        notes={item.notes ?? []}
+      />
 
       {(item.unread_attachments.length > 0 || item.input_truncated) && (
         <UnreadNotice files={item.unread_attachments} truncated={item.input_truncated} />
@@ -210,9 +216,9 @@ function Mark({ outcome, small }: { outcome: ConditionCheck['outcome']; small?: 
   )
 }
 
-/** 사용자 답을 체크리스트 아이콘으로: ✓ 충족 / ✗ 불충족 / 아직 답하지 않음 */
+/** 사용자 답을 체크리스트 아이콘으로: ✓ 충족 / ✗ 미충족 / 아직 답하지 않음 */
 const ANSWER_OUTCOME = { YES: 'MET', NO: 'UNMET' } as const
-const ANSWER_LABEL = { YES: '충족', NO: '불충족' } as const
+const ANSWER_LABEL = { YES: '충족', NO: '미충족' } as const
 
 /** 아직 답하지 않은 직접 답하는 조건: 주황 점선 원 안의 물음표로 눌러서 답할 수 있음을 보입니다. */
 function AskMark() {
@@ -278,15 +284,17 @@ function Checklist({
                           {OUTCOME[check.outcome].label}
                         </span>
                       </p>
-                      {check.evidence && (
-                        <blockquote className="mt-0.5 border-l-2 pl-2 text-muted-foreground break-keep">
-                          {check.evidence}
-                        </blockquote>
+                      {/* 기준 요약 한 줄 (계획서 5.3, extract_v10). 이름만으로 충분한 조건은 없음 */}
+                      {check.requirement && (
+                        <p className="mt-0.5 break-keep">{check.requirement}</p>
                       )}
-                      {check.evidence && check.evidence_source && (
-                        <p className="mt-0.5 text-xs text-muted-foreground break-all">
-                          출처: {evidenceSourceLabel(check.evidence_source)}
+                      {check.ambiguous && (
+                        <p className="mt-0.5 text-amber-700 break-keep">
+                          공지 기준이 명확하지 않아요
                         </p>
+                      )}
+                      {check.evidence && (
+                        <Evidence text={check.evidence} source={check.evidence_source ?? null} />
                       )}
                     </div>
                   </li>
@@ -299,7 +307,7 @@ function Checklist({
             <>
               <SectionTitle
                 title="직접 답하는 조건"
-                desc="내 정보로는 판정할 수 없는 조건이에요. 아이콘을 누를 때마다 충족 → 불충족 → 모름으로 바뀌어요."
+                desc="내 정보로는 판정할 수 없는 조건이에요. 아이콘을 누를 때마다 충족 → 미충족 → 모름으로 바뀌어요."
               />
               <ul className="mt-3 grid gap-3" aria-label="직접 답하는 조건">
                 {extra.map((check) => (
@@ -309,7 +317,7 @@ function Checklist({
                       onClick={() =>
                         mutation.mutate({ id, key: check.key, answer: nextAnswer(check.answer) })
                       }
-                      aria-label={`${conditionLabel(check.text)} 답 바꾸기, 지금: ${
+                      aria-label={`${extraTitle(check)} 답 바꾸기, 지금: ${
                         check.answer ? ANSWER_LABEL[check.answer] : '모름'
                       }`}
                       className="-m-1 self-start rounded-full p-1 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -317,8 +325,8 @@ function Checklist({
                       {check.answer ? <Mark outcome={ANSWER_OUTCOME[check.answer]} /> : <AskMark />}
                     </button>
                     <div className="min-w-0 text-sm">
-                      <p className="font-medium">
-                        {conditionLabel(check.text)}
+                      <p className="font-medium break-keep">
+                        {extraTitle(check)}
                         <span
                           className={`ml-1.5 text-xs font-normal ${
                             check.answer ? 'text-muted-foreground' : 'text-amber-700'
@@ -327,9 +335,8 @@ function Checklist({
                           {check.answer ? ANSWER_LABEL[check.answer] : '눌러서 답하기'}
                         </span>
                       </p>
-                      <blockquote className="mt-0.5 border-l-2 pl-2 text-muted-foreground break-keep">
-                        {check.text}
-                      </blockquote>
+                      {/* 요약이 틀렸을 때 대조할 수 있게 원문을 접지 않고 2줄까지 보여 줍니다(T44) */}
+                      <OriginalText text={check.text} />
                     </div>
                   </li>
                 ))}
@@ -345,12 +352,63 @@ function Checklist({
   )
 }
 
+/** 직접 답하는 조건의 굵은 줄: 추출 때 만든 요약(extract_v10), 없으면 단어 규칙으로 붙인 이름 */
+function extraTitle(check: ExtraCheck): string {
+  return check.summary ?? conditionLabel(check.text)
+}
+
+/** ✓/✗ 조건의 공지 원문 근거와 출처. 요약 한 줄을 먼저 보이고 원문은 접어 둡니다(T44). */
+function Evidence({ text, source }: { text: string; source: string | null }) {
+  return (
+    <details className="mt-0.5 text-muted-foreground">
+      <summary className="w-fit cursor-pointer text-xs underline-offset-4 hover:underline">
+        근거 보기
+      </summary>
+      <blockquote className="mt-0.5 border-l-2 pl-2 break-keep">{text}</blockquote>
+      {source && <p className="mt-0.5 text-xs break-all">출처: {evidenceSourceLabel(source)}</p>}
+    </details>
+  )
+}
+
+// 이 글자 수를 넘는 원문은 2줄로 줄이고 "더 보기"를 둡니다(360px 화면에서 대략 2줄).
+const CLAMP_CHARS = 60
+
+/** 직접 답하는 조건의 공지 원문. 2줄까지 보이고, 길면 "더 보기"로 펼칩니다. */
+function OriginalText({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const long = text.length > CLAMP_CHARS
+  return (
+    <>
+      <blockquote
+        className={`mt-0.5 border-l-2 pl-2 text-xs text-muted-foreground break-keep ${
+          long && !expanded ? 'line-clamp-2' : ''
+        }`}
+      >
+        {text}
+      </blockquote>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="mt-0.5 text-xs text-muted-foreground underline underline-offset-4"
+        >
+          {expanded ? '접기' : '더 보기'}
+        </button>
+      )}
+    </>
+  )
+}
+
+type BasicItem = ScholarshipDetail['basic_items'][number]
+
 /**
  * 판정에 쓰지 않는 공지 문장 (extract_v5). 국적·중복 수혜처럼 대부분 충족하는 기본 조건은
  * "지원 전 확인", 선발 방식·의무·예외 규정처럼 자격이 아닌 문장은 "참고 안내"로 보여 줍니다.
+ * 지원 전 확인은 요약(extract_v10)을 보이고 원문은 접어 두며, 요약이 없으면 원문을 그대로 보입니다.
  * v5 이전에 추출한 장학금은 두 목록이 비어 있어 이 상자가 나오지 않습니다.
  */
-function OtherNotes({ basic, notes }: { basic: string[]; notes: string[] }) {
+function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
   if (basic.length === 0 && notes.length === 0) return null
   return (
     <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
@@ -365,8 +423,22 @@ function OtherNotes({ basic, notes }: { basic: string[]; notes: string[] }) {
         <>
           <h3 className="mt-3 font-medium">지원 전 확인</h3>
           <ul className="mt-1 list-disc space-y-1 pl-5 break-keep" aria-label="지원 전 확인">
-            {basic.map((text) => (
-              <li key={text}>{text}</li>
+            {basic.map(({ text, summary }) => (
+              <li key={text}>
+                {summary ? (
+                  <>
+                    {summary}
+                    <details className="text-muted-foreground">
+                      <summary className="w-fit cursor-pointer text-xs underline-offset-4 hover:underline">
+                        원문 보기
+                      </summary>
+                      <p className="mt-0.5 text-xs">{text}</p>
+                    </details>
+                  </>
+                ) : (
+                  text
+                )}
+              </li>
             ))}
           </ul>
         </>

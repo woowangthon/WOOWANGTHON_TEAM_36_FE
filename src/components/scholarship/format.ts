@@ -103,6 +103,6 @@ export const UNREAD_REASON = {
 
 export const OUTCOME = {
   MET: { mark: '✓', label: '충족' },
-  UNMET: { mark: '✗', label: '불충족' },
+  UNMET: { mark: '✗', label: '미충족' },
   UNKNOWN: { mark: '?', label: '확인 필요' },
 } as const satisfies Record<ConditionCheck['outcome'], { mark: string; label: string }>

@@ -17,8 +17,8 @@ type Item = Pick<
 >
 
 export interface QuickQuestion {
-  /** 답할 조건 (모든 target에 같은 문장) */
-  condition: { key: string; text: string }
+  /** 답할 조건 (모든 target에 같은 문장). summary는 질문으로 보일 요약(extract_v10, 없으면 null) */
+  condition: Item['open_conditions'][number]
   /** 답하면 판정이 정해지는 장학금. 마감 빠른 순 */
   targets: Pick<Item, 'id' | 'name'>[]
 }
