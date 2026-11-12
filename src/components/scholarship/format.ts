@@ -73,6 +73,7 @@ export const CONDITION_LABEL = {
   excludes_transfer_students: '편입생 제외',
   min_remaining_semesters: '남은 정규학기',
   enrollment_status: '재학상태',
+  school_excluded: '학교 조건',
   min_gpa: '평점',
   min_score_100: '100점 환산 성적',
   min_credits: '이수학점',
