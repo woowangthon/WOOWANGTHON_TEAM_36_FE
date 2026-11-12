@@ -159,3 +159,13 @@ export function useDeleteAccount() {
     onSuccess: clear,
   })
 }
+
+/** 비밀번호 변경 (7.3, T38). backend가 이 기기에 새 쿠키를 주므로 로그인은 그대로입니다. */
+export function useChangePassword() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: Schemas['PasswordChangeRequest']) =>
+      apiRequest<void>('/auth/me/password', 'PUT', body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: meKey }),
+  })
+}

@@ -8,6 +8,7 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 import { GoogleButton, OrDivider } from '@/components/auth/GoogleButton'
 import { TargetNotice } from '@/components/auth/TargetNotice'
 import { Field, FormError } from '@/components/form/Field'
+import { PasswordInput } from '@/components/form/PasswordInput'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -61,9 +62,8 @@ export default function LoginPage() {
             />
           </Field>
           <Field id="password" label="비밀번호" error={errors.password?.message}>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               aria-invalid={!!errors.password}
               {...form.register('password')}
