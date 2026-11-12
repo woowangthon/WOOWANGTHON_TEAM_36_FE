@@ -135,6 +135,18 @@ const notFound = () => HttpResponse.json({ detail: 'Not Found' }, { status: 404 
 export const handlers: RequestHandler[] = [
   // 인증 (7.2, 7.3)
   http.get('/api/auth/me', () => (me ? HttpResponse.json(withSummary(me)) : unauthorized())),
+  // 비밀번호 변경 (T38). 목 계정의 비밀번호는 MOCK_PASSWORD로 고정입니다.
+  http.put('/api/auth/me/password', async ({ request }) => {
+    if (!me) return unauthorized()
+    const body = (await request.json()) as Schemas['PasswordChangeRequest']
+    if (!me.has_password) {
+      return HttpResponse.json({ detail: 'Google 계정으로 로그인하는 계정이에요' }, { status: 400 })
+    }
+    if (body.current_password !== MOCK_PASSWORD) {
+      return HttpResponse.json({ detail: '현재 비밀번호가 맞지 않아요' }, { status: 400 })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
   // 가입 3단계 (7.3). 목에서는 인증번호가 MOCK_SIGNUP_CODE로 고정이고, 토큰에 이메일을 그대로 담습니다.
   http.post('/api/auth/signup/code', async ({ request }) => {
     const { email } = (await request.json()) as Schemas['SignupCodeRequest']
@@ -208,18 +220,6 @@ export const handlers: RequestHandler[] = [
     if (!me) return unauthorized()
     me = { ...me, sensitive_agreed: false }
     if (profile) profile = { ...profile, special_flags: null }
-    return new HttpResponse(null, { status: 204 })
-  }),
-  // 비밀번호 변경 (T38). 목 계정의 비밀번호는 MOCK_PASSWORD로 고정입니다.
-  http.put('/api/auth/me/password', async ({ request }) => {
-    if (!me) return unauthorized()
-    const body = (await request.json()) as Schemas['PasswordChangeRequest']
-    if (!me.has_password) {
-      return HttpResponse.json({ detail: 'Google 계정으로 로그인하는 계정이에요' }, { status: 400 })
-    }
-    if (body.current_password !== MOCK_PASSWORD) {
-      return HttpResponse.json({ detail: '현재 비밀번호가 맞지 않아요' }, { status: 400 })
-    }
     return new HttpResponse(null, { status: 204 })
   }),
   http.delete('/api/auth/me', () => {
