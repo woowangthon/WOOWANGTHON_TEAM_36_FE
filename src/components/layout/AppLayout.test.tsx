@@ -28,6 +28,20 @@ describe('상단 프로필 아이콘과 내 정보 화면', () => {
     expect(await within(summary).findByText('4학년 (편입 후 2학기 이수)')).toBeInTheDocument()
   })
 
+  it('편입생으로 바꿔 저장하면 새로고침 없이 학년이 바로 바뀐다 (T46)', async () => {
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    fireEvent.click(screen.getByRole('checkbox', { name: '편입생이에요' }))
+    fireEvent.change(screen.getByLabelText('편입 후 마친 학기'), { target: { value: '0' } })
+    fireEvent.click(screen.getByRole('button', { name: /저장/ }))
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
+
+    fireEvent.click(await screen.findByRole('link', { name: '내 정보' }))
+    const summary = await screen.findByRole('region', { name: '프로필 요약' })
+    expect(await within(summary).findByText('3학년 (편입 후 0학기 이수)')).toBeInTheDocument()
+    expect(within(summary).queryByText(/^1학년/)).not.toBeInTheDocument()
+  })
+
   it('내 정보 화면에 프로필 요약과 내 장학금이 함께 보인다', async () => {
     renderApp('/my')
     const summary = await screen.findByRole('region', { name: '프로필 요약' })
