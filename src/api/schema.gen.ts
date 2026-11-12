@@ -511,7 +511,7 @@ export interface components {
              * Condition
              * @enum {string}
              */
-            condition: "target_grades" | "excludes_extra_semester" | "excludes_new_students" | "min_remaining_semesters" | "enrollment_status" | "min_gpa" | "min_score_100" | "min_credits" | "gender" | "max_age" | "max_income_bracket" | "regions" | "required_special" | "excludes_full_tuition" | "target_department" | "target_program";
+            condition: "target_grades" | "excludes_extra_semester" | "excludes_new_students" | "excludes_transfer_students" | "min_remaining_semesters" | "enrollment_status" | "min_gpa" | "min_score_100" | "min_credits" | "target_nationality" | "gender" | "max_age" | "max_income_bracket" | "regions" | "required_special" | "excludes_full_tuition" | "target_department" | "target_program";
             /**
              * Outcome
              * @enum {string}
@@ -635,6 +635,8 @@ export interface components {
             nickname?: string | null;
             /** Completed Semesters */
             completed_semesters?: number | null;
+            /** Is Transfer */
+            is_transfer?: boolean | null;
             /** Gpa */
             gpa?: number | null;
             /**
@@ -714,6 +716,16 @@ export interface components {
             enrollment_status: "재학" | "휴학";
             /** Aibc Member */
             aibc_member?: boolean | null;
+            /**
+             * Is Transfer
+             * @default false
+             */
+            is_transfer: boolean;
+            /**
+             * Is Foreign
+             * @default false
+             */
+            is_foreign: boolean;
             /** Gpa */
             gpa?: number | null;
             /** Score 100 */
@@ -753,6 +765,16 @@ export interface components {
             completed_semesters?: number | null;
             /** Aibc Member */
             aibc_member: boolean | null;
+            /**
+             * Is Transfer
+             * @default false
+             */
+            is_transfer: boolean;
+            /**
+             * Is Foreign
+             * @default false
+             */
+            is_foreign: boolean;
             /** Enrollment Status */
             enrollment_status?: ("재학" | "휴학") | null;
             /** Gpa */
