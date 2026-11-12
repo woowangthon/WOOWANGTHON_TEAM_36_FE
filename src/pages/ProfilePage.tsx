@@ -29,6 +29,7 @@ import { NotificationToggle } from '@/components/profile/NotificationToggle'
 import { RegionSelect } from '@/components/profile/RegionSelect'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { HelpIcon } from '@/components/ui/help-icon'
 import { Checkbox, Input, NativeSelect } from '@/components/ui/input'
 
 // 프로필 입력·수정 (계획서 4.1). 첫 로그인 때 필수이고, 민감정보 동의 철회·회원 탈퇴도 여기서 합니다(4.2).
@@ -107,6 +108,12 @@ function ProfileForm({
   const parentSame = useWatch({ control, name: 'parent_same' })
   const isTransfer = useWatch({ control, name: 'is_transfer' })
   const noGrades = hasNoGrades(useWatch({ control, name: 'completed_semesters' }))
+  const semesterHelp = [
+    isTransfer
+      ? '편입 후 이 학교에서 마친 정규학기 수예요. 편입 첫 학기는 0.'
+      : '마친 정규학기 수예요. 신입생 첫 학기는 0.',
+    '휴학·계절학기는 빼고 세요. 학기가 끝나 성적이 나오면 이수학기와 성적을 함께 고쳐 주세요(성적이 나오기 전이면 그 전 값 그대로).',
+  ].join(' ')
 
   // 이수학기 0이면 성적 칸을 숨기고, 적어 둔 값도 비웁니다(다시 1 이상으로 바꿔도 옛 값이 되살아나지 않게).
   useEffect(() => {
@@ -168,12 +175,7 @@ function ProfileForm({
                 <option value="여">여</option>
               </NativeSelect>
             </Field>
-            <Field
-              id="birth_year"
-              label="출생연도"
-              error={errors.birth_year?.message}
-              hint="나이는 자동으로 계산합니다"
-            >
+            <Field id="birth_year" label="출생연도" error={errors.birth_year?.message}>
               <NativeSelect
                 id="birth_year"
                 aria-invalid={!!errors.birth_year}
@@ -187,16 +189,11 @@ function ProfileForm({
                 ))}
               </NativeSelect>
             </Field>
-            {/* 오류가 입력 바로 아래에 오도록, 긴 안내문은 Field 밖에 둡니다. */}
             <div className="grid content-start gap-1.5">
-              {/* 편입생이면 이 학교에서 마친 학기만 받고, 학년은 4학기를 더해 계산합니다(4.1, T40). */}
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox {...register('is_transfer')} />
-                편입생이에요
-              </label>
               <Field
                 id="completed_semesters"
                 label={isTransfer ? '편입 후 마친 학기' : '이수학기'}
+                labelAction={<HelpIcon label="이수학기 도움말" description={semesterHelp} />}
                 error={errors.completed_semesters?.message}
               >
                 <Input
@@ -208,13 +205,13 @@ function ProfileForm({
                   {...register('completed_semesters')}
                 />
               </Field>
-              <p id="completed_semesters-help" className="text-xs text-muted-foreground">
-                {isTransfer
-                  ? '편입 후 이 학교에서 마친 정규학기 수예요. 3학년 편입 기준으로 4학기를 더해 학년을 계산해요. 편입 첫 학기는 0.'
-                  : '마친 정규학기 수예요. 신입생 첫 학기는 0.'}{' '}
-                휴학·계절학기는 빼고 세요. 학기가 끝나 성적이 나오면 이수학기와 성적을 함께 고쳐
-                주세요(성적이 나오기 전이면 그 전 값 그대로).
+              <p id="completed_semesters-help" hidden>
+                {semesterHelp}
               </p>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox {...register('is_transfer')} />
+                편입생이에요
+              </label>
             </div>
           </div>
           {/* 국적 조건(대한민국 국적자·외국인 유학생 대상)을 판정합니다(4.1, T40). */}
@@ -222,20 +219,17 @@ function ProfileForm({
             <Checkbox {...register('is_foreign')} />
             외국인이에요 (대한민국 국적이 아님)
           </label>
-          <fieldset className="grid gap-1.5">
-            <legend className="mb-1.5 text-sm font-medium">AI부트캠프사업단 양성인재인가요?</legend>
-            <p className="mb-1.5 text-xs text-muted-foreground">
-              충북대 AI부트캠프사업단 교육과정에 참여 중인 학생이에요. 사업단 장학금은 양성인재만
-              지원할 수 있어요.{' '}
-              <a
-                href="https://aibc.cbnu.ac.kr/"
-                target="_blank"
-                rel="noreferrer"
-                className="underline underline-offset-4"
-              >
-                사업단 누리집
-              </a>
-            </p>
+          <fieldset aria-labelledby="aibc-member-label" className="grid gap-1.5">
+            <legend className="mb-1.5 text-sm font-medium">
+              <span className="flex items-center gap-1">
+                <span id="aibc-member-label">AI부트캠프사업단 양성인재인가요?</span>
+                <HelpIcon
+                  label="AI부트캠프사업단 양성인재 도움말"
+                  description="충북대 AI부트캠프사업단 교육과정에 참여 중인 학생이에요. 사업단 장학금은 양성인재만 지원할 수 있어요."
+                  link={{ label: '사업단 누리집', href: 'https://aibc.cbnu.ac.kr/' }}
+                />
+              </span>
+            </legend>
             <div className="flex gap-4 text-sm">
               <label className="flex items-center gap-2">
                 <input
@@ -285,14 +279,14 @@ function ProfileForm({
           </section>
         ) : (
           <section className="grid gap-4" aria-labelledby="grades-heading">
-            <div className="grid gap-1">
+            <div className="flex items-center gap-1">
               <h2 id="grades-heading" className="text-sm font-semibold">
                 성적
               </h2>
-              <p className="text-muted-foreground text-xs">
-                포털 성적 조회의 숫자를 그대로 적어 주세요. 직전학기 = 계절학기를 뺀 가장 최근
-                정규학기(1·2학기)이고, 휴학했다면 휴학 전 마지막 학기입니다.
-              </p>
+              <HelpIcon
+                label="성적 도움말"
+                description="포털 성적 조회의 숫자를 그대로 적어 주세요. 직전학기 = 계절학기를 뺀 가장 최근 정규학기(1·2학기)이고, 휴학했다면 휴학 전 마지막 학기입니다."
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
@@ -345,8 +339,7 @@ function ProfileForm({
           <div>
             <h2 className="text-sm font-semibold">선택 정보</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              입력하면 더 정확해져요. 비워 두면 해당 조건은 &lsquo;확인 필요&rsquo;로 표시됩니다.
-              소득분위·주소·특수자격은 암호화해 저장합니다.
+              비워 두면 해당 조건은 &lsquo;확인 필요&rsquo;로 표시됩니다.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -390,10 +383,7 @@ function ProfileForm({
             </p>
           )}
           {!parentSame && (
-            <>
-              <RegionSelect prefix="parent" label="부모 주소" error={errors.parent_sido?.message} />
-              <p className="-mt-2 text-xs text-muted-foreground">해당 없으면 비워 두세요.</p>
-            </>
+            <RegionSelect prefix="parent" label="부모 주소" error={errors.parent_sido?.message} />
           )}
 
           <fieldset className="grid gap-1.5">

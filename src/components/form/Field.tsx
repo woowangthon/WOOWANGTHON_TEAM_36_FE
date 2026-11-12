@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/input'
 type Props = {
   id: string
   label: string
+  labelAction?: React.ReactNode
   error?: string
   hint?: string
   optional?: boolean
@@ -10,13 +11,24 @@ type Props = {
 }
 
 /** 라벨 + 입력 + 안내/오류 문장. 오류는 aria-describedby로 입력과 연결합니다. */
-export function Field({ id, label, error, hint, optional, children }: Props) {
+export function Field({ id, label, labelAction, error, hint, optional, children }: Props) {
+  const fieldLabel = (
+    <Label htmlFor={id}>
+      {label}
+      {optional && <span className="ml-1 font-normal text-muted-foreground">(선택)</span>}
+    </Label>
+  )
+
   return (
     <div className="grid content-start gap-1.5">
-      <Label htmlFor={id}>
-        {label}
-        {optional && <span className="ml-1 font-normal text-muted-foreground">(선택)</span>}
-      </Label>
+      {labelAction ? (
+        <div className="flex items-center gap-1">
+          {fieldLabel}
+          {labelAction}
+        </div>
+      ) : (
+        fieldLabel
+      )}
       {children}
       {error ? (
         <p id={`${id}-error`} role="alert" className="text-xs text-destructive">

@@ -429,7 +429,8 @@ describe('프로필 화면', () => {
     expect(await screen.findByText('닉네임을 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('0~4.5 사이로 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('0~30 사이로 입력하세요')).toBeInTheDocument()
-    expect(screen.getByText(/계절학기를 뺀 가장 최근/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '성적 도움말' }))
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/계절학기를 뺀 가장 최근/)
     expect(screen.getByText('성별을 고르세요')).toBeInTheDocument()
     expect(screen.getByText('양성인재 여부를 고르세요')).toBeInTheDocument()
   })
@@ -483,8 +484,9 @@ describe('프로필 화면', () => {
     renderApp('/profile')
     await screen.findByRole('heading', { name: '내 프로필' })
     fireEvent.click(screen.getByLabelText('편입생이에요'))
-    expect(await screen.findByLabelText('편입 후 마친 학기')).toBeInTheDocument()
-    expect(screen.getByText(/3학년 편입 기준으로 4학기를 더해 학년을 계산해요/)).toBeInTheDocument()
+    expect(await screen.findByLabelText('편입 후 마친 학기')).toHaveAccessibleDescription(
+      /편입 후 이 학교에서 마친 정규학기 수예요\. 편입 첫 학기는 0\./,
+    )
     fireEvent.click(screen.getByLabelText('편입생이에요'))
     expect(await screen.findByLabelText('이수학기')).toBeInTheDocument()
   })
