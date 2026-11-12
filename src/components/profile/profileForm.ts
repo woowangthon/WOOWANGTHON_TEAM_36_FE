@@ -7,6 +7,9 @@ import type { Profile, ProfileUpdate } from '@/api/hooks/profile'
 export const MIN_BIRTH_YEAR = 1950
 export const MIN_AGE = 15
 export const MAX_SEMESTERS = 16
+// 편입생은 3학년 편입으로 보고 4학기를 더해 학년을 계산합니다(4.1, backend effective_semesters).
+export const TRANSFER_CREDIT_SEMESTERS = 4
+export const MAX_TRANSFER_SEMESTERS = MAX_SEMESTERS - TRANSFER_CREDIT_SEMESTERS
 
 export const SPECIAL_FLAGS = ['다자녀', '보훈', '장애'] as const
 export const INCOME_OPTIONS = [
@@ -55,6 +58,17 @@ function checkDecimal(value: string, path: string, max: number, issue: Issue) {
   else if (Number(value) > max) issue(path, `0~${max} 사이로 입력하세요`)
 }
 
+/**
+ * 이수학기로 학년 표시. 백엔드 grade_of와 같은 규칙(계획서 4.1):
+ * 학년 = min(판정용 이수학기 ÷ 2(버림) + 1, 4), 8학기 이상은 초과학기. 편입생은 +4.
+ */
+export function gradeLabel(semesters: number, isTransfer: boolean): string {
+  const effective = semesters + (isTransfer ? TRANSFER_CREDIT_SEMESTERS : 0)
+  const done = isTransfer ? `편입 후 ${semesters}학기 이수` : `${semesters}학기 이수`
+  if (effective >= 8) return `4학년 초과학기 (${done})`
+  return `${Math.min(Math.floor(effective / 2) + 1, 4)}학년 (${done})`
+}
+
 /** 이수학기가 0(신입생 첫 학기)이면 성적이 없습니다(4.1). */
 export function hasNoGrades(completedSemesters: string | undefined): boolean {
   const v = (completedSemesters ?? '').trim()
@@ -83,6 +97,8 @@ const fields = z.object({
   gender: z.enum(['남', '여'], { error: '성별을 고르세요' }),
   birth_year: text(),
   completed_semesters: text(),
+  is_transfer: z.boolean(),
+  is_foreign: z.boolean(),
   aibc_member: z.enum(['yes', 'no', 'unknown'], { error: '양성인재 여부를 고르세요' }),
 
   // 성적 (4.1). 성적표 숫자를 그대로 받고, 이수학기 1 이상이면 3칸 모두 필수입니다.
@@ -117,6 +133,11 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
 
   if (!v.completed_semesters) issue('completed_semesters', '이수학기를 입력하세요')
   else if (!INTEGER.test(v.completed_semesters)) issue('completed_semesters', '정수로 입력하세요')
+  else if (v.is_transfer && Number(v.completed_semesters) > MAX_TRANSFER_SEMESTERS)
+    issue(
+      'completed_semesters',
+      `편입 후 마친 학기는 0~${MAX_TRANSFER_SEMESTERS} 사이로 입력하세요`,
+    )
   else if (Number(v.completed_semesters) > MAX_SEMESTERS)
     issue('completed_semesters', `0~${MAX_SEMESTERS} 사이로 입력하세요`)
 
@@ -165,6 +186,8 @@ export function toProfile(v: ProfileFormValues, sensitiveAgreed: boolean): Profi
     gender: v.gender,
     birth_year: Number(v.birth_year),
     completed_semesters: Number(v.completed_semesters),
+    is_transfer: v.is_transfer,
+    is_foreign: v.is_foreign,
     aibc_member: AIBC_TO_API[v.aibc_member],
     gpa: grade(v.gpa),
     credits: grade(v.credits),
@@ -186,6 +209,8 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormInput> {
     name: '',
     birth_year: '',
     completed_semesters: '',
+    is_transfer: false,
+    is_foreign: false,
     gpa: '',
     credits: '',
     gpa_total: '',
@@ -209,6 +234,8 @@ export function toFormValues(p: Profile | null): Partial<ProfileFormInput> {
     gender: p.gender,
     birth_year: String(p.birth_year),
     completed_semesters: String(p.completed_semesters),
+    is_transfer: p.is_transfer ?? false,
+    is_foreign: p.is_foreign ?? false,
     // 저장된 null은 '모름'입니다. 아무것도 고르지 않은 상태와 구분합니다.
     aibc_member: p.aibc_member == null ? 'unknown' : p.aibc_member ? 'yes' : 'no',
     gpa: str(p.gpa),
@@ -235,6 +262,8 @@ const SAME_NAME = new Set<string>([
   'gender',
   'birth_year',
   'completed_semesters',
+  'is_transfer',
+  'is_foreign',
   'aibc_member',
   ...GRADE_FIELDS,
   'income_bracket',

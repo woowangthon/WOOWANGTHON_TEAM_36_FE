@@ -1,5 +1,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 
+import { http, HttpResponse } from 'msw'
+
+import { mockMe } from '@/mocks/data'
 import { resetMockState } from '@/mocks/handlers'
 import { server } from '@/mocks/node'
 import { renderApp } from '@/test/renderApp'
@@ -12,6 +15,17 @@ describe('상단 프로필 아이콘과 내 정보 화면', () => {
     fireEvent.click(await screen.findByRole('link', { name: '내 정보' }))
     await waitFor(() => expect(app.path()).toBe('/my'))
     expect(await screen.findByRole('heading', { name: '내 정보' })).toBeInTheDocument()
+  })
+
+  it('편입생이면 4학기를 더한 학년을 보여 준다 (T40)', async () => {
+    server.use(
+      http.get('/api/auth/me', () =>
+        HttpResponse.json({ ...mockMe, completed_semesters: 2, is_transfer: true }),
+      ),
+    )
+    renderApp('/my')
+    const summary = await screen.findByRole('region', { name: '프로필 요약' })
+    expect(await within(summary).findByText('4학년 (편입 후 2학기 이수)')).toBeInTheDocument()
   })
 
   it('내 정보 화면에 프로필 요약과 내 장학금이 함께 보인다', async () => {

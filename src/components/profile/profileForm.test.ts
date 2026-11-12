@@ -3,6 +3,8 @@ import type { Profile } from '@/api/hooks/profile'
 
 import {
   birthYearOptions,
+  formFieldOf,
+  gradeLabel,
   maxBirthYear,
   profileSchema,
   score100FromGpa,
@@ -16,6 +18,8 @@ const valid: ProfileFormInput = {
   gender: '여',
   birth_year: '2004',
   completed_semesters: '5',
+  is_transfer: false,
+  is_foreign: false,
   aibc_member: 'no',
   gpa: '3.8',
   credits: '18',
@@ -198,13 +202,59 @@ describe('API 변환', () => {
       completed_semesters: 0,
       enrollment_status: '재학',
       aibc_member: null,
+      is_transfer: true,
+      is_foreign: false,
     }
     expect(toFormValues(saved)).toMatchObject({
       name: '',
       completed_semesters: '0',
       aibc_member: 'unknown',
+      is_transfer: true,
+      is_foreign: false,
       gpa: '',
       full_tuition_waiver: '',
     })
+  })
+})
+
+describe('편입생·외국인', () => {
+  it('편입생이면 편입 후 마친 학기는 12까지만 받는다', () => {
+    expect(errorOf('completed_semesters', { is_transfer: true, completed_semesters: '13' })).toBe(
+      '편입 후 마친 학기는 0~12 사이로 입력하세요',
+    )
+    expect(errorOf('completed_semesters', { is_transfer: true, completed_semesters: '12' })).toBe(
+      undefined,
+    )
+  })
+
+  it('편입생이 아니면 16까지 받는다', () => {
+    expect(errorOf('completed_semesters', { completed_semesters: '16' })).toBeUndefined()
+  })
+
+  it('두 값을 그대로 보낸다', () => {
+    const body = toProfile(
+      profileSchema.parse({ ...valid, is_transfer: true, is_foreign: true }),
+      false,
+    )
+    expect(body.is_transfer).toBe(true)
+    expect(body.is_foreign).toBe(true)
+  })
+
+  it('처음 입력하는 폼은 둘 다 꺼져 있다', () => {
+    expect(toFormValues(null)).toMatchObject({ is_transfer: false, is_foreign: false })
+  })
+
+  it('서버 오류 위치를 같은 이름의 칸으로 옮긴다', () => {
+    expect(formFieldOf(['is_transfer'])).toBe('is_transfer')
+    expect(formFieldOf(['is_foreign'])).toBe('is_foreign')
+  })
+
+  it.each([
+    [0, true, '3학년 (편입 후 0학기 이수)'],
+    [4, true, '4학년 초과학기 (편입 후 4학기 이수)'],
+    [5, false, '3학년 (5학기 이수)'],
+    [8, false, '4학년 초과학기 (8학기 이수)'],
+  ])('학년 표시: 이수학기 %i, 편입생 %s → %s', (semesters, transfer, label) => {
+    expect(gradeLabel(semesters, transfer)).toBe(label)
   })
 })

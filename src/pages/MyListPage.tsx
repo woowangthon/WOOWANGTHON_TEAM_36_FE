@@ -6,6 +6,7 @@ import { useScholarships } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
 import { Avatar } from '@/components/profile/Avatar'
+import { gradeLabel } from '@/components/profile/profileForm'
 import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
 import { Button } from '@/components/ui/button'
@@ -112,19 +113,10 @@ function ProfileSummary() {
   )
 }
 
-/**
- * 이수학기로 학년 표시 (T65). 백엔드 grade_of와 같은 규칙(계획서 4.1):
- * 학년 = min(이수학기 ÷ 2(버림) + 1, 4), 8학기 이상은 초과학기.
- */
-function gradeLabel(semesters: number): string {
-  if (semesters >= 8) return `4학년 초과학기 (${semesters}학기 이수)`
-  const grade = Math.min(Math.floor(semesters / 2) + 1, 4)
-  return `${grade}학년 (${semesters}학기 이수)`
-}
-
 function summaryFacts(me: Me): string[] {
   const facts: string[] = []
-  if (me.completed_semesters != null) facts.push(gradeLabel(me.completed_semesters))
+  if (me.completed_semesters != null)
+    facts.push(gradeLabel(me.completed_semesters, me.is_transfer ?? false))
   if (me.gpa != null) facts.push(`직전학기 평점 ${me.gpa}`)
   return facts
 }

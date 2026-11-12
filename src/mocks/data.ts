@@ -34,6 +34,8 @@ export const mockProfile: Profile = {
   completed_semesters: 5,
   enrollment_status: '재학',
   aibc_member: false,
+  is_transfer: false,
+  is_foreign: false,
   income_bracket: 6,
   self_region: { sido: '충청북도', sigungu: '청주시' },
   parent_region: { sido: '충청남도', sigungu: '논산시' },
@@ -94,6 +96,11 @@ const rawDetails: RawDetail[] = [
     my_state: 'BOOKMARKED',
     conditions: [
       { condition: 'target_grades', outcome: 'MET', evidence: '2·3학년 재학생' },
+      {
+        condition: 'target_nationality',
+        outcome: 'MET',
+        evidence: '대한민국 국적의 대학교 재학생',
+      },
       { condition: 'min_gpa', outcome: 'MET', evidence: '직전학기 평점평균 3.5 이상인 자' },
       { condition: 'max_income_bracket', outcome: 'MET', evidence: '학자금지원구간 8구간 이하' },
     ],

@@ -1,4 +1,4 @@
-import { deadlineOf, formatDateTime } from './format'
+import { CONDITION_LABEL, deadlineOf, formatDateTime } from './format'
 
 // 기준 시각: 2026-11-06 23:30 KST (UTC로는 같은 날 14:30)
 const now = new Date('2026-11-06T23:30:00+09:00')
@@ -33,4 +33,11 @@ describe('deadlineOf', () => {
 
 it('날짜는 한국 시간으로 표시한다', () => {
   expect(formatDateTime('2026-11-12T09:00:00Z')).toContain('18:00')
+})
+
+describe('CONDITION_LABEL (T40)', () => {
+  it('국적·편입생 제외 조건 이름이 있다', () => {
+    expect(CONDITION_LABEL.target_nationality).toBe('국적')
+    expect(CONDITION_LABEL.excludes_transfer_students).toBe('편입생 제외')
+  })
 })

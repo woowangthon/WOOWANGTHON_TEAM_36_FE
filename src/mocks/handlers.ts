@@ -69,6 +69,7 @@ function withSummary(value: Me): Me {
     ...value,
     nickname: profile?.name ?? null,
     completed_semesters: profile?.completed_semesters ?? null,
+    is_transfer: profile?.is_transfer ?? null,
     gpa: profile?.gpa ?? null,
   }
 }
@@ -234,6 +235,8 @@ export const handlers: RequestHandler[] = [
       completed_semesters: body.completed_semesters ?? 0,
       enrollment_status: body.enrollment_status ?? '재학', // 화면은 보내지 않음(재학생 대상)
       aibc_member: body.aibc_member,
+      is_transfer: body.is_transfer ?? false,
+      is_foreign: body.is_foreign ?? false,
       gpa: body.gpa,
       score_100: score100(body.gpa),
       credits: body.credits,
