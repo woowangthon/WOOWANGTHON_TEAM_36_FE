@@ -38,6 +38,7 @@ it('날짜는 한국 시간으로 표시한다', () => {
 describe('CONDITION_LABEL (T40)', () => {
   it('국적·편입생 제외 조건 이름이 있다', () => {
     expect(CONDITION_LABEL.target_nationality).toBe('국적')
+    expect(CONDITION_LABEL.school_excluded).toBe('학교 조건')
     expect(CONDITION_LABEL.excludes_transfer_students).toBe('편입생 제외')
   })
 })
