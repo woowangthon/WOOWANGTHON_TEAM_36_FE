@@ -9,6 +9,7 @@ import { useProfile, useSaveProfile, type Profile } from '@/api/hooks/profile'
 import { ApiError } from '@/api/hooks/request'
 import { AuthLayout, PageSkeleton } from '@/components/auth/AuthLayout'
 import { Field, FormError } from '@/components/form/Field'
+import { PasswordChange } from '@/components/profile/PasswordChange'
 import {
   birthYearOptions,
   formFieldOf,
@@ -23,7 +24,6 @@ import {
   type ProfileFormInput,
   type ProfileFormValues,
 } from '@/components/profile/profileForm'
-import { PasswordChange } from '@/components/profile/PasswordChange'
 import { RegionSelect } from '@/components/profile/RegionSelect'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -429,7 +429,6 @@ function AccountActions({ me }: { me: Me }) {
     <section className="mt-8 grid gap-3 border-t pt-5">
       <h2 className="text-sm font-semibold">계정</h2>
       <p className="text-xs text-muted-foreground">{me.email}</p>
-      <PasswordChange me={me} />
       <div className="flex flex-wrap gap-2">
         {me.sensitive_agreed && (
           <ConfirmDialog
@@ -451,6 +450,7 @@ function AccountActions({ me }: { me: Me }) {
         />
       </div>
       <FormError message={withdraw.error?.message ?? deleteAccount.error?.message} />
+      <PasswordChange me={me} />
     </section>
   )
 }
