@@ -20,9 +20,12 @@ import { Link, useNavigate, useParams } from 'react-router'
 
 import { ApiError } from '@/api/hooks/request'
 import {
+  nextAnswer,
   useScholarship,
+  useSetConditionAnswer,
   useSetScholarshipState,
   type ConditionCheck,
+  type ExtraCheck,
   type ScholarshipDetail,
   type UnreadAttachment,
 } from '@/api/hooks/scholarships'
@@ -66,7 +69,12 @@ function Detail({ item }: { item: ScholarshipDetail }) {
       <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
           <h1 className="min-w-0 text-xl font-semibold break-keep">{item.name}</h1>
-          <ResultBadge result={item.result} />
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <ResultBadge result={item.result} />
+            {item.result === 'ELIGIBLE' && item.extra_checks.length > 0 && (
+              <span className="text-xs text-muted-foreground">본인 확인 포함</span>
+            )}
+          </div>
         </div>
         <SourceLine item={item} className="mt-1 text-sm" />
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
@@ -108,7 +116,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
         <StateButtons id={item.id} state={item.my_state} />
       </section>
 
-      <Checklist conditions={item.conditions} extra={item.extra_conditions} />
+      <Checklist id={item.id} conditions={item.conditions} extra={item.extra_checks} />
 
       <OtherNotes basic={item.basic_conditions ?? []} notes={item.notes ?? []} />
 
@@ -195,8 +203,24 @@ function Mark({ outcome, small }: { outcome: ConditionCheck['outcome']; small?: 
   )
 }
 
-/** 조건별 ✓ ✗ ? 와 공지 원문 근거 (5.3). extra_conditions는 코드로 비교할 수 없어 ?로 둡니다. */
-function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra: string[] }) {
+/** 사용자 답을 체크리스트 아이콘으로: ✓ 해당돼요 / ✗ 아니에요 / ? 아직 답하지 않음 */
+const ANSWER_OUTCOME = { YES: 'MET', NO: 'UNMET' } as const
+const ANSWER_LABEL = { YES: '해당돼요', NO: '아니에요' } as const
+
+/**
+ * 조건별 ✓ ✗ ? 와 공지 원문 근거 (5.3). 추가 조건(자격을 좁히는 조건)은 코드로 비교할 수 없어
+ * 사용자가 직접 답합니다. 상태 아이콘을 누를 때마다 ? → ✓ → ✗ → ? 로 바뀌고 판정도 다시 계산됩니다.
+ */
+function Checklist({
+  id,
+  conditions,
+  extra,
+}: {
+  id: number
+  conditions: ConditionCheck[]
+  extra: ExtraCheck[]
+}) {
+  const mutation = useSetConditionAnswer()
   return (
     <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
       <h2 className="flex items-center gap-1.5 font-semibold">
@@ -230,28 +254,48 @@ function Checklist({ conditions, extra }: { conditions: ConditionCheck[]; extra:
               </div>
             </li>
           ))}
-          {extra.map((text) => (
-            <li key={text} className="flex gap-3">
-              <Mark outcome="UNKNOWN" />
+          {extra.map((check) => (
+            <li key={check.key} className="flex gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  mutation.mutate({ id, key: check.key, answer: nextAnswer(check.answer) })
+                }
+                aria-label={`추가 조건 상태 바꾸기, 지금: ${
+                  check.answer ? ANSWER_LABEL[check.answer] : '확인 필요'
+                }`}
+                className="-m-1 self-start rounded-full p-1 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+              >
+                <Mark outcome={check.answer ? ANSWER_OUTCOME[check.answer] : 'UNKNOWN'} />
+              </button>
               <div className="min-w-0 text-sm">
                 <p className="font-medium">
                   추가 조건
                   <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                    직접 확인
+                    {check.answer ? `본인 확인함 · ${ANSWER_LABEL[check.answer]}` : '직접 확인'}
                   </span>
                 </p>
-                <p className="mt-0.5 text-muted-foreground break-keep">{text}</p>
+                <p className="mt-0.5 text-muted-foreground break-keep">{check.text}</p>
               </div>
             </li>
           ))}
         </ul>
       )}
+      <FormError
+        message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
+      />
       <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
         <CircleCheck aria-hidden="true" className="size-3.5 text-emerald-600" /> 충족 ·
         <CircleX aria-hidden="true" className="size-3.5 text-red-600" /> 불충족 ·
         <CircleHelp aria-hidden="true" className="size-3.5 text-amber-600" /> 정보가 없거나 공지가
         모호해 직접 확인이 필요합니다.
       </p>
+      {extra.length > 0 && (
+        <p className="mt-1 text-xs text-muted-foreground break-keep">
+          추가 조건은 아이콘을 눌러 직접 답할 수 있어요. 누를 때마다 해당돼요 → 아니에요 → 모름
+          순으로 바뀌고 판정에 바로 반영돼요.
+        </p>
+      )}
     </section>
   )
 }
