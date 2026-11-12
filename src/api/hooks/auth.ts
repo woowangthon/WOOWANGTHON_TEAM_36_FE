@@ -106,6 +106,35 @@ export function useWithdrawSensitive() {
   })
 }
 
+/**
+ * 알림 메일 수신 켜기·끄기 (7.4). 화면에 먼저 반영하고(optimistic), 실패하면 되돌립니다(9.8).
+ */
+export function useSetNotifications() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: Schemas['NotificationSettingRequest']) =>
+      apiRequest<Me>('/auth/me/notifications', 'PUT', body),
+    onMutate: async (body) => {
+      await queryClient.cancelQueries({ queryKey: meKey })
+      const previous = queryClient.getQueryData<Me | null>(meKey)
+      if (previous) queryClient.setQueryData(meKey, { ...previous, ...body })
+      return { previous }
+    },
+    onError: (_error, _body, context) => {
+      if (context?.previous) queryClient.setQueryData(meKey, context.previous)
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: meKey }),
+  })
+}
+
+/** 메일의 수신 거부 링크 (7.4). 로그인 없이 서명된 토큰으로 끕니다. */
+export function useUnsubscribe() {
+  return useMutation({
+    mutationFn: (body: Schemas['UnsubscribeRequest']) =>
+      apiRequest<void>('/notifications/unsubscribe', 'POST', body),
+  })
+}
+
 /** 로그아웃·탈퇴 뒤에는 이전 사용자의 캐시를 모두 지웁니다. */
 function useClearSession() {
   const queryClient = useQueryClient()

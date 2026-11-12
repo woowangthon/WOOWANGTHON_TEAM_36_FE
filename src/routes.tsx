@@ -12,11 +12,14 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import PrivacyPage from '@/pages/PrivacyPage'
 import ProfilePage from '@/pages/ProfilePage'
 import SignupPage from '@/pages/SignupPage'
+import UnsubscribePage from '@/pages/UnsubscribePage'
 
 // 라우팅 가드(frontend CLAUDE.md): 비로그인 → /login, 동의 전 → /consent, 프로필 미입력 → /profile.
 export const routes: RouteObject[] = [
   { path: '/', element: <RootRedirect /> },
   { path: '/privacy', element: <PrivacyPage /> },
+  // 메일의 수신 거부 링크: 로그인 없이 열립니다(7.4).
+  { path: '/unsubscribe', element: <UnsubscribePage /> },
   {
     element: <GuestOnly />,
     children: [
