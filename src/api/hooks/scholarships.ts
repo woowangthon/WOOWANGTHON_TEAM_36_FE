@@ -28,12 +28,34 @@ function toQueryString(params: ListParams): string {
   return text ? `?${text}` : ''
 }
 
+/**
+ * 새로 생긴 응답 필드가 빠져 있어도 화면이 깨지지 않게 기본값을 채웁니다.
+ * frontend(Vercel)가 backend(Cloud Run)보다 먼저 배포되면 잠시 예전 응답이 옵니다.
+ * 2026-11-12에 open_conditions가 없는 응답 때문에 대시보드 전체가 깨졌습니다.
+ * 기본값은 backend 스키마의 기본값과 같습니다. 새 필드를 화면에서 쓰기 시작하면 여기에도 추가합니다.
+ */
+function withSummaryDefaults<T extends ScholarshipSummary>(item: T): T {
+  return {
+    ...item,
+    open_conditions: item.open_conditions ?? [],
+    other_unknown: item.other_unknown ?? false,
+  }
+}
+
+function withDetailDefaults(detail: ScholarshipDetail): ScholarshipDetail {
+  return { ...withSummaryDefaults(detail), extra_checks: detail.extra_checks ?? [] }
+}
+
 /** 대시보드·내 장학금 목록. 판정 결과와 내 상태가 함께 옵니다(화면 하나에 API 한 번, 9.8). */
 export function useScholarships(params: ListParams) {
   return useQuery({
     queryKey: listKey(params),
-    queryFn: () =>
-      apiRequest<Schemas['ScholarshipListResponse']>(`/scholarships${toQueryString(params)}`),
+    queryFn: async () => {
+      const data = await apiRequest<Schemas['ScholarshipListResponse']>(
+        `/scholarships${toQueryString(params)}`,
+      )
+      return { ...data, items: (data.items ?? []).map(withSummaryDefaults) }
+    },
     select: (data) => data.items,
   })
 }
@@ -41,7 +63,8 @@ export function useScholarships(params: ListParams) {
 export function useScholarship(id: number) {
   return useQuery({
     queryKey: detailKey(id),
-    queryFn: () => apiRequest<ScholarshipDetail>(`/scholarships/${id}`),
+    queryFn: async () =>
+      withDetailDefaults(await apiRequest<ScholarshipDetail>(`/scholarships/${id}`)),
     enabled: Number.isInteger(id) && id > 0,
     retry: false,
   })

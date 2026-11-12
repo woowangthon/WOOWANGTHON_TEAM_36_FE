@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
 
-import { mockDetails } from '@/mocks/data'
+import { mockDetails, toSummary } from '@/mocks/data'
 import { resetMockState } from '@/mocks/handlers'
 import { server } from '@/mocks/node'
 import { renderApp } from '@/test/renderApp'
@@ -90,6 +90,35 @@ describe('대시보드', () => {
     renderApp('/dashboard')
     expect(await screen.findByLabelText('불러오는 중')).toHaveAttribute('aria-busy', 'true')
     expect(await screen.findByText(/지원 가능한 장학금이 없습니다/)).toBeInTheDocument()
+  })
+})
+
+describe('backend가 아직 예전 버전일 때', () => {
+  // frontend가 먼저 배포되면 새 필드가 없는 응답이 옵니다(2026-11-12 대시보드 깨짐).
+  const legacy = <T extends object>(item: T) => {
+    const copy = { ...item } as Record<string, unknown>
+    delete copy.open_conditions
+    delete copy.other_unknown
+    delete copy.extra_checks
+    return copy
+  }
+
+  it('목록에 open_conditions·other_unknown이 없어도 대시보드를 보여 준다', async () => {
+    server.use(
+      http.get('/api/scholarships', () =>
+        HttpResponse.json({ items: mockDetails.map((d) => legacy(toSummary(d))) }),
+      ),
+    )
+    renderApp('/dashboard?tab=conditional')
+    await waitForCards('논산시 인재육성 장학금')
+    expect(screen.queryByText(/Unexpected Application Error/)).not.toBeInTheDocument()
+  })
+
+  it('상세에 extra_checks·open_conditions가 없어도 체크리스트를 보여 준다', async () => {
+    server.use(http.get('/api/scholarships/:id', () => HttpResponse.json(legacy(mockDetails[1]))))
+    renderApp('/scholarships/2')
+    const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
+    expect(within(checklist).getAllByRole('listitem')).toHaveLength(2) // 추가 조건 없이 조건 2개
   })
 })
 
