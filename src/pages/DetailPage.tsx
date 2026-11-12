@@ -370,8 +370,9 @@ function Evidence({ text, source }: { text: string; source: string | null }) {
   )
 }
 
-// 이 글자 수를 넘는 원문은 2줄로 줄이고 "더 보기"를 둡니다(360px 화면에서 대략 2줄).
-const CLAMP_CHARS = 60
+// 이 글자 수를 넘는 원문은 2줄로 줄이고 "더 보기"를 둡니다. 360px 화면에서 text-xs 한글이
+// 한 줄에 20자 안팎이라 2줄은 대략 40자입니다.
+const CLAMP_CHARS = 40
 
 /** 직접 답하는 조건의 공지 원문. 2줄까지 보이고, 길면 "더 보기"로 펼칩니다. */
 function OriginalText({ text }: { text: string }) {
@@ -391,7 +392,7 @@ function OriginalText({ text }: { text: string }) {
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="mt-0.5 text-xs text-muted-foreground underline underline-offset-4"
+          className="mt-0.5 rounded-sm text-xs text-muted-foreground underline underline-offset-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           {expanded ? '접기' : '더 보기'}
         </button>
@@ -430,7 +431,7 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
                     {summary}
                     <details className="text-muted-foreground">
                       <summary className="w-fit cursor-pointer text-xs underline-offset-4 hover:underline">
-                        원문 보기
+                        공지 문장 보기
                       </summary>
                       <p className="mt-0.5 text-xs">{text}</p>
                     </details>

@@ -402,7 +402,41 @@ describe('상세', () => {
     expect(within(extra).getByText('기타 조건')).toBeInTheDocument() // 요약 대신 단어 규칙 이름
     const basic = screen.getByRole('list', { name: '지원 전 확인' })
     expect(within(basic).getByText('타 장학금과 중복 수혜 불가')).toBeInTheDocument()
-    expect(within(basic).queryByText('원문 보기')).not.toBeInTheDocument()
+    expect(within(basic).queryByText('공지 문장 보기')).not.toBeInTheDocument()
+  })
+
+  it('기준값은 있고 기준 학기만 모호하면 요약과 모호 안내를 함께, 이름만으로 충분하면 요약 줄 없이', async () => {
+    const second = mockDetails[1]
+    server.use(
+      http.get('/api/scholarships/:id', () =>
+        HttpResponse.json({
+          ...second,
+          conditions: [
+            {
+              condition: 'min_gpa',
+              outcome: 'UNKNOWN',
+              evidence: '평점 3.5 이상',
+              requirement: '3.5 이상',
+              ambiguous: true,
+            },
+            {
+              condition: 'excludes_new_students',
+              outcome: 'MET',
+              evidence: '신·편입생 제외',
+              requirement: null,
+              ambiguous: false,
+            },
+          ],
+        }),
+      ),
+    )
+    renderApp('/scholarships/2')
+    const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
+    const [gpa, newcomer] = within(checklist).getAllByRole('listitem')
+    expect(within(gpa).getByText('3.5 이상')).toBeInTheDocument()
+    expect(within(gpa).getByText('공지 기준이 명확하지 않아요')).toBeInTheDocument()
+    // 조건 이름·판정·근거 보기 말고는 글이 없어야 합니다
+    expect(newcomer).toHaveTextContent(/^신·편입생 제외충족근거 보기신·편입생 제외$/)
   })
 
   it('직접 답하는 조건의 긴 원문은 2줄로 줄이고 더 보기로 펼친다', async () => {
