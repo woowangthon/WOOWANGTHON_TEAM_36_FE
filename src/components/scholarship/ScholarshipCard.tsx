@@ -84,7 +84,7 @@ export function DeadlineConflictNote() {
  */
 export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
   return (
-    <li className="relative flex flex-col rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4">
+    <li className="relative isolate flex flex-col rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="grid min-w-0 gap-1">
           <h3 className="font-medium break-keep">
@@ -150,7 +150,7 @@ function BookmarkHeart({ item }: { item: ScholarshipSummary }) {
  */
 export function ScholarshipRow({ item }: { item: ScholarshipSummary }) {
   return (
-    <li className="relative flex items-start gap-3 rounded-lg px-2 py-3 transition-colors focus-within:ring-3 focus-within:ring-ring/50 hover:bg-brand-50">
+    <li className="relative isolate flex items-start gap-3 rounded-lg px-2 py-3 transition-colors focus-within:ring-3 focus-within:ring-ring/50 hover:bg-brand-50">
       <div className="grid min-w-0 flex-1 gap-1">
         <h3 className="font-medium break-keep">
           <Link
