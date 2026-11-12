@@ -18,6 +18,10 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
         <li>선택: 소득분위, 본인·부모 주소(시/도, 시/군/구까지), 등록금 전액 감면 여부</li>
         <li>민감정보(별도 동의 시): 특수자격(다자녀·보훈·장애)</li>
         <li>Google 로그인 시: Google 계정 식별자와 이메일</li>
+        <li>
+          장학금 상세에서 직접 답한 경우: 추가 조건마다 &lsquo;해당돼요 / 아니에요&rsquo; 답과 답한
+          시각
+        </li>
       </ul>
     ),
   },
@@ -41,7 +45,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     title: '3. 보관 기간과 삭제',
     body: (
       <ul className="list-disc space-y-1 pl-5">
-        <li>회원 탈퇴 시 계정·프로필·관심/신청완료 기록을 즉시 삭제합니다.</li>
+        <li>회원 탈퇴 시 계정·프로필·관심/신청완료 기록·추가 조건 답을 즉시 삭제합니다.</li>
         <li>민감정보 동의를 철회하면 특수자격 값을 즉시 삭제합니다.</li>
         <li>탈퇴와 동의 철회는 프로필 화면에서 직접 할 수 있습니다.</li>
       </ul>
@@ -51,10 +55,12 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     title: '4. 안전성 확보 조치',
     body: (
       <ul className="list-disc space-y-1 pl-5">
-        <li>소득분위, 본인·부모 주소, 특수자격은 AES-256-GCM으로 암호화해 저장합니다.</li>
+        <li>
+          소득분위, 본인·부모 주소, 특수자격, 추가 조건 답은 AES-256-GCM으로 암호화해 저장합니다.
+        </li>
         <li>비밀번호는 Argon2로 해시해 원문을 저장하지 않습니다.</li>
         <li>로그인 정보는 브라우저 스크립트가 읽을 수 없는 쿠키(httpOnly)로만 주고받습니다.</li>
-        <li>서버 기록(로그)에는 프로필 값, 비밀번호, 토큰을 남기지 않습니다.</li>
+        <li>서버 기록(로그)에는 프로필 값, 추가 조건 답, 비밀번호, 토큰을 남기지 않습니다.</li>
         <li>가입 인증번호는 저장하지 않으며, 10분이 지나면 쓸 수 없습니다.</li>
       </ul>
     ),

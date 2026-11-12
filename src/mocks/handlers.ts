@@ -9,6 +9,8 @@ import {
   mockCrawlRuns,
   mockDetails,
   mockMe,
+  judge,
+  withDerived,
   mockProfile,
   toSummary,
   type ScholarshipDetail,
@@ -106,6 +108,26 @@ function listScholarships(url: URL): Schemas['ScholarshipListResponse'] {
 
 function findDetail(id: string | readonly string[] | undefined) {
   return details.find((d) => d.id === Number(id))
+}
+
+function answerCondition(
+  id: string | readonly string[] | undefined,
+  key: string | readonly string[] | undefined,
+  answer: Schemas['ConditionAnswerRequest']['answer'] | null,
+) {
+  const detail = findDetail(id)
+  const check = detail?.extra_checks.find((c) => c.key === key)
+  if (!detail || !check) return notFound()
+  check.answer = answer
+  Object.assign(detail, withDerived(detail))
+  detail.result = judge(detail)
+  const response: Schemas['ConditionAnswerResponse'] = {
+    scholarship_id: detail.id,
+    key: check.key,
+    answer,
+    result: detail.result,
+  }
+  return HttpResponse.json(response)
 }
 
 const notFound = () => HttpResponse.json({ detail: 'Not Found' }, { status: 404 })
@@ -249,6 +271,14 @@ export const handlers: RequestHandler[] = [
     detail.my_state = null
     return new HttpResponse(null, { status: 204 })
   }),
+  // 추가 조건에 답하기 (계획서 5.3). 답을 바꾸고 판정을 다시 계산해 돌려줍니다.
+  http.put('/api/scholarships/:id/conditions/:key', async ({ params, request }) => {
+    const body = (await request.json()) as Schemas['ConditionAnswerRequest']
+    return answerCondition(params.id, params.key, body.answer)
+  }),
+  http.delete('/api/scholarships/:id/conditions/:key', ({ params }) =>
+    answerCondition(params.id, params.key, null),
+  ),
 
   // 관리자: 관리자가 아니면 403. 재추출은 PENDING으로만 바꿉니다(9.3).
   http.get('/api/admin/crawl-runs', () => {

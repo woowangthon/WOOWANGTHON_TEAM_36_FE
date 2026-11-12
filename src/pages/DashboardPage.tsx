@@ -8,6 +8,7 @@ import { SidePanel } from '@/components/layout/SidePanel'
 import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
 import { DeadlineSoon, ResultGuide } from '@/components/scholarship/SideExtras'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
+import { UnlockHint } from '@/components/scholarship/UnlockHint'
 
 const TABS = [
   { value: 'eligible', label: '지원 가능' },
@@ -198,6 +199,8 @@ export default function DashboardPage() {
             <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />
           ) : (
             <>
+              {/* "이것만 확인하면 N개" 안내: 확인 필요 장학금이 있는 탭(확인 필요·전체)에서만 보입니다 */}
+              {!keyword && <UnlockHint items={list.data} />}
               <p aria-live="polite" className="text-sm text-muted-foreground">
                 {keyword ? (
                   <>
