@@ -93,24 +93,27 @@ describe('대시보드', () => {
   })
 })
 
-describe('추가 조건 직접 답하기 (계획서 5.3)', () => {
+describe('직접 답하는 조건 (계획서 5.3)', () => {
   const button = (state: string) =>
-    screen.findByRole('button', { name: `추가 조건 상태 바꾸기, 지금: ${state}` })
+    screen.findByRole('button', { name: `거주 기간 답 바꾸기, 지금: ${state}` })
 
-  it('상태 아이콘을 누를 때마다 ? → ✓ → ✗ → ? 로 바뀌고 판정도 바뀐다', async () => {
+  it('아이콘을 누를 때마다 모름 → 충족 → 불충족 → 모름으로 바뀌고 판정도 바뀐다', async () => {
     renderApp('/scholarships/8')
-    fireEvent.click(await button('확인 필요'))
-    expect(await button('해당돼요')).toBeInTheDocument()
-    expect(screen.getByText(/본인 확인함 · 해당돼요/)).toBeInTheDocument()
+    const list = await screen.findByRole('list', { name: '직접 답하는 조건' })
+    expect(within(list).getByText('눌러서 답하기')).toBeInTheDocument()
+    expect(within(list).getByText('청주시에 1년 이상 주민등록이 되어 있는 자')).toBeInTheDocument()
+
+    fireEvent.click(await button('모름'))
+    expect(await button('충족')).toBeInTheDocument()
     expect(await screen.findByText('지원 가능')).toBeInTheDocument()
     expect(screen.getByText('본인 확인 포함')).toBeInTheDocument()
 
-    fireEvent.click(await button('해당돼요'))
-    expect(await button('아니에요')).toBeInTheDocument()
+    fireEvent.click(await button('충족'))
+    expect(await button('불충족')).toBeInTheDocument()
     expect(await screen.findByText('지원 불가')).toBeInTheDocument()
 
-    fireEvent.click(await button('아니에요'))
-    expect(await button('확인 필요')).toBeInTheDocument()
+    fireEvent.click(await button('불충족'))
+    expect(await button('모름')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('지원 불가')).not.toBeInTheDocument())
     expect(screen.queryByText('본인 확인 포함')).not.toBeInTheDocument()
   })
@@ -123,49 +126,57 @@ describe('추가 조건 직접 답하기 (계획서 5.3)', () => {
       }),
     )
     renderApp('/scholarships/8')
-    fireEvent.click(await button('확인 필요'))
-    expect(await button('해당돼요')).toBeInTheDocument() // 먼저 반영
+    fireEvent.click(await button('모름'))
+    expect(await button('충족')).toBeInTheDocument() // 먼저 반영
     expect(
       await screen.findByText('저장하지 못했습니다. 잠시 후 다시 시도하세요.'),
     ).toBeInTheDocument()
-    expect(await button('확인 필요')).toBeInTheDocument()
+    expect(await button('모름')).toBeInTheDocument()
   })
 })
 
-describe('이것만 확인하면 N개 안내 (계획서 7.1)', () => {
-  it('안 1: 후보 수를 알리고 바로 답하면 줄어든다', async () => {
+describe('대시보드 빠른 확인 (계획서 7.1)', () => {
+  beforeEach(() => sessionStorage.clear())
+  const card = () => screen.findByRole('region', { name: '빠른 확인' })
+
+  it('같은 문장은 한 번만 묻고, 답하면 묶인 장학금이 모두 정해진다', async () => {
     renderApp('/dashboard?tab=conditional')
-    expect(await screen.findByText('조건 1개만 확인하면 장학금 3개가 정리돼요')).toBeInTheDocument()
-    expect(screen.getByText('청주시에 1년 이상 주민등록이 되어 있는 자')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: '해당돼요' }))
-    expect(await screen.findByText('조건 1개만 확인하면 장학금 2개가 정리돼요')).toBeInTheDocument()
-    expect(screen.getAllByText('TOEIC 500점 이상').length).toBeGreaterThan(0)
-  })
-
-  it('안 2: 마감이 가장 가까운 장학금을 이름으로 짚는다', async () => {
-    renderApp('/dashboard?tab=conditional&hint=2')
+    const first = await card()
+    expect(within(first).getByText('1/2')).toBeInTheDocument()
+    expect(within(first).getByText('TOEIC 500점 이상')).toBeInTheDocument()
     expect(
-      await screen.findByText('‘청주시 미래인재 장학금’은 조건 하나만 확인하면 돼요'),
+      within(first).getByText(
+        '답하면 ‘글로벌 SW 인재 장학금’ 외 1개의 지원 가능 여부를 바로 알려 드려요.',
+      ),
     ).toBeInTheDocument()
-  })
 
-  it('안 3: 같은 문장을 가진 장학금을 한 번에 정리한다', async () => {
-    renderApp('/dashboard?tab=conditional&hint=3')
-    expect(await screen.findByText('이 조건 하나로 장학금 2개가 정리돼요')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: '아니에요' }))
+    fireEvent.click(within(first).getByRole('button', { name: '안 맞아요' }))
     // 두 장학금 모두 지원 불가가 되어 확인 필요 탭에서 빠집니다
     await waitFor(() => expect(screen.queryByText('글로벌 SW 인재 장학금')).not.toBeInTheDocument())
     expect(screen.queryByText('해외 연수 지원 장학금')).not.toBeInTheDocument()
+
+    const second = await card()
+    expect(within(second).getByText('2/2')).toBeInTheDocument()
     expect(
-      await screen.findByText('‘청주시 미래인재 장학금’은 조건 하나만 확인하면 돼요'),
+      within(second).getByText('청주시에 1년 이상 주민등록이 되어 있는 자'),
     ).toBeInTheDocument()
   })
 
-  it('지원 가능 탭에는 확인 필요 장학금이 없어 안내가 나오지 않는다', async () => {
+  it('모르겠어요는 판정을 바꾸지 않고 넘어가며, 끝나면 다 끝냈다고 알린다', async () => {
+    renderApp('/dashboard?tab=conditional')
+    fireEvent.click(within(await card()).getByRole('button', { name: '모르겠어요' }))
+    expect(
+      within(await card()).getByText('청주시에 1년 이상 주민등록이 되어 있는 자'),
+    ).toBeInTheDocument()
+    fireEvent.click(within(await card()).getByRole('button', { name: '모르겠어요' }))
+    expect(await screen.findByText('빠르게 확인할 질문을 다 끝냈어요.')).toBeInTheDocument()
+    expect(screen.getByText('글로벌 SW 인재 장학금')).toBeInTheDocument() // 그대로 확인 필요
+  })
+
+  it('지원 가능 탭에는 확인 필요 장학금이 없어 카드가 나오지 않는다', async () => {
     renderApp('/dashboard')
     await waitForCards('두산연강재단 장학금')
-    expect(screen.queryByText(/정리돼요|확인하면 돼요/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '빠른 확인' })).not.toBeInTheDocument()
   })
 })
 
@@ -174,11 +185,13 @@ describe('상세', () => {
     renderApp('/scholarships/2')
     const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
     const items = within(checklist).getAllByRole('listitem')
-    expect(items).toHaveLength(3) // 조건 2개 + 추가 조건 1개
+    expect(items).toHaveLength(2) // 내 정보로 판정한 조건 2개
     expect(within(items[0]).getByRole('img', { name: '충족' })).toBeInTheDocument()
     expect(within(items[0]).getByText('부모가 논산시에 1년 이상 거주한 학생')).toBeInTheDocument()
     expect(within(items[1]).getByRole('img', { name: '확인 필요' })).toBeInTheDocument()
-    expect(within(items[2]).getByText('직전학기 봉사활동 20시간 이상')).toBeInTheDocument()
+    const extra = screen.getByRole('list', { name: '직접 답하는 조건' })
+    expect(within(extra).getByText('직전학기 봉사활동 20시간 이상')).toBeInTheDocument()
+    expect(within(extra).getByText('기타 조건')).toBeInTheDocument()
 
     // 판정에 쓰지 않는 기본 조건·안내는 체크리스트 밖에 따로 (extract_v5)
     const basic = screen.getByRole('list', { name: '지원 전 확인' })
