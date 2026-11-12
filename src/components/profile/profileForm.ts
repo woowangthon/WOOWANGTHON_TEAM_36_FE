@@ -134,7 +134,10 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
   if (!v.completed_semesters) issue('completed_semesters', '이수학기를 입력하세요')
   else if (!INTEGER.test(v.completed_semesters)) issue('completed_semesters', '정수로 입력하세요')
   else if (v.is_transfer && Number(v.completed_semesters) > MAX_TRANSFER_SEMESTERS)
-    issue('completed_semesters', `편입 후 마친 학기는 0~${MAX_TRANSFER_SEMESTERS} 사이로 입력하세요`)
+    issue(
+      'completed_semesters',
+      `편입 후 마친 학기는 0~${MAX_TRANSFER_SEMESTERS} 사이로 입력하세요`,
+    )
   else if (Number(v.completed_semesters) > MAX_SEMESTERS)
     issue('completed_semesters', `0~${MAX_SEMESTERS} 사이로 입력하세요`)
 

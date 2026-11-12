@@ -16,6 +16,7 @@ import {
   hasNoGrades,
   INCOME_OPTIONS,
   MAX_SEMESTERS,
+  MAX_TRANSFER_SEMESTERS,
   profileSchema,
   SPECIAL_FLAGS,
   toFormValues,
@@ -102,6 +103,7 @@ function ProfileForm({
   const { errors, isDirty } = formState
   useEffect(() => onDirtyChange(isDirty), [isDirty, onDirtyChange])
   const parentSame = useWatch({ control, name: 'parent_same' })
+  const isTransfer = useWatch({ control, name: 'is_transfer' })
   const noGrades = hasNoGrades(useWatch({ control, name: 'completed_semesters' }))
 
   // 이수학기 0이면 성적 칸을 숨기고, 적어 둔 값도 비웁니다(다시 1 이상으로 바꿔도 옛 값이 되살아나지 않게).
@@ -185,27 +187,39 @@ function ProfileForm({
             </Field>
             {/* 오류가 입력 바로 아래에 오도록, 긴 안내문은 Field 밖에 둡니다. */}
             <div className="grid content-start gap-1.5">
+              {/* 편입생이면 이 학교에서 마친 학기만 받고, 학년은 4학기를 더해 계산합니다(4.1, T40). */}
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox {...register('is_transfer')} />
+                편입생이에요
+              </label>
               <Field
                 id="completed_semesters"
-                label="이수학기"
+                label={isTransfer ? '편입 후 마친 학기' : '이수학기'}
                 error={errors.completed_semesters?.message}
               >
                 <Input
                   id="completed_semesters"
                   inputMode="numeric"
-                  placeholder={`0~${MAX_SEMESTERS}`}
+                  placeholder={`0~${isTransfer ? MAX_TRANSFER_SEMESTERS : MAX_SEMESTERS}`}
                   aria-invalid={!!errors.completed_semesters}
                   aria-describedby="completed_semesters-help"
                   {...register('completed_semesters')}
                 />
               </Field>
               <p id="completed_semesters-help" className="text-xs text-muted-foreground">
-                마친 정규학기 수예요. 휴학·계절학기는 빼고 세요. 신입생 첫 학기는 0. 학기가 끝나
-                성적이 나오면 이수학기와 성적을 함께 고쳐 주세요(성적이 나오기 전이면 그 전 값
-                그대로).
+                {isTransfer
+                  ? '편입 후 이 학교에서 마친 정규학기 수예요. 3학년 편입 기준으로 4학기를 더해 학년을 계산해요. 편입 첫 학기는 0.'
+                  : '마친 정규학기 수예요. 신입생 첫 학기는 0.'}{' '}
+                휴학·계절학기는 빼고 세요. 학기가 끝나 성적이 나오면 이수학기와 성적을 함께 고쳐
+                주세요(성적이 나오기 전이면 그 전 값 그대로).
               </p>
             </div>
           </div>
+          {/* 국적 조건(대한민국 국적자·외국인 유학생 대상)을 판정합니다(4.1, T40). */}
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox {...register('is_foreign')} />
+            외국인이에요 (대한민국 국적이 아님)
+          </label>
           <fieldset className="grid gap-1.5">
             <legend className="mb-1.5 text-sm font-medium">AI부트캠프사업단 양성인재인가요?</legend>
             <p className="mb-1.5 text-xs text-muted-foreground">

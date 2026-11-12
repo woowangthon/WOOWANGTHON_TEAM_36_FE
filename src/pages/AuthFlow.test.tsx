@@ -92,6 +92,8 @@ describe('가입 흐름', () => {
       credits: 18,
       gpa_total: 3.6,
       completed_semesters: 5,
+      is_transfer: false, // 체크하지 않으면 false (T40)
+      is_foreign: false,
       aibc_member: false,
       income_bracket: null,
       self_region: { sido: '충청남도', sigungu: '논산시' },
@@ -432,6 +434,35 @@ describe('프로필 화면', () => {
       credits: null,
       gpa_total: null,
     })
+    server.events.removeAllListeners()
+  })
+
+  it('편입생을 체크하면 이수학기 칸이 편입 후 마친 학기로 바뀐다 (T40)', async () => {
+    renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    fireEvent.click(screen.getByLabelText('편입생이에요'))
+    expect(await screen.findByLabelText('편입 후 마친 학기')).toBeInTheDocument()
+    expect(screen.getByText(/3학년 편입 기준으로 4학기를 더해 학년을 계산해요/)).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('편입생이에요'))
+    expect(await screen.findByLabelText('이수학기')).toBeInTheDocument()
+  })
+
+  it('편입생·외국인 체크를 저장한다 (T40)', async () => {
+    let saved: Record<string, unknown> | null = null
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'PUT' && request.url.endsWith('/api/profile')) {
+        saved = await request.clone().json()
+      }
+    })
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    fireEvent.click(screen.getByLabelText('편입생이에요'))
+    fireEvent.click(screen.getByLabelText('외국인이에요 (대한민국 국적이 아님)'))
+    type('편입 후 마친 학기', '2')
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
+
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
+    expect(saved).toMatchObject({ is_transfer: true, is_foreign: true, completed_semesters: 2 })
     server.events.removeAllListeners()
   })
 

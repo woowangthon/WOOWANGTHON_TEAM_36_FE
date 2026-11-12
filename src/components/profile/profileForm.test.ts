@@ -232,7 +232,10 @@ describe('편입생·외국인', () => {
   })
 
   it('두 값을 그대로 보낸다', () => {
-    const body = toProfile(profileSchema.parse({ ...valid, is_transfer: true, is_foreign: true }), false)
+    const body = toProfile(
+      profileSchema.parse({ ...valid, is_transfer: true, is_foreign: true }),
+      false,
+    )
     expect(body.is_transfer).toBe(true)
     expect(body.is_foreign).toBe(true)
   })
