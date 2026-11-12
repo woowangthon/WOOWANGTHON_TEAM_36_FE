@@ -46,6 +46,7 @@ import {
   SourceLine,
 } from '@/components/scholarship/ScholarshipCard'
 import { Button } from '@/components/ui/button'
+import { conditionLabel } from '@/lib/conditionLabel'
 
 // 상세 (7.1): 조건별 체크리스트(충족·불충족·확인 필요 아이콘), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
 // 관심·신청완료 버튼, 중복 안내 문구.
@@ -71,7 +72,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
           <h1 className="min-w-0 text-xl font-semibold break-keep">{item.name}</h1>
           <div className="flex shrink-0 flex-col items-end gap-1">
             <ResultBadge result={item.result} />
-            {item.result === 'ELIGIBLE' && item.extra_checks.length > 0 && (
+            {item.result === 'ELIGIBLE' && (item.extra_checks ?? []).length > 0 && (
               <span className="text-xs text-muted-foreground">본인 확인 포함</span>
             )}
           </div>
@@ -116,7 +117,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
         <StateButtons id={item.id} state={item.my_state} />
       </section>
 
-      <Checklist id={item.id} conditions={item.conditions} extra={item.extra_checks} />
+      <Checklist id={item.id} conditions={item.conditions} extra={item.extra_checks ?? []} />
 
       <OtherNotes basic={item.basic_conditions ?? []} notes={item.notes ?? []} />
 
@@ -203,13 +204,36 @@ function Mark({ outcome, small }: { outcome: ConditionCheck['outcome']; small?: 
   )
 }
 
-/** 사용자 답을 체크리스트 아이콘으로: ✓ 해당돼요 / ✗ 아니에요 / ? 아직 답하지 않음 */
+/** 사용자 답을 체크리스트 아이콘으로: ✓ 충족 / ✗ 불충족 / 아직 답하지 않음 */
 const ANSWER_OUTCOME = { YES: 'MET', NO: 'UNMET' } as const
-const ANSWER_LABEL = { YES: '해당돼요', NO: '아니에요' } as const
+const ANSWER_LABEL = { YES: '충족', NO: '불충족' } as const
+
+/** 아직 답하지 않은 직접 답하는 조건: 주황 점선 원 안의 물음표로 눌러서 답할 수 있음을 보입니다. */
+function AskMark() {
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-6 shrink-0 place-items-center rounded-full border-2 border-dashed border-amber-600 text-xs font-bold text-amber-600"
+    >
+      ?
+    </span>
+  )
+}
+
+function SectionTitle({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="mt-3">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="mt-0.5 text-xs text-muted-foreground break-keep">{desc}</p>
+    </div>
+  )
+}
 
 /**
- * 조건별 ✓ ✗ ? 와 공지 원문 근거 (5.3). 추가 조건(자격을 좁히는 조건)은 코드로 비교할 수 없어
- * 사용자가 직접 답합니다. 상태 아이콘을 누를 때마다 ? → ✓ → ✗ → ? 로 바뀌고 판정도 다시 계산됩니다.
+ * 조건별 ✓ ✗ ? 와 공지 원문 근거 (5.3). 두 구역으로 나눕니다.
+ * - 내 정보로 판정한 조건: 프로필과 공지를 코드로 비교한 결과
+ * - 직접 답하는 조건(추가 조건): 코드로 비교할 수 없어 사용자가 답합니다. 아이콘을 누를 때마다
+ *   ? → ✓ → ✗ → ? 로 바뀌고 판정도 다시 계산됩니다.
  */
 function Checklist({
   id,
@@ -230,72 +254,87 @@ function Checklist({
       {conditions.length === 0 && extra.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">공지에 따로 적힌 지원 조건이 없습니다.</p>
       ) : (
-        <ul className="mt-3 grid gap-3" aria-label="조건 체크리스트">
-          {conditions.map((check) => (
-            <li key={check.condition} className="flex gap-3">
-              <Mark outcome={check.outcome} />
-              <div className="min-w-0 text-sm">
-                <p className="font-medium">
-                  {CONDITION_LABEL[check.condition]}
-                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                    {OUTCOME[check.outcome].label}
-                  </span>
-                </p>
-                {check.evidence && (
-                  <blockquote className="mt-0.5 border-l-2 pl-2 text-muted-foreground break-keep">
-                    {check.evidence}
-                  </blockquote>
-                )}
-                {check.evidence && check.evidence_source && (
-                  <p className="mt-0.5 text-xs text-muted-foreground break-all">
-                    출처: {evidenceSourceLabel(check.evidence_source)}
-                  </p>
-                )}
-              </div>
-            </li>
-          ))}
-          {extra.map((check) => (
-            <li key={check.key} className="flex gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  mutation.mutate({ id, key: check.key, answer: nextAnswer(check.answer) })
-                }
-                aria-label={`추가 조건 상태 바꾸기, 지금: ${
-                  check.answer ? ANSWER_LABEL[check.answer] : '확인 필요'
-                }`}
-                className="-m-1 self-start rounded-full p-1 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-              >
-                <Mark outcome={check.answer ? ANSWER_OUTCOME[check.answer] : 'UNKNOWN'} />
-              </button>
-              <div className="min-w-0 text-sm">
-                <p className="font-medium">
-                  추가 조건
-                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                    {check.answer ? `본인 확인함 · ${ANSWER_LABEL[check.answer]}` : '직접 확인'}
-                  </span>
-                </p>
-                <p className="mt-0.5 text-muted-foreground break-keep">{check.text}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <>
+          {conditions.length > 0 && (
+            <>
+              <SectionTitle
+                title="내 정보로 판정한 조건"
+                desc="프로필에 입력한 정보와 공지를 비교한 결과예요. 물음표는 정보가 없거나 공지가 모호한 조건이에요."
+              />
+              <ul className="mt-3 grid gap-3" aria-label="조건 체크리스트">
+                {conditions.map((check) => (
+                  <li key={check.condition} className="flex gap-3">
+                    <Mark outcome={check.outcome} />
+                    <div className="min-w-0 text-sm">
+                      <p className="font-medium">
+                        {CONDITION_LABEL[check.condition]}
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                          {OUTCOME[check.outcome].label}
+                        </span>
+                      </p>
+                      {check.evidence && (
+                        <blockquote className="mt-0.5 border-l-2 pl-2 text-muted-foreground break-keep">
+                          {check.evidence}
+                        </blockquote>
+                      )}
+                      {check.evidence && check.evidence_source && (
+                        <p className="mt-0.5 text-xs text-muted-foreground break-all">
+                          출처: {evidenceSourceLabel(check.evidence_source)}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {conditions.length > 0 && extra.length > 0 && <hr className="mt-4 border-brand-100" />}
+          {extra.length > 0 && (
+            <>
+              <SectionTitle
+                title="직접 답하는 조건"
+                desc="내 정보로는 판정할 수 없는 조건이에요. 아이콘을 누를 때마다 충족 → 불충족 → 모름으로 바뀌어요."
+              />
+              <ul className="mt-3 grid gap-3" aria-label="직접 답하는 조건">
+                {extra.map((check) => (
+                  <li key={check.key} className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        mutation.mutate({ id, key: check.key, answer: nextAnswer(check.answer) })
+                      }
+                      aria-label={`${conditionLabel(check.text)} 답 바꾸기, 지금: ${
+                        check.answer ? ANSWER_LABEL[check.answer] : '모름'
+                      }`}
+                      className="-m-1 self-start rounded-full p-1 transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    >
+                      {check.answer ? <Mark outcome={ANSWER_OUTCOME[check.answer]} /> : <AskMark />}
+                    </button>
+                    <div className="min-w-0 text-sm">
+                      <p className="font-medium">
+                        {conditionLabel(check.text)}
+                        <span
+                          className={`ml-1.5 text-xs font-normal ${
+                            check.answer ? 'text-muted-foreground' : 'text-amber-700'
+                          }`}
+                        >
+                          {check.answer ? ANSWER_LABEL[check.answer] : '눌러서 답하기'}
+                        </span>
+                      </p>
+                      <blockquote className="mt-0.5 border-l-2 pl-2 text-muted-foreground break-keep">
+                        {check.text}
+                      </blockquote>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
       )}
       <FormError
         message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
       />
-      <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
-        <CircleCheck aria-hidden="true" className="size-3.5 text-emerald-600" /> 충족 ·
-        <CircleX aria-hidden="true" className="size-3.5 text-red-600" /> 불충족 ·
-        <CircleHelp aria-hidden="true" className="size-3.5 text-amber-600" /> 정보가 없거나 공지가
-        모호해 직접 확인이 필요합니다.
-      </p>
-      {extra.length > 0 && (
-        <p className="mt-1 text-xs text-muted-foreground break-keep">
-          추가 조건은 아이콘을 눌러 직접 답할 수 있어요. 누를 때마다 해당돼요 → 아니에요 → 모름
-          순으로 바뀌고 판정에 바로 반영돼요.
-        </p>
-      )}
     </section>
   )
 }

@@ -1,8 +1,8 @@
 import type { ScholarshipSummary } from '@/api/hooks/scholarships'
 
-import { hintVariantOf, unlockCandidates, unlockHint } from './unlockHint'
+import { questionNote, quickQuestions, unlockCandidates } from './unlockHint'
 
-type Item = Parameters<typeof unlockHint>[0][number]
+type Item = Parameters<typeof quickQuestions>[0][number]
 
 function item(id: number, overrides: Partial<ScholarshipSummary> = {}, texts = ['A 조건']): Item {
   return {
@@ -32,45 +32,29 @@ describe('unlockCandidates', () => {
   })
 })
 
-describe('unlockHint', () => {
-  const items = [item(3, {}, ['B 조건']), item(1), item(2), item(4, { other_unknown: true })]
-
-  it('후보가 없으면 null', () => {
-    expect(unlockHint([item(1, { other_unknown: true })], 1)).toBeNull()
-    expect(unlockHint([], 3)).toBeNull()
+describe('quickQuestions', () => {
+  it('같은 문장은 한 질문으로 묶고, 정해지는 장학금이 많은 질문부터', () => {
+    const questions = quickQuestions([item(1, {}, ['B 조건']), item(3), item(2)])
+    expect(questions.map((q) => q.condition.text)).toEqual(['A 조건', 'B 조건'])
+    expect(questions[0].targets.map((t) => t.id)).toEqual([2, 3])
   })
 
-  it('안 1: 후보 수와 마감이 가장 가까운 장학금의 조건', () => {
-    const hint = unlockHint(items, 1)!
-    expect(hint.message).toBe('조건 1개만 확인하면 장학금 3개가 정리돼요')
-    expect(hint.targets.map((t) => t.id)).toEqual([1])
-    expect(hint.condition.text).toBe('A 조건')
+  it('수가 같으면 마감이 가까운 장학금이 있는 질문부터', () => {
+    const questions = quickQuestions([item(2), item(1, {}, ['B 조건'])])
+    expect(questions.map((q) => q.condition.text)).toEqual(['B 조건', 'A 조건'])
   })
 
-  it('안 2: 마감이 가장 가까운 장학금을 이름으로', () => {
-    const hint = unlockHint(items, 2)!
-    expect(hint.message).toBe('‘장학금1’은 조건 하나만 확인하면 돼요')
-    expect(hint.targets.map((t) => t.id)).toEqual([1])
-  })
-
-  it('안 3: 같은 문장을 가진 장학금을 묶어 가장 많이 정해지는 문장', () => {
-    const hint = unlockHint(items, 3)!
-    expect(hint.message).toBe('이 조건 하나로 장학금 2개가 정리돼요')
-    expect(hint.condition.text).toBe('A 조건')
-    expect(hint.targets.map((t) => t.id)).toEqual([1, 2])
-  })
-
-  it('안 3: 묶이는 문장이 없으면 마감이 가까운 장학금 하나', () => {
-    const hint = unlockHint([item(2, {}, ['B 조건']), item(1)], 3)!
-    expect(hint.message).toBe('‘장학금1’은 조건 하나만 확인하면 돼요')
-    expect(hint.targets.map((t) => t.id)).toEqual([1])
+  it('이미 답했거나 건너뛴 문장은 다시 묻지 않는다', () => {
+    expect(quickQuestions([item(1), item(2, {}, ['B 조건'])], new Set(['k:A 조건']))).toEqual([
+      { condition: { key: 'k:B 조건', text: 'B 조건' }, targets: [{ id: 2, name: '장학금2' }] },
+    ])
+    expect(quickQuestions([])).toEqual([])
   })
 })
 
-it('hintVariantOf: 주소 값이 1·2·3이 아니면 안 1', () => {
-  expect(hintVariantOf('2')).toBe(2)
-  expect(hintVariantOf('3')).toBe(3)
-  expect(hintVariantOf(null)).toBe(1)
-  expect(hintVariantOf('9')).toBe(1)
-  expect(hintVariantOf('abc')).toBe(1)
+it('questionNote: 장학금이 여럿이면 "외 N개"', () => {
+  const [one] = quickQuestions([item(1)])
+  expect(questionNote(one)).toBe('답하면 ‘장학금1’의 지원 가능 여부를 바로 알려 드려요.')
+  const [many] = quickQuestions([item(1), item(2), item(3)])
+  expect(questionNote(many)).toBe('답하면 ‘장학금1’ 외 2개의 지원 가능 여부를 바로 알려 드려요.')
 })
