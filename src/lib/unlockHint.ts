@@ -6,7 +6,14 @@ import type { ScholarshipSummary } from '@/api/hooks/scholarships'
 
 type Item = Pick<
   ScholarshipSummary,
-  'id' | 'name' | 'result' | 'status' | 'apply_end' | 'open_conditions' | 'other_unknown'
+  | 'id'
+  | 'name'
+  | 'display_name'
+  | 'result'
+  | 'status'
+  | 'apply_end'
+  | 'open_conditions'
+  | 'other_unknown'
 >
 
 export interface QuickQuestion {
@@ -49,7 +56,7 @@ export function quickQuestions(
     const condition = item.open_conditions[0]
     if (done.has(condition.key)) continue
     const group = groups.get(condition.key) ?? { condition, targets: [] }
-    group.targets.push({ id: item.id, name: item.name })
+    group.targets.push({ id: item.id, name: item.display_name }) // 안내 문구에는 쉬운 이름
     groups.set(condition.key, group)
   }
   // Map은 넣은 순서(마감 빠른 순)를 지키고 sort는 안정 정렬이라, 수가 같으면 마감 순이 됩니다.

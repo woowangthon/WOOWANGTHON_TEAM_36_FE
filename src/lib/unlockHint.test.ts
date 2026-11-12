@@ -8,6 +8,7 @@ function item(id: number, overrides: Partial<ScholarshipSummary> = {}, texts = [
   return {
     id,
     name: `장학금${id}`,
+    display_name: `장학금${id}`,
     result: 'CONDITIONAL',
     status: 'OPEN',
     apply_end: `2026-11-${String(10 + id).padStart(2, '0')}T18:00:00+09:00`,

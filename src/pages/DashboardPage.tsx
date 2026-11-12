@@ -92,7 +92,9 @@ export default function DashboardPage() {
   }
   const list = useScholarships(params)
   const items = list.data?.filter(
-    (item) => !keyword || normalize(`${item.name} ${item.source_name}`).includes(keyword),
+    (item) =>
+      !keyword ||
+      normalize(`${item.display_name} ${item.name} ${item.source_name}`).includes(keyword),
   )
 
   // 초기화는 정렬·출처·지원 형태와 검색어를 함께 지웁니다 (판정 탭은 그대로)
