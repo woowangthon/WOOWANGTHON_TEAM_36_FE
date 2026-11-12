@@ -1,28 +1,28 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import { meKey, useMe, type Me } from '@/api/hooks/auth'
 import {
   useSetConditionAnswer,
   type ConditionAnswer,
   type ScholarshipSummary,
 } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
-import { questionNote, quickQuestions } from '@/lib/unlockHint'
+import { questionNote, quickQuestions, type QuickQuestion } from '@/lib/unlockHint'
 
-// 이미 답했거나 건너뛴 질문(key)은 이 브라우저 탭을 닫기 전까지 다시 묻지 않습니다.
+// 저장에 성공했거나 건너뛴 질문은 같은 계정과 브라우저 탭에서 다시 묻지 않습니다.
 // 화면 편의용이라 저장소를 쓸 수 없으면(사생활 보호 모드 등) 화면 안에서만 기억합니다.
-const STORAGE_KEY = 'quick-check-done'
-
-function loadDone(): Set<string> {
+function loadDone(storageKey: string): Set<string> {
   try {
-    return new Set(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? '[]') as string[])
+    return new Set(JSON.parse(sessionStorage.getItem(storageKey) ?? '[]') as string[])
   } catch {
     return new Set()
   }
 }
 
-function saveDone(done: Set<string>) {
+function saveDone(storageKey: string, done: Set<string>) {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...done]))
+    sessionStorage.setItem(storageKey, JSON.stringify([...done]))
   } catch {
     // 저장하지 못해도 화면 안에서는 기억합니다.
   }
@@ -34,11 +34,21 @@ function saveDone(done: Set<string>) {
  * 바꾸지 않고 다음 질문으로 넘어갑니다. 이미 받은 목록으로 계산해 API를 더 부르지 않습니다(9.8).
  */
 export function UnlockHint({ items }: { items: ScholarshipSummary[] }) {
-  const mutation = useSetConditionAnswer()
-  const [done, setDone] = useState(loadDone)
+  const { data: me } = useMe()
+  return me ? <QuickCheck key={me.id} userId={me.id} items={items} /> : null
+}
+
+type AnswerAttempt = { question: QuickQuestion; status: 'saving' | 'failed' }
+
+function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSummary[] }) {
+  const storageKey = `quick-check-done:${userId}`
+  const queryClient = useQueryClient()
+  const { mutateAsync } = useSetConditionAnswer()
+  const [done, setDone] = useState(() => loadDone(storageKey))
   const [finished, setFinished] = useState(false)
+  const [attempt, setAttempt] = useState<AnswerAttempt | null>(null)
   const questions = quickQuestions(items, done)
-  const [question] = questions
+  const question = attempt?.question ?? questions[0]
 
   if (!question) {
     if (!finished) return null
@@ -49,24 +59,43 @@ export function UnlockHint({ items }: { items: ScholarshipSummary[] }) {
     )
   }
 
-  const next = (answer: ConditionAnswer | null) => {
-    if (answer) {
-      for (const target of question.targets) {
-        mutation.mutate({ id: target.id, key: question.condition.key, answer })
+  const saving = attempt?.status === 'saving'
+  const remaining = questions.some(({ condition }) => condition.key === question.condition.key)
+    ? questions.length
+    : questions.length + 1
+
+  const next = async (answer: ConditionAnswer | null) => {
+    if (saving) return
+    if (answer !== null) {
+      // 목록이 낙관적으로 바뀌어도 저장이 끝날 때까지 같은 질문을 보여 줍니다.
+      setAttempt({ question, status: 'saving' })
+      try {
+        // 장학금마다 순서대로 저장해 실패한 요청의 캐시 복구가 다른 요청과 겹치지 않게 합니다.
+        for (const target of question.targets) {
+          if (queryClient.getQueryData<Me | null>(meKey)?.id !== userId) {
+            setAttempt(null)
+            return
+          }
+          await mutateAsync({ id: target.id, key: question.condition.key, answer })
+        }
+      } catch {
+        setAttempt({ question, status: 'failed' })
+        return
       }
     }
-    const updated = new Set(done).add(question.condition.key)
-    saveDone(updated)
+    const updated = new Set([...loadDone(storageKey), ...done, question.condition.key])
+    saveDone(storageKey, updated)
     setDone(updated)
     setFinished(true)
+    setAttempt(null)
   }
 
   return (
     <section aria-label="빠른 확인" className={CARD}>
       <p className="flex items-center justify-between text-xs font-semibold text-brand-700">
         빠른 확인
-        <span aria-label={`${questions.length}개 남음`} className="font-normal tabular-nums">
-          {done.size + 1}/{done.size + questions.length}
+        <span aria-label={`${remaining}개 남음`} className="font-normal tabular-nums">
+          {done.size + 1}/{done.size + remaining}
         </span>
       </p>
       <p className="mt-2 text-xs text-muted-foreground">이 조건에 맞나요?</p>
@@ -75,22 +104,25 @@ export function UnlockHint({ items }: { items: ScholarshipSummary[] }) {
       </p>
       <p className="mt-1.5 text-xs text-muted-foreground break-keep">{questionNote(question)}</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={() => next('YES')} className={BUTTON}>
+        <button type="button" onClick={() => void next('YES')} disabled={saving} className={BUTTON}>
           맞아요
         </button>
-        <button type="button" onClick={() => next('NO')} className={BUTTON}>
+        <button type="button" onClick={() => void next('NO')} disabled={saving} className={BUTTON}>
           안 맞아요
         </button>
         <button
           type="button"
-          onClick={() => next(null)}
+          onClick={() => void next(null)}
+          disabled={saving}
           className="h-9 px-2 text-sm text-muted-foreground underline underline-offset-4"
         >
           모르겠어요
         </button>
       </div>
       <FormError
-        message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
+        message={
+          attempt?.status === 'failed' ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null
+        }
       />
     </section>
   )
