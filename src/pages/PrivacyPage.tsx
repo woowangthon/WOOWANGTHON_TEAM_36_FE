@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { AuthLayout } from '@/components/auth/AuthLayout'
 
 // 개인정보처리방침 (계획서 4.2). 로그인 없이 볼 수 있는 정적 페이지이며 Google OAuth 동의 화면에도 링크합니다.
 // 문안은 운영 담당자가 검토합니다(T24 사람 할 일).
@@ -91,26 +91,15 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-svh bg-muted/40">
-      <header className="mx-auto flex max-w-2xl items-center px-4 py-4">
-        <Link to="/" className="text-sm font-semibold">
-          장학금 매칭
-        </Link>
-      </header>
-      <main className="mx-auto max-w-2xl px-4 pb-12">
-        <article className="rounded-xl border bg-background p-5 text-sm leading-relaxed sm:p-6">
-          <h1 className="text-xl font-semibold">개인정보처리방침</h1>
-          <p className="mt-1 text-xs text-muted-foreground">시행일 {UPDATED_AT}</p>
-          <div className="mt-6 grid gap-6">
-            {SECTIONS.map((section) => (
-              <section key={section.title}>
-                <h2 className="mb-2 font-semibold">{section.title}</h2>
-                <div className="text-muted-foreground">{section.body}</div>
-              </section>
-            ))}
-          </div>
-        </article>
-      </main>
-    </div>
+    <AuthLayout title="개인정보처리방침" description={`시행일 ${UPDATED_AT}`} wide>
+      <article className="grid gap-6 text-sm leading-relaxed">
+        {SECTIONS.map((section) => (
+          <section key={section.title}>
+            <h2 className="mb-2 font-semibold">{section.title}</h2>
+            <div className="text-muted-foreground">{section.body}</div>
+          </section>
+        ))}
+      </article>
+    </AuthLayout>
   )
 }
