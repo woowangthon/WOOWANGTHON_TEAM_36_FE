@@ -27,6 +27,8 @@ const score100 = (gpa: number | null | undefined) =>
 
 /** 목 로그인에 쓰는 비밀번호. 다른 값이면 401을 돌려줍니다. */
 export const MOCK_PASSWORD = 'password123'
+// 수신 거부 링크의 토큰 (목에서는 이 값만 맞는 토큰으로 봅니다, 7.4)
+export const MOCK_UNSUBSCRIBE_TOKEN = 'mock-unsub'
 /** 목 API의 가입 인증번호 (backend MAIL_MOCK=1과 같음) */
 export const MOCK_SIGNUP_CODE = '000000'
 
@@ -209,6 +211,21 @@ export const handlers: RequestHandler[] = [
     if (!me) return unauthorized()
     me = { ...me, sensitive_agreed: false }
     if (profile) profile = { ...profile, special_flags: null }
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.put('/api/auth/me/notifications', async ({ request }) => {
+    if (!me) return unauthorized()
+    const body = (await request.json()) as Schemas['NotificationSettingRequest']
+    me = { ...me, email_notifications: body.email_notifications }
+    return HttpResponse.json(withSummary(me))
+  }),
+  // 로그인 없이 동작합니다. 맞는 토큰이면 지금 사용자의 알림을 끕니다(목에는 사용자가 한 명뿐).
+  http.post('/api/notifications/unsubscribe', async ({ request }) => {
+    const body = (await request.json()) as Schemas['UnsubscribeRequest']
+    if (body.token !== MOCK_UNSUBSCRIBE_TOKEN) {
+      return HttpResponse.json({ detail: '유효하지 않은 링크입니다' }, { status: 400 })
+    }
+    if (me) me = { ...me, email_notifications: false }
     return new HttpResponse(null, { status: 204 })
   }),
   http.delete('/api/auth/me', () => {
