@@ -101,3 +101,77 @@ export function useSetScholarshipState() {
     },
   })
 }
+
+export type ExtraCheck = Schemas['ExtraCheck']
+export type OpenCondition = Schemas['OpenCondition']
+export type ConditionAnswer = Schemas['ConditionAnswerRequest']['answer']
+type AnswerResponse = Schemas['ConditionAnswerResponse']
+
+/** 상태 아이콘을 누를 때마다 ? → ✓(YES) → ✗(NO) → ? 로 돌립니다 (계획서 5.3·7.1). */
+export function nextAnswer(answer: ConditionAnswer | null | undefined): ConditionAnswer | null {
+  if (answer === 'YES') return 'NO'
+  if (answer === 'NO') return null
+  return 'YES'
+}
+
+/**
+ * 자격을 좁히는 조건(추가 조건) 1줄에 답합니다. answer=null이면 답을 지워 다시 '?'로 돌립니다.
+ * 상세의 아이콘과 목록의 남은 조건을 먼저 바꾸고(optimistic update), 실패하면 되돌립니다(9.8).
+ * 판정은 서버가 다시 계산하므로 응답의 result로 배지를 맞추고, 관련 쿼리를 무효화합니다.
+ */
+export function useSetConditionAnswer() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      key,
+      answer,
+    }: {
+      id: number
+      key: string
+      answer: ConditionAnswer | null
+    }) =>
+      answer === null
+        ? apiRequest<AnswerResponse>(`/scholarships/${id}/conditions/${key}`, 'DELETE')
+        : apiRequest<AnswerResponse>(`/scholarships/${id}/conditions/${key}`, 'PUT', { answer }),
+    onMutate: async ({ id, key, answer }): Promise<{ snapshot: Snapshot }> => {
+      await queryClient.cancelQueries({ queryKey: scholarshipsKey })
+      const snapshot: Snapshot = queryClient.getQueriesData({ queryKey: scholarshipsKey })
+
+      queryClient.setQueryData<ScholarshipDetail>(detailKey(id), (detail) =>
+        detail
+          ? {
+              ...detail,
+              extra_checks: detail.extra_checks.map((check) =>
+                check.key === key ? { ...check, answer } : check,
+              ),
+            }
+          : detail,
+      )
+      for (const [queryKey, data] of snapshot) {
+        if (!isListKey(queryKey) || !data) continue
+        const items = (data as ListData).items
+        if (!items.some((item) => item.id === id)) continue
+        queryClient.setQueryData<ListData>(queryKey, {
+          items: items.map((item) =>
+            item.id === id && answer !== null
+              ? { ...item, open_conditions: item.open_conditions.filter((c) => c.key !== key) }
+              : item,
+          ),
+        })
+      }
+      return { snapshot }
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData<ScholarshipDetail>(detailKey(response.scholarship_id), (detail) =>
+        detail ? { ...detail, result: response.result } : detail,
+      )
+    },
+    onError: (_error, _variables, context) => {
+      for (const [key, data] of context?.snapshot ?? []) queryClient.setQueryData(key, data)
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: scholarshipsKey })
+    },
+  })
+}

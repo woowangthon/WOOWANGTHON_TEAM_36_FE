@@ -93,6 +93,82 @@ describe('대시보드', () => {
   })
 })
 
+describe('추가 조건 직접 답하기 (계획서 5.3)', () => {
+  const button = (state: string) =>
+    screen.findByRole('button', { name: `추가 조건 상태 바꾸기, 지금: ${state}` })
+
+  it('상태 아이콘을 누를 때마다 ? → ✓ → ✗ → ? 로 바뀌고 판정도 바뀐다', async () => {
+    renderApp('/scholarships/8')
+    fireEvent.click(await button('확인 필요'))
+    expect(await button('해당돼요')).toBeInTheDocument()
+    expect(screen.getByText(/본인 확인함 · 해당돼요/)).toBeInTheDocument()
+    expect(await screen.findByText('지원 가능')).toBeInTheDocument()
+    expect(screen.getByText('본인 확인 포함')).toBeInTheDocument()
+
+    fireEvent.click(await button('해당돼요'))
+    expect(await button('아니에요')).toBeInTheDocument()
+    expect(await screen.findByText('지원 불가')).toBeInTheDocument()
+
+    fireEvent.click(await button('아니에요'))
+    expect(await button('확인 필요')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('지원 불가')).not.toBeInTheDocument())
+    expect(screen.queryByText('본인 확인 포함')).not.toBeInTheDocument()
+  })
+
+  it('저장에 실패하면 아이콘을 되돌리고 안내한다', async () => {
+    server.use(
+      http.put('/api/scholarships/:id/conditions/:key', async () => {
+        await delay(20)
+        return HttpResponse.json({ detail: '서버 오류' }, { status: 500 })
+      }),
+    )
+    renderApp('/scholarships/8')
+    fireEvent.click(await button('확인 필요'))
+    expect(await button('해당돼요')).toBeInTheDocument() // 먼저 반영
+    expect(
+      await screen.findByText('저장하지 못했습니다. 잠시 후 다시 시도하세요.'),
+    ).toBeInTheDocument()
+    expect(await button('확인 필요')).toBeInTheDocument()
+  })
+})
+
+describe('이것만 확인하면 N개 안내 (계획서 7.1)', () => {
+  it('안 1: 후보 수를 알리고 바로 답하면 줄어든다', async () => {
+    renderApp('/dashboard?tab=conditional')
+    expect(await screen.findByText('조건 1개만 확인하면 장학금 3개가 정리돼요')).toBeInTheDocument()
+    expect(screen.getByText('청주시에 1년 이상 주민등록이 되어 있는 자')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '해당돼요' }))
+    expect(await screen.findByText('조건 1개만 확인하면 장학금 2개가 정리돼요')).toBeInTheDocument()
+    expect(screen.getAllByText('TOEIC 500점 이상').length).toBeGreaterThan(0)
+  })
+
+  it('안 2: 마감이 가장 가까운 장학금을 이름으로 짚는다', async () => {
+    renderApp('/dashboard?tab=conditional&hint=2')
+    expect(
+      await screen.findByText('‘청주시 미래인재 장학금’은 조건 하나만 확인하면 돼요'),
+    ).toBeInTheDocument()
+  })
+
+  it('안 3: 같은 문장을 가진 장학금을 한 번에 정리한다', async () => {
+    renderApp('/dashboard?tab=conditional&hint=3')
+    expect(await screen.findByText('이 조건 하나로 장학금 2개가 정리돼요')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '아니에요' }))
+    // 두 장학금 모두 지원 불가가 되어 확인 필요 탭에서 빠집니다
+    await waitFor(() => expect(screen.queryByText('글로벌 SW 인재 장학금')).not.toBeInTheDocument())
+    expect(screen.queryByText('해외 연수 지원 장학금')).not.toBeInTheDocument()
+    expect(
+      await screen.findByText('‘청주시 미래인재 장학금’은 조건 하나만 확인하면 돼요'),
+    ).toBeInTheDocument()
+  })
+
+  it('지원 가능 탭에는 확인 필요 장학금이 없어 안내가 나오지 않는다', async () => {
+    renderApp('/dashboard')
+    await waitForCards('두산연강재단 장학금')
+    expect(screen.queryByText(/정리돼요|확인하면 돼요/)).not.toBeInTheDocument()
+  })
+})
+
 describe('상세', () => {
   it('조건별 체크리스트·근거·제출 서류·같은 공지의 다른 장학금을 보여 준다', async () => {
     renderApp('/scholarships/2')

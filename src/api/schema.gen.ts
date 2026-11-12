@@ -340,6 +340,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/scholarships/{scholarship_id}/conditions/{condition_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Condition Answer
+         * @description 자격을 좁히는 조건 1줄에 답합니다: YES(해당돼요) / NO(아니에요). 새 값으로 바꿉니다.
+         */
+        put: operations["put_condition_answer_scholarships__scholarship_id__conditions__condition_key__put"];
+        post?: never;
+        /**
+         * Delete Condition Answer
+         * @description 답을 지워 다시 '?'(확인 필요)로 돌립니다. 답이 없어도 같은 응답입니다.
+         */
+        delete: operations["delete_condition_answer_scholarships__scholarship_id__conditions__condition_key__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/unsubscribe": {
         parameters: {
             query?: never;
@@ -456,6 +480,28 @@ export interface components {
             /** Scholarship Count */
             scholarship_count: number;
         };
+        /** ConditionAnswerRequest */
+        ConditionAnswerRequest: {
+            /**
+             * Answer
+             * @enum {string}
+             */
+            answer: "YES" | "NO";
+        };
+        /** ConditionAnswerResponse */
+        ConditionAnswerResponse: {
+            /** Scholarship Id */
+            scholarship_id: number;
+            /** Key */
+            key: string;
+            /** Answer */
+            answer: ("YES" | "NO") | null;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "ELIGIBLE" | "CONDITIONAL" | "INELIGIBLE";
+        };
         /**
          * ConditionCheck
          * @description 조건 1개의 판정. 화면에서 ✓(MET) ✗(UNMET) ?(UNKNOWN)로 표시합니다(5.3).
@@ -534,6 +580,18 @@ export interface components {
             items: components["schemas"]["CrawlRunOut"][];
             /** Notices */
             notices: components["schemas"]["AdminNotice"][];
+        };
+        /**
+         * ExtraCheck
+         * @description 자격을 좁히는 조건 1줄과 사용자 답. 화면에서 ?(null) ✓(YES) ✗(NO)로 표시합니다(5.3).
+         */
+        ExtraCheck: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
+            /** Answer */
+            answer: ("YES" | "NO") | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -622,6 +680,16 @@ export interface components {
         NotificationSettingRequest: {
             /** Email Notifications */
             email_notifications: boolean;
+        };
+        /**
+         * OpenCondition
+         * @description 아직 답하지 않은 자격을 좁히는 조건 1줄. "이것만 확인하면 N개" 안내에 씁니다(7.1).
+         */
+        OpenCondition: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
         };
         /**
          * Profile
@@ -787,12 +855,24 @@ export interface components {
             result: "ELIGIBLE" | "CONDITIONAL" | "INELIGIBLE";
             /** My State */
             my_state: ("BOOKMARKED" | "APPLIED") | null;
+            /**
+             * Open Conditions
+             * @default []
+             */
+            open_conditions: components["schemas"]["OpenCondition"][];
+            /**
+             * Other Unknown
+             * @default false
+             */
+            other_unknown: boolean;
             /** Apply Start */
             apply_start: string | null;
             /** Conditions */
             conditions: components["schemas"]["ConditionCheck"][];
             /** Extra Conditions */
             extra_conditions: string[];
+            /** Extra Checks */
+            extra_checks: components["schemas"]["ExtraCheck"][];
             /** Basic Conditions */
             basic_conditions: string[];
             /** Notes */
@@ -855,6 +935,16 @@ export interface components {
             result: "ELIGIBLE" | "CONDITIONAL" | "INELIGIBLE";
             /** My State */
             my_state: ("BOOKMARKED" | "APPLIED") | null;
+            /**
+             * Open Conditions
+             * @default []
+             */
+            open_conditions: components["schemas"]["OpenCondition"][];
+            /**
+             * Other Unknown
+             * @default false
+             */
+            other_unknown: boolean;
         };
         /**
          * SiblingScholarship
@@ -1738,6 +1828,116 @@ export interface operations {
             };
             /** @description 개인정보 동의 필요 */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_condition_answer_scholarships__scholarship_id__conditions__condition_key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scholarship_id: number;
+                condition_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConditionAnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConditionAnswerResponse"];
+                };
+            };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 장학금·조건 없음 또는 프로필 미입력 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_condition_answer_scholarships__scholarship_id__conditions__condition_key__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scholarship_id: number;
+                condition_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConditionAnswerResponse"];
+                };
+            };
+            /** @description 로그인 필요 */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 개인정보 동의 필요 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 장학금·조건 없음 또는 프로필 미입력 */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

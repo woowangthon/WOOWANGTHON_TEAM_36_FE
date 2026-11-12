@@ -41,6 +41,20 @@ export const mockProfile: Profile = {
   full_tuition_waiver: '아니오',
 }
 
+/**
+ * 추가 조건마다 사용자 답(처음에는 모두 null = '?'). 목에서는 key를 문장 앞부분으로 만듭니다
+ * (backend는 정규화한 문장의 SHA-256 앞 16자, 계획서 5.3). 같은 문장이면 같은 key입니다.
+ */
+export function mockConditionKey(text: string): string {
+  let hash = 0
+  for (const ch of text) hash = (hash * 31 + ch.codePointAt(0)!) >>> 0
+  return hash.toString(16).padStart(16, '0')
+}
+
+function extraChecks(texts: string[]): Schemas['ExtraCheck'][] {
+  return texts.map((text) => ({ key: mockConditionKey(text), text, answer: null }))
+}
+
 const sw = { source_code: 'SW_DEPT', source_name: '소프트웨어학부', is_internal: true } as const
 const aibc = { source_code: 'AIBC', source_name: 'AI부트캠프사업단', is_internal: true } as const
 const kosaf = { source_code: 'KOSAF', source_name: '한국장학재단', is_internal: false } as const
@@ -61,7 +75,10 @@ const noticeA = {
   ],
 }
 
-export const mockDetails: ScholarshipDetail[] = [
+// 목록용 칸(open_conditions·other_unknown)은 extra_checks에서 계산해 붙입니다(withDerived).
+type RawDetail = Omit<ScholarshipDetail, 'open_conditions' | 'other_unknown'>
+
+const rawDetails: RawDetail[] = [
   {
     id: 1,
     name: '두산연강재단 장학금',
@@ -83,6 +100,7 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    extra_checks: extraChecks([]),
     basic_conditions: [],
     notes: [],
     required_documents: ['재학증명서', '성적증명서'],
@@ -116,6 +134,7 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: ['직전학기 봉사활동 20시간 이상'],
+    extra_checks: extraChecks(['직전학기 봉사활동 20시간 이상']),
     basic_conditions: ['대한민국 국적', '타 장학금과 중복 수혜 불가'],
     notes: ['면접 점수 석차순 선발'],
     required_documents: ['주민등록등본', '재학증명서'],
@@ -145,6 +164,7 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    extra_checks: extraChecks([]),
     basic_conditions: [],
     notes: [],
     required_documents: ['재학증명서'],
@@ -171,6 +191,7 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    extra_checks: extraChecks([]),
     basic_conditions: [],
     notes: [],
     required_documents: [],
@@ -201,6 +222,7 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    extra_checks: extraChecks([]),
     basic_conditions: [],
     notes: [],
     required_documents: [],
@@ -251,6 +273,7 @@ export const mockDetails: ScholarshipDetail[] = [
     ],
     input_truncated: true,
     extra_conditions: [],
+    extra_checks: extraChecks([]),
     basic_conditions: [],
     notes: [],
     required_documents: ['가족관계증명서'],
@@ -283,6 +306,7 @@ export const mockDetails: ScholarshipDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
+    extra_checks: extraChecks([]),
     basic_conditions: [],
     notes: [],
     required_documents: ['취업 약정서'],
@@ -296,7 +320,69 @@ export const mockDetails: ScholarshipDetail[] = [
     },
     siblings: [],
   },
+  // 추가 조건 하나만 확인하면 판정이 정해지는 장학금 ("이것만 확인하면 N개" 안내, 계획서 7.1).
+  // 9·10번은 같은 문장이라 안 3에서 한 번에 묶입니다.
+  ...[
+    {
+      id: 8,
+      name: '청주시 미래인재 장학금',
+      apply_end: '2026-11-18T18:00:00+09:00',
+      extra: '청주시에 1년 이상 주민등록이 되어 있는 자',
+    },
+    {
+      id: 9,
+      name: '글로벌 SW 인재 장학금',
+      apply_end: '2026-11-25T18:00:00+09:00',
+      extra: 'TOEIC 500점 이상',
+    },
+    {
+      id: 10,
+      name: '해외 연수 지원 장학금',
+      apply_end: '2026-12-05T18:00:00+09:00',
+      extra: 'TOEIC 500점 이상',
+    },
+  ].map(({ id, name, apply_end, extra }): RawDetail => ({
+    id,
+    name,
+    ...kosaf,
+    benefit_amount_text: '200만원',
+    benefit_type: '등록금성',
+    apply_start: '2026-11-05T09:00:00+09:00',
+    apply_end,
+    status: 'OPEN',
+    deadline_conflict: false,
+    posted_at: '2026-11-05T09:00:00+09:00',
+    result: 'CONDITIONAL',
+    my_state: null,
+    conditions: [{ condition: 'min_gpa', outcome: 'MET', evidence: '직전학기 평점 3.0 이상' }],
+    unread_attachments: [],
+    input_truncated: false,
+    extra_conditions: [extra],
+    extra_checks: extraChecks([extra]),
+    basic_conditions: [],
+    notes: [],
+    required_documents: [],
+    notice: {
+      id: 100 + id,
+      title: `${name} 선발 안내`,
+      url: `https://kosaf.go.kr/ko/notice.do?mode=view&seqNo=${21600 + id}`,
+      posted_at: '2026-11-05T09:00:00+09:00',
+      body_text: '공지 본문입니다. 자세한 내용은 원문 링크를 확인하세요.',
+      attachments: [],
+    },
+    siblings: [],
+  })),
 ]
+
+export const mockDetails: ScholarshipDetail[] = rawDetails.map(withDerived)
+
+/** extra_checks의 답에 맞춰 답하지 않은 조건·다른 모름 여부를 다시 계산합니다(backend와 같음). */
+export function withDerived<T extends RawDetail>(d: T): T & ScholarshipDetail {
+  const open_conditions = d.extra_checks
+    .filter((check) => check.answer === null)
+    .map(({ key, text }) => ({ key, text }))
+  return { ...d, open_conditions, other_unknown: otherUnknown(d) }
+}
 
 export function toSummary(d: ScholarshipDetail): ScholarshipSummary {
   return {
@@ -313,7 +399,22 @@ export function toSummary(d: ScholarshipDetail): ScholarshipSummary {
     posted_at: d.posted_at,
     result: d.result,
     my_state: d.my_state,
+    open_conditions: d.open_conditions,
+    other_unknown: d.other_unknown,
   }
+}
+
+/** 답하지 않은 추가 조건 말고도 판정을 막는 것(모르는 조건·못 읽은 첨부)이 있는지 */
+export function otherUnknown(d: RawDetail): boolean {
+  return d.conditions.some((c) => c.outcome === 'UNKNOWN') || d.unread_attachments.length > 0
+}
+
+/** backend 판정과 같은 규칙 (계획서 5.3): 불충족·✗ → 지원 불가, 모름·미답 → 확인 필요 */
+export function judge(d: ScholarshipDetail): ScholarshipDetail['result'] {
+  const answers = d.extra_checks.map((check) => check.answer)
+  if (d.conditions.some((c) => c.outcome === 'UNMET') || answers.includes('NO')) return 'INELIGIBLE'
+  if (otherUnknown(d) || answers.includes(null)) return 'CONDITIONAL'
+  return 'ELIGIBLE'
 }
 
 export const mockCrawlRuns: CrawlRunOut[] = [
