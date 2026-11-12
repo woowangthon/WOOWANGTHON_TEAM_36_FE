@@ -2,7 +2,7 @@
 // 인증번호를 확인하기 전에는 비밀번호 칸과 가입 버튼이 잠겨 있습니다. 로그인은 지금과 같습니다.
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
 
@@ -12,8 +12,11 @@ import { AuthLayout } from '@/components/auth/AuthLayout'
 import { GoogleButton, OrDivider } from '@/components/auth/GoogleButton'
 import { TargetNotice } from '@/components/auth/TargetNotice'
 import { Field, FormError } from '@/components/form/Field'
+import { PasswordInput } from '@/components/form/PasswordInput'
+import { PasswordRules } from '@/components/form/PasswordRules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { newPasswordSchema } from '@/lib/password'
 
 const emailSchema = z
   .string()
@@ -23,15 +26,12 @@ const emailSchema = z
   .max(320)
 const CODE_PATTERN = /^[0-9]{6}$/
 
-// backend SignupRequest와 같은 규칙: 비밀번호 8~128자 (7.3)
+// backend SignupRequest와 같은 규칙: 8~16자, 영문·숫자·특수문자 (7.3, T38)
 const schema = z
   .object({
     email: emailSchema,
     code: z.string(),
-    password: z
-      .string()
-      .min(8, '비밀번호는 8자 이상이어야 해요')
-      .max(128, '비밀번호는 128자 이하여야 해요'),
+    password: newPasswordSchema,
     passwordConfirm: z.string(),
   })
   .refine((v) => v.password === v.passwordConfirm, {
@@ -69,6 +69,7 @@ export default function SignupPage() {
     defaultValues: { email: '', code: '', password: '', passwordConfirm: '' },
   })
   const { errors } = form.formState
+  const password = useWatch({ control: form.control, name: 'password' })
 
   const [sent, setSent] = useState<Sent | null>(null)
   const [signupToken, setSignupToken] = useState<string | null>(null)
@@ -275,21 +276,20 @@ export default function SignupPage() {
             id="password"
             label="비밀번호"
             error={errors.password?.message}
-            hint={verified ? '8자 이상' : '이메일 인증을 마치면 입력할 수 있어요'}
+            hint={verified ? undefined : '이메일 인증을 마치면 입력할 수 있어요'}
           >
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="new-password"
               disabled={!verified}
               aria-invalid={!!errors.password}
               {...form.register('password')}
             />
+            {verified && <PasswordRules value={password} />}
           </Field>
           <Field id="passwordConfirm" label="비밀번호 확인" error={errors.passwordConfirm?.message}>
-            <Input
+            <PasswordInput
               id="passwordConfirm"
-              type="password"
               autoComplete="new-password"
               disabled={!verified}
               aria-invalid={!!errors.passwordConfirm}

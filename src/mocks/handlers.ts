@@ -210,6 +210,18 @@ export const handlers: RequestHandler[] = [
     if (profile) profile = { ...profile, special_flags: null }
     return new HttpResponse(null, { status: 204 })
   }),
+  // 비밀번호 변경 (T38). 목 계정의 비밀번호는 MOCK_PASSWORD로 고정입니다.
+  http.put('/api/auth/me/password', async ({ request }) => {
+    if (!me) return unauthorized()
+    const body = (await request.json()) as Schemas['PasswordChangeRequest']
+    if (!me.has_password) {
+      return HttpResponse.json({ detail: 'Google 계정으로 로그인하는 계정이에요' }, { status: 400 })
+    }
+    if (body.current_password !== MOCK_PASSWORD) {
+      return HttpResponse.json({ detail: '현재 비밀번호가 맞지 않아요' }, { status: 400 })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
   http.delete('/api/auth/me', () => {
     me = null
     profile = null

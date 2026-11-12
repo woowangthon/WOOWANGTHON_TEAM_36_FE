@@ -63,8 +63,8 @@ describe('가입 흐름', () => {
     await screen.findByRole('heading', { name: '회원가입' })
     await verifyEmail('new@example.com')
     await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
-    type('비밀번호', 'password123')
-    type('비밀번호 확인', 'password123')
+    type('비밀번호', 'password12!')
+    type('비밀번호 확인', 'password12!')
     fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
 
     // 동의: 필수 동의 전에는 버튼이 꺼져 있음
@@ -204,8 +204,42 @@ describe('가입 흐름', () => {
     type('비밀번호', 'short')
     type('비밀번호 확인', 'other')
     fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
-    expect(await screen.findByText('비밀번호는 8자 이상이어야 해요')).toBeInTheDocument()
+    expect(await screen.findByText('비밀번호는 8~16자로 입력하세요')).toBeInTheDocument()
     expect(screen.getByText('비밀번호가 서로 달라요')).toBeInTheDocument()
+  })
+
+  it('특수문자가 없으면 알려 주고, 안내 목록에 충족한 항목을 표시한다 (T38)', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    await verifyEmail('new@example.com')
+    await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
+    type('비밀번호', 'abcd1234')
+    const rules = screen.getByRole('list', { name: '비밀번호 규칙' })
+    expect(within(rules).getByText('8~16자').closest('li')).toHaveAttribute('data-met', 'true')
+    expect(within(rules).getByText('특수문자 포함').closest('li')).toHaveAttribute(
+      'data-met',
+      'false',
+    )
+    fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
+    expect(await screen.findByText('특수문자를 1자 이상 넣어 주세요')).toBeInTheDocument()
+  })
+
+  it('보기 버튼을 누르면 비밀번호가 글자로 보인다 (T38)', async () => {
+    startLoggedOut()
+    renderApp('/signup')
+    await screen.findByRole('heading', { name: '회원가입' })
+    await verifyEmail('new@example.com')
+    await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
+    const input = screen.getByLabelText('비밀번호')
+    expect(input).toHaveAttribute('type', 'password')
+    const [toggle] = screen.getAllByRole('button', { name: '비밀번호 보기' })
+    fireEvent.click(toggle!)
+    expect(input).toHaveAttribute('type', 'text')
+    expect(screen.getByRole('button', { name: '비밀번호 숨기기' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it('인증 시간이 지나 가입이 거부되면 처음 단계로 돌아간다', async () => {
@@ -222,8 +256,8 @@ describe('가입 흐름', () => {
     await screen.findByRole('heading', { name: '회원가입' })
     await verifyEmail('new@example.com')
     await waitFor(() => expect(screen.getByLabelText('비밀번호')).toBeEnabled())
-    type('비밀번호', 'password123')
-    type('비밀번호 확인', 'password123')
+    type('비밀번호', 'password12!')
+    type('비밀번호 확인', 'password12!')
     fireEvent.click(screen.getByRole('button', { name: '가입하기' }))
     expect(
       await screen.findByText('인증 시간이 지났어요. 이메일 인증을 다시 해 주세요'),
@@ -242,6 +276,14 @@ describe('로그인', () => {
     type('비밀번호', 'wrong-password')
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
     expect(await screen.findByText('이메일 또는 비밀번호가 올바르지 않습니다')).toBeInTheDocument()
+  })
+
+  it('로그인 화면에도 비밀번호 보기 버튼이 있다 (T38)', async () => {
+    startLoggedOut()
+    renderApp('/login')
+    await screen.findByRole('heading', { name: '로그인' })
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 보기' }))
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('type', 'text')
   })
 
   it('로그인 후 원래 가려던 내부 경로로 돌아간다', async () => {
