@@ -69,7 +69,13 @@ function Detail({ item }: { item: ScholarshipDetail }) {
       <BackLink />
       <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 text-xl font-semibold break-keep">{item.name}</h1>
+          <div className="grid min-w-0 gap-0.5">
+            <h1 className="text-xl font-semibold break-keep">{item.display_name}</h1>
+            {item.name !== item.display_name && (
+              // 재단 누리집에서 찾을 때 쓰는 공지 원래 이름 (계획서 5.2)
+              <p className="text-xs break-keep text-muted-foreground">공지 이름: {item.name}</p>
+            )}
+          </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
             <ResultBadge result={item.result} />
             {item.result === 'ELIGIBLE' && (item.extra_checks ?? []).length > 0 && (
@@ -170,7 +176,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
               {item.siblings.map((sibling) => (
                 <li key={sibling.id}>
                   <Link to={`/scholarships/${sibling.id}`} className="underline underline-offset-4">
-                    {sibling.name}
+                    {sibling.display_name}
                   </Link>
                   {sibling.status === 'CLOSED' && (
                     <span className="ml-1 text-xs text-muted-foreground">(마감)</span>

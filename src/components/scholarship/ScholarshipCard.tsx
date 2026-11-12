@@ -92,7 +92,7 @@ export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
               to={`/scholarships/${item.id}`}
               className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
             >
-              {item.name}
+              {item.display_name}
             </Link>
           </h3>
           <SourceLine item={item} className="text-xs" />
@@ -157,7 +157,7 @@ export function ScholarshipRow({ item }: { item: ScholarshipSummary }) {
             to={`/scholarships/${item.id}`}
             className="after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none"
           >
-            {item.name}
+            {item.display_name}
           </Link>
         </h3>
         <SourceLine item={item} className="text-xs" />

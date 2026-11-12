@@ -874,6 +874,8 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Display Name */
+            display_name: string;
             /**
              * Source Code
              * @enum {string}
@@ -954,6 +956,8 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Display Name */
+            display_name: string;
             /**
              * Source Code
              * @enum {string}
@@ -1008,6 +1012,8 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Display Name */
+            display_name: string;
             /**
              * Status
              * @enum {string}

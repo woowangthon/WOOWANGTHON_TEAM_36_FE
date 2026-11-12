@@ -82,7 +82,7 @@ export function DeadlineSoon({
                   to={`/scholarships/${item.id}`}
                   className="flex items-center justify-between gap-2 rounded-md hover:text-brand-800"
                 >
-                  <span className="min-w-0 truncate">{item.name}</span>
+                  <span className="min-w-0 truncate">{item.display_name}</span>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${deadline.tone === 'urgent' ? 'bg-red-50 text-destructive' : 'bg-brand-50 text-brand-800'}`}
                   >

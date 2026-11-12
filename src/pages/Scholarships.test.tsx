@@ -28,7 +28,7 @@ describe('대시보드', () => {
     renderApp('/dashboard')
     await waitForCards('두산연강재단 장학금', '희망사다리 장학금 II유형')
     expect(screen.queryByText('논산시 인재육성 장학금')).not.toBeInTheDocument()
-    expect(screen.queryByText('2026년 2학기 국가근로장학금')).not.toBeInTheDocument() // 마감
+    expect(screen.queryByText('국가근로장학금')).not.toBeInTheDocument() // 마감
 
     fireEvent.click(screen.getByRole('tab', { name: '확인 필요' }))
     await waitForCards('논산시 인재육성 장학금', '푸른등대 기부장학금')
@@ -90,6 +90,20 @@ describe('대시보드', () => {
     renderApp('/dashboard')
     expect(await screen.findByLabelText('불러오는 중')).toHaveAttribute('aria-busy', 'true')
     expect(await screen.findByText(/지원 가능한 장학금이 없습니다/)).toBeInTheDocument()
+  })
+})
+
+describe('쉬운 이름 (계획서 5.2)', () => {
+  it('카드에는 쉬운 이름을 보여 주고 원래 이름으로도 검색된다', async () => {
+    renderApp('/')
+    await waitForCards('두산연강재단 장학금')
+    expect(
+      screen.queryByText('2026학년도 2학기 (재)두산연강재단 장학생 선발'),
+    ).not.toBeInTheDocument()
+    fireEvent.change(screen.getByRole('searchbox', { name: '장학금 검색' }), {
+      target: { value: '연강재단 장학생 선발' },
+    })
+    await waitFor(() => expect(cardNames()).toEqual(['두산연강재단 장학금']))
   })
 })
 
@@ -209,6 +223,22 @@ describe('상세', () => {
     expect(screen.getByText(/교외장학금 3종 모집/)).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /교외장학금 3종 모집/ })).not.toBeInTheDocument()
     expect(screen.getByText(/다른 게시판에도 같은 장학금이 있을 수 있습니다/)).toBeInTheDocument()
+  })
+
+  it('쉬운 이름을 제목으로 보여 주고 공지 원래 이름을 함께 적는다 (계획서 5.2)', async () => {
+    renderApp('/scholarships/1')
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '두산연강재단 장학금' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('공지 이름: 2026학년도 2학기 (재)두산연강재단 장학생 선발'),
+    ).toBeInTheDocument()
+  })
+
+  it('쉬운 이름과 원래 이름이 같으면 원래 이름을 다시 적지 않는다', async () => {
+    renderApp('/scholarships/2')
+    await screen.findByRole('heading', { level: 1, name: '논산시 인재육성 장학금' })
+    expect(screen.queryByText(/공지 이름:/)).not.toBeInTheDocument()
   })
 
   it('근거 출처와 읽지 못한 첨부를 보여 준다', async () => {
@@ -361,10 +391,10 @@ describe('내 장학금', () => {
   it('관심·신청완료 목록을 보여 주고 마감된 장학금도 포함한다', async () => {
     renderApp('/my')
     await waitForCards('두산연강재단 장학금')
-    expect(screen.queryByText('2026년 2학기 국가근로장학금')).not.toBeInTheDocument()
+    expect(screen.queryByText('국가근로장학금')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('tab', { name: '신청완료' }))
-    await waitForCards('2026년 2학기 국가근로장학금')
+    await waitForCards('국가근로장학금')
     expect(screen.getByText('마감')).toBeInTheDocument()
     expect(screen.queryByText('두산연강재단 장학금')).not.toBeInTheDocument()
   })

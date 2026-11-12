@@ -83,7 +83,8 @@ type RawDetail = Omit<ScholarshipDetail, 'open_conditions' | 'other_unknown'>
 const rawDetails: RawDetail[] = [
   {
     id: 1,
-    name: '두산연강재단 장학금',
+    name: '2026학년도 2학기 (재)두산연강재단 장학생 선발',
+    display_name: '두산연강재단 장학금',
     ...sw,
     benefit_amount_text: '연 600만원',
     benefit_type: '등록금성',
@@ -113,13 +114,19 @@ const rawDetails: RawDetail[] = [
     required_documents: ['재학증명서', '성적증명서'],
     notice: noticeA,
     siblings: [
-      { id: 2, name: '논산시 인재육성 장학금', status: 'OPEN' },
-      { id: 3, name: '여성공학인 장학금', status: 'OPEN' },
+      {
+        id: 2,
+        name: '논산시 인재육성 장학금',
+        display_name: '논산시 인재육성 장학금',
+        status: 'OPEN',
+      },
+      { id: 3, name: '여성공학인 장학금', display_name: '여성공학인 장학금', status: 'OPEN' },
     ],
   },
   {
     id: 2,
     name: '논산시 인재육성 장학금',
+    display_name: '논산시 인재육성 장학금',
     ...sw,
     benefit_amount_text: '200만원',
     benefit_type: '생활비성',
@@ -147,13 +154,19 @@ const rawDetails: RawDetail[] = [
     required_documents: ['주민등록등본', '재학증명서'],
     notice: noticeA,
     siblings: [
-      { id: 1, name: '두산연강재단 장학금', status: 'OPEN' },
-      { id: 3, name: '여성공학인 장학금', status: 'OPEN' },
+      {
+        id: 1,
+        name: '2026학년도 2학기 (재)두산연강재단 장학생 선발',
+        display_name: '두산연강재단 장학금',
+        status: 'OPEN',
+      },
+      { id: 3, name: '여성공학인 장학금', display_name: '여성공학인 장학금', status: 'OPEN' },
     ],
   },
   {
     id: 3,
     name: '여성공학인 장학금',
+    display_name: '여성공학인 장학금',
     ...sw,
     benefit_amount_text: '300만원',
     benefit_type: '혼합',
@@ -177,13 +190,24 @@ const rawDetails: RawDetail[] = [
     required_documents: ['재학증명서'],
     notice: noticeA,
     siblings: [
-      { id: 1, name: '두산연강재단 장학금', status: 'OPEN' },
-      { id: 2, name: '논산시 인재육성 장학금', status: 'OPEN' },
+      {
+        id: 1,
+        name: '2026학년도 2학기 (재)두산연강재단 장학생 선발',
+        display_name: '두산연강재단 장학금',
+        status: 'OPEN',
+      },
+      {
+        id: 2,
+        name: '논산시 인재육성 장학금',
+        display_name: '논산시 인재육성 장학금',
+        status: 'OPEN',
+      },
     ],
   },
   {
     id: 4,
     name: 'AI부트캠프 양성인재 학업장려금',
+    display_name: 'AI부트캠프 양성인재 학업장려금',
     ...aibc,
     benefit_amount_text: '월 30만원',
     benefit_type: '생활비성',
@@ -215,6 +239,7 @@ const rawDetails: RawDetail[] = [
   {
     id: 5,
     name: '2026년 2학기 국가근로장학금',
+    display_name: '국가근로장학금',
     ...kosaf,
     benefit_amount_text: '시급 10,030원',
     benefit_type: '생활비성',
@@ -246,6 +271,7 @@ const rawDetails: RawDetail[] = [
   {
     id: 6,
     name: '푸른등대 기부장학금',
+    display_name: '푸른등대 기부장학금',
     ...kosaf,
     benefit_amount_text: '최대 400만원',
     benefit_type: '등록금성',
@@ -297,6 +323,7 @@ const rawDetails: RawDetail[] = [
   {
     id: 7,
     name: '희망사다리 장학금 II유형',
+    display_name: '희망사다리 장학금 II유형',
     ...kosaf,
     benefit_amount_text: '등록금 전액',
     benefit_type: '등록금성',
@@ -351,6 +378,7 @@ const rawDetails: RawDetail[] = [
   ].map(({ id, name, apply_end, extra }): RawDetail => ({
     id,
     name,
+    display_name: name,
     ...kosaf,
     benefit_amount_text: '200만원',
     benefit_type: '등록금성',
@@ -395,6 +423,7 @@ export function toSummary(d: ScholarshipDetail): ScholarshipSummary {
   return {
     id: d.id,
     name: d.name,
+    display_name: d.display_name,
     source_code: d.source_code,
     source_name: d.source_name,
     is_internal: d.is_internal,
