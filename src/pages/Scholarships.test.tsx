@@ -1,7 +1,7 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
 
-import { mockDetails } from '@/mocks/data'
+import { mockDetails, mockMe } from '@/mocks/data'
 import { resetMockState } from '@/mocks/handlers'
 import { server } from '@/mocks/node'
 import { renderApp } from '@/test/renderApp'
@@ -166,14 +166,61 @@ describe('대시보드 빠른 확인 (계획서 7.1)', () => {
 
     fireEvent.click(within(first).getByRole('button', { name: '안 맞아요' }))
     // 두 장학금 모두 지원 불가가 되어 확인 필요 탭에서 빠집니다
-    await waitFor(() => expect(screen.queryByText('글로벌 SW 인재 장학금')).not.toBeInTheDocument())
-    expect(screen.queryByText('해외 연수 지원 장학금')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('글로벌 SW 인재 장학금')).not.toBeInTheDocument()
+      expect(screen.queryByText('해외 연수 지원 장학금')).not.toBeInTheDocument()
+    })
 
     const second = await card()
     expect(within(second).getByText('2/2')).toBeInTheDocument()
     expect(
       within(second).getByText('청주시에 1년 이상 주민등록이 되어 있는 자'),
     ).toBeInTheDocument()
+  })
+
+  it.each([
+    ['다른 계정', 'other@example.com'],
+    ['탈퇴 뒤 같은 이메일로 재가입한 계정', mockMe.email],
+  ])('%s에는 이전 계정이 답한 질문도 보여 준다', async (_account, email) => {
+    renderApp('/dashboard?tab=conditional')
+    fireEvent.click(within(await card()).getByRole('button', { name: '맞아요' }))
+    expect(await screen.findByText('청주시에 1년 이상 주민등록이 되어 있는 자')).toBeInTheDocument()
+
+    // 같은 브라우저 탭에서 새 로그인 세션을 시작합니다. 재가입한 계정도 새 ID를 받습니다.
+    cleanup()
+    resetMockState()
+    server.use(http.get('/api/auth/me', () => HttpResponse.json({ ...mockMe, id: 2, email })))
+    renderApp('/dashboard?tab=conditional')
+    expect(within(await card()).getByText('TOEIC 500점 이상')).toBeInTheDocument()
+  })
+
+  it('묶인 장학금 중 한 건의 저장이 실패하면 같은 질문에서 다시 답할 수 있다', async () => {
+    let fail = true
+    server.use(
+      http.put('/api/scholarships/10/conditions/:key', async () => {
+        if (!fail) return
+        await delay(20)
+        return HttpResponse.json({ detail: '서버 오류' }, { status: 500 })
+      }),
+    )
+    renderApp('/dashboard?tab=conditional')
+
+    const first = within(await card())
+    const answer = first.getByRole('button', { name: '안 맞아요' })
+    fireEvent.click(answer)
+    expect(answer).toBeDisabled()
+    expect(first.getByText('TOEIC 500점 이상')).toBeInTheDocument()
+    expect(await first.findByRole('alert')).toHaveTextContent('저장하지 못했습니다.')
+    await waitFor(() => expect(screen.queryByText('글로벌 SW 인재 장학금')).not.toBeInTheDocument())
+    expect(first.getByText('TOEIC 500점 이상')).toBeInTheDocument()
+    expect(answer).toBeEnabled()
+    expect(screen.getByText('해외 연수 지원 장학금')).toBeInTheDocument()
+
+    fail = false
+    fireEvent.click(answer)
+    expect(await screen.findByText('청주시에 1년 이상 주민등록이 되어 있는 자')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('해외 연수 지원 장학금')).not.toBeInTheDocument())
+    expect(first.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('모르겠어요는 판정을 바꾸지 않고 넘어가며, 끝나면 다 끝냈다고 알린다', async () => {
