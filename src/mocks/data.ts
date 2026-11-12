@@ -19,6 +19,7 @@ export const mockMe: MeResponse = {
   is_admin: false,
   google_linked: false,
   has_password: true,
+  email_notifications: true,
 }
 
 export const mockProfile: Profile = {

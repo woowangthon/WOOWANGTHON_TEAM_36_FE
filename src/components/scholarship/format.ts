@@ -69,6 +69,8 @@ export const STATE_LABEL = {
 export const CONDITION_LABEL = {
   target_grades: '학년',
   excludes_extra_semester: '초과학기 제외',
+  excludes_new_students: '신·편입생 제외',
+  min_remaining_semesters: '남은 정규학기',
   enrollment_status: '재학상태',
   min_gpa: '평점',
   min_score_100: '100점 환산 성적',
