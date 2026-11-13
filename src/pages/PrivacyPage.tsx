@@ -19,8 +19,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
         <li>민감정보(별도 동의 시): 특수자격(다자녀·보훈·장애)</li>
         <li>Google 로그인 시: Google 계정 식별자와 이메일</li>
         <li>
-          장학금 상세에서 직접 답한 경우: 추가 조건마다 &lsquo;해당돼요 / 아니에요&rsquo; 답과 답한
-          시각
+          장학금 상세에서 직접 답한 경우: 추가 조건마다 &lsquo;충족 / 미충족&rsquo; 답과 답한 시각
         </li>
       </ul>
     ),

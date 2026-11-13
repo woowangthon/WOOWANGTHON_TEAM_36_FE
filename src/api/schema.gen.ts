@@ -371,7 +371,7 @@ export interface paths {
         get?: never;
         /**
          * Put Condition Answer
-         * @description 자격을 좁히는 조건 1줄에 답합니다: YES(해당돼요) / NO(아니에요). 새 값으로 바꿉니다.
+         * @description 자격을 좁히는 조건 1줄에 답합니다: YES(맞아요, 충족) / NO(안 맞아요, 불충족). 새 값 교체.
          */
         put: operations["put_condition_answer_scholarships__scholarship_id__conditions__condition_key__put"];
         post?: never;
@@ -542,6 +542,23 @@ export interface components {
             evidence: string | null;
             /** Evidence Source */
             evidence_source?: string | null;
+            /** Requirement */
+            requirement?: string | null;
+            /**
+             * Ambiguous
+             * @default false
+             */
+            ambiguous: boolean;
+        };
+        /**
+         * ConditionTextOut
+         * @description 기본 조건 1줄: 공지 원문 문장과 쉬운 요약.
+         */
+        ConditionTextOut: {
+            /** Text */
+            text: string;
+            /** Summary */
+            summary?: string | null;
         };
         /**
          * ConsentRequest
@@ -613,6 +630,8 @@ export interface components {
             text: string;
             /** Answer */
             answer: ("YES" | "NO") | null;
+            /** Summary */
+            summary?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -713,6 +732,8 @@ export interface components {
             key: string;
             /** Text */
             text: string;
+            /** Summary */
+            summary?: string | null;
         };
         /**
          * PasswordChangeRequest
@@ -930,6 +951,11 @@ export interface components {
             extra_checks: components["schemas"]["ExtraCheck"][];
             /** Basic Conditions */
             basic_conditions: string[];
+            /**
+             * Basic Items
+             * @default []
+             */
+            basic_items: components["schemas"]["ConditionTextOut"][];
             /** Notes */
             notes: string[];
             /** Required Documents */

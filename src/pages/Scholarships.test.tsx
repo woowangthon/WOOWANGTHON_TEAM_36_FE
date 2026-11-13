@@ -111,7 +111,7 @@ describe('직접 답하는 조건 (계획서 5.3)', () => {
   const button = (state: string) =>
     screen.findByRole('button', { name: `거주 기간 답 바꾸기, 지금: ${state}` })
 
-  it('아이콘을 누를 때마다 모름 → 충족 → 불충족 → 모름으로 바뀌고 판정도 바뀐다', async () => {
+  it('아이콘을 누를 때마다 모름 → 충족 → 미충족 → 모름으로 바뀌고 판정도 바뀐다', async () => {
     renderApp('/scholarships/8')
     const list = await screen.findByRole('list', { name: '직접 답하는 조건' })
     expect(within(list).getByText('눌러서 답하기')).toBeInTheDocument()
@@ -123,10 +123,10 @@ describe('직접 답하는 조건 (계획서 5.3)', () => {
     expect(screen.getByText('본인 확인 포함')).toBeInTheDocument()
 
     fireEvent.click(await button('충족'))
-    expect(await button('불충족')).toBeInTheDocument()
+    expect(await button('미충족')).toBeInTheDocument()
     expect(await screen.findByText('지원 불가')).toBeInTheDocument()
 
-    fireEvent.click(await button('불충족'))
+    fireEvent.click(await button('미충족'))
     expect(await button('모름')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('지원 불가')).not.toBeInTheDocument())
     expect(screen.queryByText('본인 확인 포함')).not.toBeInTheDocument()
@@ -157,7 +157,9 @@ describe('대시보드 빠른 확인 (계획서 7.1)', () => {
     renderApp('/dashboard?tab=conditional')
     const first = await card()
     expect(within(first).getByText('1/2')).toBeInTheDocument()
-    expect(within(first).getByText('TOEIC 500점 이상')).toBeInTheDocument()
+    // 질문은 요약(extract_v10)으로, 공지 원문은 대조할 수 있게 아래에 작게 보여 줍니다
+    expect(within(first).getByText('TOEIC 500점 이상인 학생')).toBeInTheDocument()
+    expect(within(first).getByText('※ 2026-1학기 TOEIC 점수 500점 이상 취득')).toBeInTheDocument()
     expect(
       within(first).getByText(
         '답하면 ‘글로벌 SW 인재 장학금’ 외 1개의 지원 가능 여부를 바로 알려 드려요.',
@@ -191,7 +193,7 @@ describe('대시보드 빠른 확인 (계획서 7.1)', () => {
     resetMockState()
     server.use(http.get('/api/auth/me', () => HttpResponse.json({ ...mockMe, id: 2, email })))
     renderApp('/dashboard?tab=conditional')
-    expect(within(await card()).getByText('TOEIC 500점 이상')).toBeInTheDocument()
+    expect(within(await card()).getByText('TOEIC 500점 이상인 학생')).toBeInTheDocument()
   })
 
   it('묶인 장학금 중 한 건의 저장이 실패하면 같은 질문에서 다시 답할 수 있다', async () => {
@@ -209,10 +211,10 @@ describe('대시보드 빠른 확인 (계획서 7.1)', () => {
     const answer = first.getByRole('button', { name: '안 맞아요' })
     fireEvent.click(answer)
     expect(answer).toBeDisabled()
-    expect(first.getByText('TOEIC 500점 이상')).toBeInTheDocument()
+    expect(first.getByText('TOEIC 500점 이상인 학생')).toBeInTheDocument()
     expect(await first.findByRole('alert')).toHaveTextContent('저장하지 못했습니다.')
     await waitFor(() => expect(screen.queryByText('글로벌 SW 인재 장학금')).not.toBeInTheDocument())
-    expect(first.getByText('TOEIC 500점 이상')).toBeInTheDocument()
+    expect(first.getByText('TOEIC 500점 이상인 학생')).toBeInTheDocument()
     expect(answer).toBeEnabled()
     expect(screen.getByText('해외 연수 지원 장학금')).toBeInTheDocument()
 
@@ -248,16 +250,26 @@ describe('상세', () => {
     const items = within(checklist).getAllByRole('listitem')
     expect(items).toHaveLength(2) // 내 정보로 판정한 조건 2개
     expect(within(items[0]).getByRole('img', { name: '충족' })).toBeInTheDocument()
-    expect(within(items[0]).getByText('부모가 논산시에 1년 이상 거주한 학생')).toBeInTheDocument()
+    // 요약 한 줄(코드가 값으로 만듦)을 보이고, 원문 근거는 "근거 보기" 안에 접어 둡니다 (extract_v10)
+    expect(within(items[0]).getByText('부모 주소 충청남도 논산시')).toBeInTheDocument()
+    const evidence = within(items[0]).getByText('근거 보기').closest('details')
+    expect(evidence).not.toHaveAttribute('open')
+    expect(evidence).toHaveTextContent('부모가 논산시에 1년 이상 거주한 학생')
     expect(within(items[1]).getByRole('img', { name: '확인 필요' })).toBeInTheDocument()
+    expect(within(items[1]).getByText('공지 기준이 명확하지 않아요')).toBeInTheDocument()
     const extra = screen.getByRole('list', { name: '직접 답하는 조건' })
+    // 직접 답하는 조건은 요약을 질문으로, 원문을 대조용으로 함께 보여 줍니다
+    expect(within(extra).getByText('직전학기 봉사 20시간 이상 학생')).toBeInTheDocument()
     expect(within(extra).getByText('직전학기 봉사활동 20시간 이상')).toBeInTheDocument()
-    expect(within(extra).getByText('기타 조건')).toBeInTheDocument()
+    expect(within(extra).queryByText('기타 조건')).not.toBeInTheDocument()
 
     // 판정에 쓰지 않는 기본 조건·안내는 체크리스트 밖에 따로 (extract_v5)
     const basic = screen.getByRole('list', { name: '지원 전 확인' })
-    expect(within(basic).getByText('대한민국 국적')).toBeInTheDocument()
-    expect(within(basic).getByText('타 장학금과 중복 수혜 불가')).toBeInTheDocument()
+    expect(within(basic).getByText('대한민국 국적')).toBeInTheDocument() // 요약 없으면 원문
+    expect(within(basic).getByText('다른 장학금을 받지 않는 학생')).toBeInTheDocument()
+    expect(
+      within(basic).getByText('타 장학금과 중복 수혜 불가').closest('details'),
+    ).not.toHaveAttribute('open')
     const notes = screen.getByRole('list', { name: '참고 안내' })
     expect(within(notes).getByText('면접 점수 석차순 선발')).toBeInTheDocument()
 
@@ -311,10 +323,10 @@ describe('상세', () => {
     expect(screen.queryByText(/^출처:/)).not.toBeInTheDocument()
   })
 
-  it('불충족 조건은 ✗로 표시한다', async () => {
+  it('미충족 조건은 ✗로 표시한다', async () => {
     renderApp('/scholarships/3')
     const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
-    expect(within(checklist).getByRole('img', { name: '불충족' })).toBeInTheDocument()
+    expect(within(checklist).getByRole('img', { name: '미충족' })).toBeInTheDocument()
   })
 
   it('원문 보기를 누르면 공지 본문과 읽은 첨부를 같은 페이지에서 보여 준다', async () => {
@@ -363,6 +375,91 @@ describe('상세', () => {
     expect(screen.getByRole('link', { name: /교외장학금 3종 모집/ })).toHaveAttribute(
       'target',
       '_blank',
+    )
+  })
+
+  it('조건 요약 칸이 없는 예전 backend 응답이면 원문을 그대로 보여 준다', async () => {
+    const second = mockDetails[1]
+    server.use(
+      http.get('/api/scholarships/:id', () =>
+        HttpResponse.json({
+          ...second,
+          conditions: second.conditions.map(({ condition, outcome, evidence }) => ({
+            condition,
+            outcome,
+            evidence,
+          })),
+          extra_checks: second.extra_checks.map(({ key, text, answer }) => ({ key, text, answer })),
+          basic_items: undefined,
+        }),
+      ),
+    )
+    renderApp('/scholarships/2')
+    const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
+    expect(within(checklist).queryByText('공지 기준이 명확하지 않아요')).not.toBeInTheDocument()
+    expect(within(checklist).getByText('부모가 논산시에 1년 이상 거주한 학생')).toBeInTheDocument()
+    const extra = screen.getByRole('list', { name: '직접 답하는 조건' })
+    expect(within(extra).getByText('기타 조건')).toBeInTheDocument() // 요약 대신 단어 규칙 이름
+    const basic = screen.getByRole('list', { name: '지원 전 확인' })
+    expect(within(basic).getByText('타 장학금과 중복 수혜 불가')).toBeInTheDocument()
+    expect(within(basic).queryByText('공지 문장 보기')).not.toBeInTheDocument()
+  })
+
+  it('기준값은 있고 기준 학기만 모호하면 요약과 모호 안내를 함께, 이름만으로 충분하면 요약 줄 없이', async () => {
+    const second = mockDetails[1]
+    server.use(
+      http.get('/api/scholarships/:id', () =>
+        HttpResponse.json({
+          ...second,
+          conditions: [
+            {
+              condition: 'min_gpa',
+              outcome: 'UNKNOWN',
+              evidence: '평점 3.5 이상',
+              requirement: '3.5 이상',
+              ambiguous: true,
+            },
+            {
+              condition: 'excludes_new_students',
+              outcome: 'MET',
+              evidence: '신·편입생 제외',
+              requirement: null,
+              ambiguous: false,
+            },
+          ],
+        }),
+      ),
+    )
+    renderApp('/scholarships/2')
+    const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
+    const [gpa, newcomer] = within(checklist).getAllByRole('listitem')
+    expect(within(gpa).getByText('3.5 이상')).toBeInTheDocument()
+    expect(within(gpa).getByText('공지 기준이 명확하지 않아요')).toBeInTheDocument()
+    // 조건 이름·판정·근거 보기 말고는 글이 없어야 합니다
+    expect(newcomer).toHaveTextContent(/^신·편입생 제외충족근거 보기신·편입생 제외$/)
+  })
+
+  it('직접 답하는 조건의 긴 원문은 2줄로 줄이고 더 보기로 펼친다', async () => {
+    const long =
+      '대한민국 국적보유자로서 대한민국에서 고등학교를 졸업한 자(단, 국외에서 고등학교 과정을 수학한 경우와 검정고시 합격자는 지원 가능)'
+    const second = mockDetails[1]
+    server.use(
+      http.get('/api/scholarships/:id', () =>
+        HttpResponse.json({
+          ...second,
+          extra_checks: [{ key: 'k1', text: long, summary: null, answer: null }],
+        }),
+      ),
+    )
+    renderApp('/scholarships/2')
+    const extra = await screen.findByRole('list', { name: '직접 답하는 조건' })
+    const more = within(extra).getByRole('button', { name: '더 보기' })
+    expect(within(extra).getByText(long)).toHaveClass('line-clamp-2')
+    fireEvent.click(more)
+    expect(within(extra).getByText(long)).not.toHaveClass('line-clamp-2')
+    expect(within(extra).getByRole('button', { name: '접기' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
     )
   })
 

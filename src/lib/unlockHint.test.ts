@@ -45,6 +45,15 @@ describe('quickQuestions', () => {
     expect(questions.map((q) => q.condition.text)).toEqual(['B 조건', 'A 조건'])
   })
 
+  it('묶인 장학금 중 하나라도 요약이 있으면 그 요약을 질문으로 쓴다 (extract_v10)', () => {
+    const withSummary = item(2, {
+      open_conditions: [{ key: 'k:A 조건', text: 'A 조건', summary: 'A 요약' }],
+    })
+    const [question] = quickQuestions([item(1), withSummary]) // 1번(요약 없음)이 마감이 더 빠름
+    expect(question.condition.summary).toBe('A 요약')
+    expect(question.targets.map((t) => t.id)).toEqual([1, 2])
+  })
+
   it('이미 답했거나 건너뛴 문장은 다시 묻지 않는다', () => {
     expect(quickQuestions([item(1), item(2, {}, ['B 조건'])], new Set(['k:A 조건']))).toEqual([
       { condition: { key: 'k:B 조건', text: 'B 조건' }, targets: [{ id: 2, name: '장학금2' }] },
