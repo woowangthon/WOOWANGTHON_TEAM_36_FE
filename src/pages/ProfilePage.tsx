@@ -15,6 +15,7 @@ import {
   formFieldOf,
   GRADE_FIELDS,
   hasNoGrades,
+  usesPriorGrades,
   INCOME_OPTIONS,
   MAX_NICKNAME_LENGTH,
   MAX_SEMESTERS,
@@ -109,7 +110,9 @@ function ProfileForm({
   useEffect(() => onDirtyChange(isDirty), [isDirty, onDirtyChange])
   const parentSame = useWatch({ control, name: 'parent_same' })
   const isTransfer = useWatch({ control, name: 'is_transfer' })
-  const noGrades = hasNoGrades(useWatch({ control, name: 'completed_semesters' }))
+  const semesters = useWatch({ control, name: 'completed_semesters' })
+  const noGrades = hasNoGrades(semesters, isTransfer)
+  const priorGrades = usesPriorGrades(semesters, isTransfer)
   const semesterHelp = [
     isTransfer
       ? '편입 후 이 학교에서 마친 정규학기 수예요. 편입 첫 학기는 0.'
@@ -290,13 +293,23 @@ function ProfileForm({
           <section className="grid gap-4" aria-labelledby="grades-heading">
             <div className="flex items-center gap-1">
               <h2 id="grades-heading" className="text-sm font-semibold">
-                성적
+                {priorGrades ? '전 학교 성적' : '성적'}
               </h2>
               <HelpIcon
                 label="성적 도움말"
-                description="포털 성적 조회의 숫자를 그대로 적어 주세요. 직전학기 = 계절학기를 뺀 가장 최근 정규학기(1·2학기)이고, 휴학했다면 휴학 전 마지막 학기입니다."
+                description={
+                  priorGrades
+                    ? '편입 첫 학기라 충북대 성적이 아직 없어요. 편입 전 학교 성적표의 숫자를 적어 주세요. 직전학기 = 전 학교에서 마지막으로 마친 정규학기(1·2학기)입니다.'
+                    : '포털 성적 조회의 숫자를 그대로 적어 주세요. 직전학기 = 계절학기를 뺀 가장 최근 정규학기(1·2학기)이고, 휴학했다면 휴학 전 마지막 학기입니다.'
+                }
               />
             </div>
+            {priorGrades && (
+              <p className="text-xs text-muted-foreground">
+                편입 첫 학기에는 편입 전 학교 성적으로 판정해요. 4.5 만점이 아니면 4.5 만점으로 바꿔
+                적어 주세요.
+              </p>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 id="gpa"

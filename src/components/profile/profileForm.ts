@@ -70,10 +70,19 @@ export function gradeLabel(semesters: number, isTransfer: boolean): string {
   return `${Math.min(Math.floor(effective / 2) + 1, 4)}학년 (${done})`
 }
 
-/** 이수학기가 0(신입생 첫 학기)이면 성적이 없습니다(4.1). */
-export function hasNoGrades(completedSemesters: string | undefined): boolean {
+/** 이수학기가 0(신입생 첫 학기)이면 성적이 없습니다. 편입 첫 학기는 전 학교 성적을 받습니다(4.1). */
+export function hasNoGrades(completedSemesters: string | undefined, isTransfer = false): boolean {
   const v = (completedSemesters ?? '').trim()
-  return INTEGER.test(v) && Number(v) === 0
+  return !isTransfer && INTEGER.test(v) && Number(v) === 0
+}
+
+/** 편입 첫 학기(편입 후 0학기)면 성적 칸에 전 학교 성적을 받습니다(4.1). */
+export function usesPriorGrades(
+  completedSemesters: string | undefined,
+  isTransfer: boolean,
+): boolean {
+  const v = (completedSemesters ?? '').trim()
+  return isTransfer && INTEGER.test(v) && Number(v) === 0
 }
 
 // 학생이 입력하는 성적 칸. 100점 환산은 평점으로 계산해 보여 주기만 합니다(2026-11-10 결정).
@@ -144,7 +153,7 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
     issue('completed_semesters', `0~${MAX_SEMESTERS} 사이로 입력하세요`)
 
   // 이수학기 0이면 성적 칸이 화면에 없고, 남은 값도 저장하지 않으므로 검사하지 않습니다.
-  if (!hasNoGrades(v.completed_semesters)) {
+  if (!hasNoGrades(v.completed_semesters, v.is_transfer)) {
     // 서버와 같은 문장 (backend ProfileUpdate)
     if (!v.gpa) issue('gpa', '직전학기 평점을 입력하세요')
     if (!v.credits) issue('credits', '직전학기 이수학점을 입력하세요')
@@ -181,7 +190,7 @@ const numberOrNull = (v: string) => (v === '' ? null : Number(v))
 /** 폼 값 → API. 민감정보 동의가 없으면 특수자격은 보내지 않습니다(null = 입력 안 함, 4.2). */
 export function toProfile(v: ProfileFormValues, sensitiveAgreed: boolean): ProfileUpdate {
   const self = region(v.self_sido, v.self_sigungu)
-  const noGrades = hasNoGrades(v.completed_semesters)
+  const noGrades = hasNoGrades(v.completed_semesters, v.is_transfer)
   const grade = (value: string) => (noGrades ? null : numberOrNull(value))
   return {
     name: v.name,

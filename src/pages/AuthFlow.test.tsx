@@ -480,6 +480,33 @@ describe('프로필 화면', () => {
     server.events.removeAllListeners()
   })
 
+  it('편입 첫 학기(편입 후 0학기)는 전 학교 성적을 받아 저장한다', async () => {
+    let saved: Record<string, unknown> | null = null
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'PUT' && request.url.endsWith('/api/profile')) {
+        saved = await request.clone().json()
+      }
+    })
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    fireEvent.click(screen.getByLabelText('편입생이에요'))
+    await screen.findByLabelText('편입 후 마친 학기')
+    type('편입 후 마친 학기', '0')
+    expect(await screen.findByRole('heading', { name: '전 학교 성적' })).toBeInTheDocument()
+    expect(screen.getByLabelText('직전학기 평점')).toHaveValue('3.8')
+    type('직전학기 평점', '')
+    select('AI부트캠프사업단 양성인재', 'unknown')
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
+    expect(await screen.findByText('직전학기 평점을 입력하세요')).toBeInTheDocument()
+
+    type('직전학기 평점', '3.9')
+    fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
+    expect(saved).toMatchObject({ completed_semesters: 0, is_transfer: true, gpa: 3.9 })
+    expect((saved as unknown as Record<string, unknown>).gpa_total).not.toBeNull()
+    server.events.removeAllListeners()
+  })
+
   it('편입생을 체크하면 이수학기 칸이 편입 후 마친 학기로 바뀐다 (T40)', async () => {
     renderApp('/profile')
     await screen.findByRole('heading', { name: '내 프로필' })
