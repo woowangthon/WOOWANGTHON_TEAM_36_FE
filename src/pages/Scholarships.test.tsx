@@ -495,6 +495,170 @@ describe('관심·신청완료', () => {
     await waitForCards('여성공학인 장학금', '두산연강재단 장학금')
   })
 
+  it('관심 추가 실패 후 다시 누르면 두 번째 요청으로 관심 장학금에 추가한다', async () => {
+    let requests = 0
+    server.use(
+      http.put('/api/scholarships/3/state', () => {
+        requests += 1
+        if (requests === 1) return HttpResponse.json({}, { status: 500 })
+        // 재시도는 기본 목 핸들러에서 실제 관심 상태를 저장합니다.
+      }),
+    )
+    const app = renderApp('/dashboard?tab=all')
+    await waitForCards('여성공학인 장학금')
+    const card = within(screen.getByText('여성공학인 장학금').closest('li')!)
+    fireEvent.click(card.getByRole('button', { name: '관심', pressed: false }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '관심 장학금에 추가하지 못했어요. 다시 시도해 주세요.',
+    )
+    const retry = await card.findByRole('button', { name: '관심', pressed: false })
+    expect(retry).toBeEnabled()
+    expect(requests).toBe(1)
+
+    fireEvent.click(retry)
+    await waitFor(() =>
+      expect(card.getByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled(),
+    )
+    expect(requests).toBe(2)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    await app.router.navigate('/my')
+    await waitForCards('여성공학인 장학금')
+  })
+
+  it('내 장학금에서 마지막 관심 해제에 실패하면 항목을 복구하고 오류를 보여 준다', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.delete('/api/scholarships/1/state', async () => {
+        await gate
+        return HttpResponse.json({}, { status: 500 })
+      }),
+    )
+    renderApp('/my')
+    const button = await screen.findByRole('button', { name: '관심 해제', pressed: true })
+    fireEvent.click(button)
+    try {
+      expect(await screen.findByText(/관심 장학금이 없습니다/)).toBeInTheDocument()
+      expect(button).not.toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    } finally {
+      release()
+    }
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '관심을 해제하지 못했어요. 다시 시도해 주세요.',
+    )
+    expect(await screen.findByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled()
+  })
+
+  it('다른 탭이 로딩 중이어도 관심 해제 실패를 안내한다', async () => {
+    let finishSave!: () => void
+    let finishLoad!: () => void
+    const saving = new Promise<void>((resolve) => (finishSave = resolve))
+    const loading = new Promise<void>((resolve) => (finishLoad = resolve))
+    server.use(
+      http.delete('/api/scholarships/1/state', async () => {
+        await saving
+        return HttpResponse.json({}, { status: 500 })
+      }),
+      http.get('/api/scholarships', async ({ request }) => {
+        if (new URL(request.url).searchParams.get('state') === 'applied') await loading
+      }),
+    )
+    renderApp('/my')
+    try {
+      fireEvent.click(await screen.findByRole('button', { name: '관심 해제', pressed: true }))
+      expect(await screen.findByText(/관심 장학금이 없습니다/)).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('tab', { name: '신청완료' }))
+      expect(await screen.findByLabelText('불러오는 중')).toBeInTheDocument()
+
+      finishSave()
+      expect(await screen.findByText(/관심을 해제하지 못했어요/)).toBeInTheDocument()
+      expect(screen.getByLabelText('불러오는 중')).toBeInTheDocument()
+    } finally {
+      finishSave()
+      finishLoad()
+    }
+    expect(await screen.findByRole('heading', { name: '국가근로장학금' })).toBeInTheDocument()
+    expect(screen.getByText(/관심을 해제하지 못했어요/)).toBeInTheDocument()
+  })
+
+  it('관심 해제와 목록 재조회가 모두 실패해도 항목과 저장 오류를 표시한다', async () => {
+    let failRefresh = false
+    server.use(
+      http.delete('/api/scholarships/1/state', () => {
+        failRefresh = true
+        return HttpResponse.json({}, { status: 500 })
+      }),
+      http.get('/api/scholarships', () => {
+        if (failRefresh) return HttpResponse.json({ detail: '목록 조회 실패' }, { status: 500 })
+      }),
+    )
+    renderApp('/my')
+    fireEvent.click(await screen.findByRole('button', { name: '관심 해제', pressed: true }))
+
+    expect(await screen.findByText('목록 조회 실패', {}, { timeout: 10000 })).toBeInTheDocument()
+    expect(screen.getByText(/관심을 해제하지 못했어요/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled()
+  }, 12000)
+
+  it.each([true, false])(
+    '동시 관심 요청에서 첫 요청 성공 여부(%s)와 관계없이 두 번째 상태를 유지한다',
+    async (firstSucceeds) => {
+      let finishFirst!: () => void
+      let finishSecond!: () => void
+      const first = new Promise<void>((resolve) => (finishFirst = resolve))
+      const second = new Promise<void>((resolve) => (finishSecond = resolve))
+      let refreshes = 0
+      server.use(
+        http.put('/api/scholarships/2/state', async () => {
+          await first
+          if (!firstSucceeds) return HttpResponse.json({}, { status: 500 })
+        }),
+        http.put('/api/scholarships/3/state', async () => {
+          await second
+          return HttpResponse.json({}, { status: 500 })
+        }),
+        http.get('/api/scholarships', () => {
+          refreshes += 1
+        }),
+      )
+      renderApp('/dashboard?tab=all')
+      const card = async (name: string) =>
+        within((await screen.findByRole('heading', { name })).closest('li')!)
+      const firstCard = await card('논산시 인재육성 장학금')
+      const secondCard = await card('여성공학인 장학금')
+      try {
+        fireEvent.click(firstCard.getByRole('button', { name: '관심', pressed: false }))
+        expect(
+          await firstCard.findByRole('button', { name: '관심 해제', pressed: true }),
+        ).toBeDisabled()
+        fireEvent.click(secondCard.getByRole('button', { name: '관심', pressed: false }))
+        expect(
+          await secondCard.findByRole('button', { name: '관심 해제', pressed: true }),
+        ).toBeDisabled()
+
+        finishFirst()
+        await waitFor(() => expect(refreshes).toBeGreaterThan(1))
+        await waitFor(() =>
+          expect(firstCard.getByRole('button', { pressed: firstSucceeds })).toBeEnabled(),
+        )
+        expect(secondCard.getByRole('button', { name: '관심 해제', pressed: true })).toBeDisabled()
+
+        finishSecond()
+        await waitFor(() =>
+          expect(secondCard.getByRole('button', { name: '관심', pressed: false })).toBeEnabled(),
+        )
+        expect(firstCard.getByRole('button', { pressed: firstSucceeds })).toBeEnabled()
+      } finally {
+        finishFirst()
+        finishSecond()
+      }
+    },
+  )
+
   it('저장에 실패하면 되돌리고 오류를 보여 준다', async () => {
     server.use(
       http.put('/api/scholarships/:id/state', async () => {

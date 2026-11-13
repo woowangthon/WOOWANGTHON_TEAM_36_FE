@@ -1,4 +1,5 @@
 import { ArrowLeft, LogOut, Pencil, Settings } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { useLogout, useMe, type Me } from '@/api/hooks/auth'
@@ -7,7 +8,11 @@ import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
 import { Avatar } from '@/components/profile/Avatar'
 import { gradeLabel } from '@/components/profile/profileForm'
-import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
+import {
+  BookmarkError,
+  ListSkeleton,
+  ScholarshipList,
+} from '@/components/scholarship/ScholarshipCard'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
 import { Button } from '@/components/ui/button'
 
@@ -28,6 +33,7 @@ const EMPTY: Record<Tab, string> = {
 // 프로필 요약은 모든 화면이 이미 불러오는 /auth/me 값을 써서, 이 화면은 목록 API만 부릅니다(계획서 9.8, BE #44).
 export default function MyListPage() {
   const [search, setSearch] = useSearchParams()
+  const [bookmarkError, setBookmarkError] = useState<string | null>(null)
   const tab: Tab = search.get('tab') === 'applied' ? 'applied' : 'bookmarked'
   const list = useScholarships({ result: 'all', sort: 'deadline', state: tab })
 
@@ -67,13 +73,17 @@ export default function MyListPage() {
               />
             </div>
           </div>
-          {list.isPending ? (
-            <ListSkeleton variant="row" />
-          ) : list.isError ? (
-            <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />
-          ) : (
-            <ScholarshipList items={list.data} empty={EMPTY[tab]} variant="row" />
+          {list.isError && <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />}
+          {list.isPending && <ListSkeleton variant="row" />}
+          {list.data && (
+            <ScholarshipList
+              items={list.data}
+              empty={EMPTY[tab]}
+              onBookmarkError={setBookmarkError}
+              variant="row"
+            />
           )}
+          <BookmarkError message={bookmarkError} onDismiss={() => setBookmarkError(null)} />
         </section>
       </div>
     </div>

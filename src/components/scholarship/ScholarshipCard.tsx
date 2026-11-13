@@ -7,10 +7,12 @@ import {
   Heart,
   School,
   Wallet,
+  X,
 } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { useSetScholarshipState, type ScholarshipSummary } from '@/api/hooks/scholarships'
+import { FormError } from '@/components/form/Field'
 
 import { deadlineOf, RESULT_LABEL, STATE_LABEL } from './format'
 
@@ -78,11 +80,16 @@ export function DeadlineConflictNote() {
   )
 }
 
+type ScholarshipItemProps = {
+  item: ScholarshipSummary
+  onBookmarkError: (message: string | null) => void
+}
+
 /**
  * 대시보드·내 정보 카드 1장 (장학금 단위, 7.1). 넓은 화면에서는 한 줄에 2장씩 놓습니다.
  * 카드 전체를 누르면 상세로 가고(제목 링크를 카드 크기로 넓힘), 하트는 따로 눌러 관심을 켜고 끕니다.
  */
-export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
+function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
   return (
     <li className="relative isolate flex flex-col rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4">
       <div className="flex items-start justify-between gap-3">
@@ -99,7 +106,7 @@ export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <ResultBadge result={item.result} />
-          <BookmarkHeart item={item} />
+          <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
         </div>
       </div>
       <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-3">
@@ -126,8 +133,8 @@ export function ScholarshipCard({ item }: { item: ScholarshipSummary }) {
  * 관심 하트 (T54). 누르면 바로 채워지고(optimistic update) 실패하면 되돌아갑니다.
  * 신청완료한 장학금은 관심과 함께 둘 수 없어 하트를 숨기고 '신청완료'만 보여 줍니다.
  */
-function BookmarkHeart({ item }: { item: ScholarshipSummary }) {
-  const mutation = useSetScholarshipState()
+function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
+  const mutation = useSetScholarshipState(item.id)
   if (item.my_state === 'APPLIED') return null
   const on = item.my_state === 'BOOKMARKED'
   return (
@@ -136,7 +143,14 @@ function BookmarkHeart({ item }: { item: ScholarshipSummary }) {
       aria-pressed={on}
       aria-label={on ? '관심 해제' : '관심'}
       title={on ? '관심 해제' : '관심'}
-      onClick={() => mutation.mutate({ id: item.id, state: on ? null : 'BOOKMARKED' })}
+      disabled={mutation.isPending}
+      onClick={() => {
+        onBookmarkError(null)
+        void mutation.mutateAsync({ id: item.id, state: on ? null : 'BOOKMARKED' }).catch(() => {
+          const action = on ? '관심을 해제하지 못했어요.' : '관심 장학금에 추가하지 못했어요.'
+          onBookmarkError(`${action} 다시 시도해 주세요.`)
+        })
+      }}
       className="relative z-10 -mr-1 grid size-8 place-items-center rounded-full text-rose-500 transition-colors hover:bg-rose-50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <Heart aria-hidden="true" className={`size-5 ${on ? 'fill-current' : ''}`} />
@@ -148,7 +162,7 @@ function BookmarkHeart({ item }: { item: ScholarshipSummary }) {
  * 바 형태 한 줄 (T58, 내 정보). 이미 고른 장학금을 마감 순으로 훑기 좋게 한 줄에 하나씩 둡니다.
  * 카드와 같은 정보·하트를 쓰고, 줄 전체를 누르면 상세로 갑니다.
  */
-export function ScholarshipRow({ item }: { item: ScholarshipSummary }) {
+function ScholarshipRow({ item, onBookmarkError }: ScholarshipItemProps) {
   return (
     <li className="relative isolate flex items-start gap-3 rounded-lg px-2 py-3 transition-colors focus-within:ring-3 focus-within:ring-ring/50 hover:bg-brand-50">
       <div className="grid min-w-0 flex-1 gap-1">
@@ -180,7 +194,7 @@ export function ScholarshipRow({ item }: { item: ScholarshipSummary }) {
         {item.my_state === 'APPLIED' ? (
           <span className="text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
         ) : (
-          <BookmarkHeart item={item} />
+          <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
         )}
       </div>
     </li>
@@ -204,13 +218,19 @@ export function ListSkeleton({ variant = 'card' }: { variant?: 'card' | 'row' })
 export function ScholarshipList({
   items,
   empty,
+  onBookmarkError,
   variant = 'card',
 }: {
   items: ScholarshipSummary[]
   empty: React.ReactNode
+  onBookmarkError: ScholarshipItemProps['onBookmarkError']
   /** card: 대시보드 2열 카드, row: 내 정보 바 형태 */
   variant?: 'card' | 'row'
 }) {
+  const Item = variant === 'row' ? ScholarshipRow : ScholarshipCard
+  const listClass =
+    variant === 'row' ? 'grid divide-y divide-brand-100' : 'grid gap-3 sm:grid-cols-2'
+
   if (items.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-brand-200 p-8 text-center text-sm text-muted-foreground">
@@ -218,17 +238,38 @@ export function ScholarshipList({
       </p>
     )
   }
-  return variant === 'row' ? (
-    <ul className="grid divide-y divide-brand-100">
+
+  return (
+    <ul className={listClass}>
       {items.map((item) => (
-        <ScholarshipRow key={item.id} item={item} />
+        <Item key={item.id} item={item} onBookmarkError={onBookmarkError} />
       ))}
     </ul>
-  ) : (
-    <ul className="grid gap-3 sm:grid-cols-2">
-      {items.map((item) => (
-        <ScholarshipCard key={item.id} item={item} />
-      ))}
-    </ul>
+  )
+}
+
+export function BookmarkError({
+  message,
+  onDismiss,
+}: {
+  message: string | null
+  onDismiss: () => void
+}) {
+  if (!message) return null
+
+  return (
+    <div className="fixed inset-x-4 bottom-4 z-20 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-brand-200 bg-background p-2 shadow-lg">
+      <div className="min-w-0 flex-1">
+        <FormError message={message} />
+      </div>
+      <button
+        type="button"
+        aria-label="관심 오류 닫기"
+        className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onDismiss}
+      >
+        <X aria-hidden="true" className="size-4" />
+      </button>
+    </div>
   )
 }

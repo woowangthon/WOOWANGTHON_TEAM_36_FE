@@ -591,7 +591,7 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
  * 우리 서비스가 대신 신청하지 않으므로, 원문 공지에서 신청한 뒤 표시해 두는 용도입니다.
  */
 function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_state'] }) {
-  const mutation = useSetScholarshipState()
+  const mutation = useSetScholarshipState(id)
   const applied = state === 'APPLIED'
   const Icon = applied ? SquareCheckBig : Square
   return (
@@ -599,6 +599,7 @@ function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_
       <button
         type="button"
         aria-pressed={applied}
+        disabled={mutation.isPending}
         onClick={() => mutation.mutate({ id, state: applied ? null : 'APPLIED' })}
         className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
           applied
