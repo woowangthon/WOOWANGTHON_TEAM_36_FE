@@ -23,6 +23,13 @@ export type ListParams = NonNullable<
   operations['list_scholarships_scholarships_get']['parameters']['query']
 >
 
+type ListData = Schemas['ScholarshipListResponse']
+type ListResponse = Omit<ListData, 'items'> & {
+  items: (Omit<ScholarshipSummary, 'open_conditions'> & {
+    open_conditions?: ScholarshipSummary['open_conditions'] | null
+  })[]
+}
+
 export const scholarshipsKey = ['scholarships'] as const
 const listKey = (params: ListParams) => [...scholarshipsKey, 'list', params] as const
 const detailKey = (id: number) => [...scholarshipsKey, 'detail', id] as const
@@ -51,8 +58,16 @@ export function useScholarships(params: ListParams) {
   const pending = usePendingStates()
   const query = useQuery({
     queryKey: listKey(params),
-    queryFn: () =>
-      apiRequest<Schemas['ScholarshipListResponse']>(`/scholarships${toQueryString(params)}`),
+    queryFn: async (): Promise<ListData> => {
+      const response = await apiRequest<ListResponse>(`/scholarships${toQueryString(params)}`)
+      return {
+        ...response,
+        items: response.items.map((item) => ({
+          ...item,
+          open_conditions: item.open_conditions ?? [],
+        })),
+      }
+    },
     select: (data) => data.items,
   })
   const data = pending.reduce(
@@ -76,7 +91,6 @@ export function useScholarship(id: number) {
   }
 }
 
-type ListData = Schemas['ScholarshipListResponse']
 type Snapshot = [QueryKey, unknown][]
 
 function isListKey(key: QueryKey): key is ReturnType<typeof listKey> {

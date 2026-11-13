@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
 
-import { mockDetails, mockMe } from '@/mocks/data'
+import { mockDetails, mockMe, toSummary } from '@/mocks/data'
 import { resetMockState } from '@/mocks/handlers'
 import { server } from '@/mocks/node'
 import { renderApp } from '@/test/renderApp'
@@ -160,6 +160,32 @@ describe('직접 답하는 조건 (계획서 5.3)', () => {
 describe('대시보드 빠른 확인 (계획서 7.1)', () => {
   beforeEach(() => sessionStorage.clear())
   const card = () => screen.findByRole('region', { name: '빠른 확인' })
+
+  it('open_conditions가 누락되거나 null인 장학금도 목록에 표시한다', async () => {
+    const summary = (id: number) => toSummary(mockDetails.find((item) => item.id === id)!)
+    server.use(
+      http.get('/api/scholarships', () =>
+        HttpResponse.json({
+          items: [
+            { ...summary(8), open_conditions: undefined },
+            { ...summary(9), open_conditions: null },
+            summary(10),
+          ],
+        }),
+      ),
+    )
+    renderApp('/dashboard?tab=conditional')
+
+    expect(
+      await screen.findByRole('heading', { name: '청주시 미래인재 장학금' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '글로벌 SW 인재 장학금' })).toBeInTheDocument()
+    const quickCheck = within(await card())
+    expect(quickCheck.getByText('1/1')).toBeInTheDocument()
+    expect(
+      quickCheck.getByText('답하면 ‘해외 연수 지원 장학금’의 지원 가능 여부를 바로 알려 드려요.'),
+    ).toBeInTheDocument()
+  })
 
   it('같은 문장은 한 번만 묻고, 답하면 묶인 장학금이 모두 정해진다', async () => {
     renderApp('/dashboard?tab=conditional')
