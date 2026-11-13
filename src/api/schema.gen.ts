@@ -941,6 +941,11 @@ export interface components {
              * @default false
              */
             other_unknown: boolean;
+            /**
+             * Also Posted In
+             * @default []
+             */
+            also_posted_in: string[];
             /** Apply Start */
             apply_start: string | null;
             /** Conditions */
@@ -1028,6 +1033,11 @@ export interface components {
              * @default false
              */
             other_unknown: boolean;
+            /**
+             * Also Posted In
+             * @default []
+             */
+            also_posted_in: string[];
         };
         /**
          * SiblingScholarship
