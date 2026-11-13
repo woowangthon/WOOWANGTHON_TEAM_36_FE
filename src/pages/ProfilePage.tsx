@@ -16,6 +16,7 @@ import {
   GRADE_FIELDS,
   hasNoGrades,
   INCOME_OPTIONS,
+  MAX_NICKNAME_LENGTH,
   MAX_SEMESTERS,
   MAX_TRANSFER_SEMESTERS,
   profileSchema,
@@ -155,8 +156,31 @@ function ProfileForm({
               <Input
                 id="name"
                 autoComplete="nickname"
-                maxLength={20}
-                placeholder="한글·영문·숫자 2~10자"
+                maxLength={MAX_NICKNAME_LENGTH}
+                placeholder={`한글·영문·숫자 2~${MAX_NICKNAME_LENGTH}자`}
+                onPaste={(event) => {
+                  const pasted = event.clipboardData.getData('text')
+                  const normalized = pasted.normalize('NFC')
+                  if (normalized === pasted) return
+
+                  event.preventDefault()
+                  const input = event.currentTarget
+                  const start = input.selectionStart ?? input.value.length
+                  const end = input.selectionEnd ?? start
+                  const available = MAX_NICKNAME_LENGTH - (input.value.length - (end - start))
+                  if (available <= 0) return
+
+                  const inserted = normalized.slice(0, available)
+                  setValue(
+                    'name',
+                    input.value.slice(0, start) + inserted + input.value.slice(end),
+                    {
+                      shouldDirty: true,
+                      shouldValidate: !!errors.name,
+                    },
+                  )
+                  input.setSelectionRange(start + inserted.length, start + inserted.length)
+                }}
                 aria-invalid={!!errors.name}
                 {...register('name')}
               />

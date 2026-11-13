@@ -398,6 +398,45 @@ describe('관심·신청완료', () => {
     await waitForCards('여성공학인 장학금', '두산연강재단 장학금')
   })
 
+  it('관심 추가에 실패하면 하트를 되돌리고 다시 시도할 수 있게 안내한다', async () => {
+    server.use(http.put('/api/scholarships/3/state', () => HttpResponse.json({}, { status: 500 })))
+    renderApp('/dashboard?tab=all')
+    await waitForCards('여성공학인 장학금')
+    const card = within(screen.getByText('여성공학인 장학금').closest('li')!)
+    fireEvent.click(card.getByRole('button', { name: '관심', pressed: false }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '관심 장학금에 추가하지 못했어요. 다시 시도해 주세요.',
+    )
+    expect(card.getByRole('button', { name: '관심', pressed: false })).toBeEnabled()
+    fireEvent.click(screen.getByRole('button', { name: '관심 오류 닫기' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('내 장학금에서 마지막 관심 해제에 실패하면 항목을 복구하고 오류를 보여 준다', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.delete('/api/scholarships/1/state', async () => {
+        await gate
+        return HttpResponse.json({}, { status: 500 })
+      }),
+    )
+    renderApp('/my')
+    const button = await screen.findByRole('button', { name: '관심 해제', pressed: true })
+    fireEvent.click(button)
+    try {
+      expect(await screen.findByText(/관심 장학금이 없습니다/)).toBeInTheDocument()
+    } finally {
+      release()
+    }
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '관심을 해제하지 못했어요. 다시 시도해 주세요.',
+    )
+    expect(screen.getByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled()
+  })
+
   it('저장에 실패하면 되돌리고 오류를 보여 준다', async () => {
     server.use(
       http.put('/api/scholarships/:id/state', async () => {

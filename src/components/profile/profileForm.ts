@@ -6,6 +6,7 @@ import type { Profile, ProfileUpdate } from '@/api/hooks/profile'
 
 export const MIN_BIRTH_YEAR = 1950
 export const MIN_AGE = 15
+export const MAX_NICKNAME_LENGTH = 10
 export const MAX_SEMESTERS = 16
 // 편입생은 3학년 편입으로 보고 4학기를 더해 학년을 계산합니다(4.1, backend effective_semesters).
 export const TRANSFER_CREDIT_SEMESTERS = 4
@@ -123,7 +124,8 @@ const rules = z.superRefine<z.output<typeof fields>>((v, ctx) => {
   else if (/\s/.test(v.name)) issue('name', '닉네임에는 띄어쓰기를 쓸 수 없어요')
   else if (!NICKNAME_CHARS.test(v.name))
     issue('name', '닉네임은 한글·영문·숫자만 쓸 수 있어요 (특수기호·이모지·ㅋㅋ 같은 자음 불가)')
-  else if (v.name.length < 2 || v.name.length > 10) issue('name', '닉네임은 2~10자로 입력하세요')
+  else if (v.name.length < 2 || v.name.length > MAX_NICKNAME_LENGTH)
+    issue('name', `닉네임은 2~${MAX_NICKNAME_LENGTH}자로 입력하세요`)
   else if (INTEGER.test(v.name)) issue('name', '닉네임은 숫자만으로 만들 수 없어요')
 
   if (!v.birth_year) issue('birth_year', '출생연도를 고르세요')
