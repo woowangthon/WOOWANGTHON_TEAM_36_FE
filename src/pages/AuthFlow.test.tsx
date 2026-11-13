@@ -40,7 +40,7 @@ async function fillRequiredProfile() {
   type('직전학기 평점', '3.8')
   type('직전학기 이수학점', '18')
   type('전체 평점평균', '3.6')
-  fireEvent.click(screen.getByLabelText('아니오'))
+  select('AI부트캠프사업단 양성인재', 'no')
 }
 
 describe('가입 흐름', () => {
@@ -466,7 +466,7 @@ describe('프로필 화면', () => {
     type('이수학기', '0')
     await waitFor(() => expect(screen.queryByLabelText('직전학기 평점')).not.toBeInTheDocument())
     expect(screen.getByText(/아직 성적이 없어 입력하지 않아요/)).toBeInTheDocument()
-    fireEvent.click(screen.getByLabelText('모름'))
+    select('AI부트캠프사업단 양성인재', 'unknown')
     fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
 
     await waitFor(() => expect(app.path()).toBe('/dashboard'))
@@ -501,7 +501,7 @@ describe('프로필 화면', () => {
     const app = renderApp('/profile')
     await screen.findByRole('heading', { name: '내 프로필' })
     fireEvent.click(screen.getByLabelText('편입생이에요'))
-    fireEvent.click(screen.getByLabelText('외국인이에요 (대한민국 국적이 아님)'))
+    select('국적', 'true')
     type('편입 후 마친 학기', '2')
     fireEvent.click(screen.getByRole('button', { name: '저장하고 장학금 보기' }))
 

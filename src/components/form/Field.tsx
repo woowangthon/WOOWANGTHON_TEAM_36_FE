@@ -21,14 +21,11 @@ export function Field({ id, label, labelAction, error, hint, optional, children 
 
   return (
     <div className="grid content-start gap-1.5">
-      {labelAction ? (
-        <div className="flex items-center gap-1">
-          {fieldLabel}
-          {labelAction}
-        </div>
-      ) : (
-        fieldLabel
-      )}
+      {/* 제목 줄 높이를 도움말 아이콘(24px) 높이로 고정해, 아이콘이 있는 칸과 없는 칸의 입력창 줄을 맞춥니다 (T68). */}
+      <div className="flex min-h-6 items-center gap-1">
+        {fieldLabel}
+        {labelAction}
+      </div>
       {children}
       {error ? (
         <p id={`${id}-error`} role="alert" className="text-xs text-destructive">

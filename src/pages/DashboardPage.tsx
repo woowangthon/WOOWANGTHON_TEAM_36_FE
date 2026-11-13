@@ -230,7 +230,7 @@ export default function DashboardPage() {
         {/* 스크롤해도 따라오는 사이드바. 화면보다 길면 사이드바 안에서만 스크롤됩니다 (상단 바 64px + 여백) */}
         <aside
           aria-label="바로가기"
-          className="hidden min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 [scrollbar-width:thin] lg:sticky lg:top-20 lg:grid lg:max-h-[calc(100svh-6rem)] lg:self-start lg:overflow-y-auto lg:pb-1"
+          className="hidden min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 [scrollbar-width:thin] lg:sticky lg:top-20 lg:grid lg:max-h-[calc(100svh-6rem)] lg:self-start lg:overflow-y-auto lg:pr-2 lg:pb-1"
         >
           <SidePanel className="grid min-w-0 grid-cols-[minmax(0,1fr)]" />
           <DeadlineSoon

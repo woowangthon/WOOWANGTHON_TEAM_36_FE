@@ -312,7 +312,9 @@ const rawDetails: RawDetail[] = [
     name: '푸른등대 기부장학금',
     display_name: '푸른등대 기부장학금',
     ...kosaf,
-    benefit_amount_text: '최대 400만원',
+    // 긴 금액 문장 (T68, 실제 추출처럼 여러 줄이 되는 경우 확인용)
+    benefit_amount_text:
+      '매학기 등록금 범위 내 필수경비 전액 지원(기초생활수급자는 학기당 생활비 250만 원 추가 지원)',
     benefit_type: '등록금성',
     apply_start: '2026-11-01T09:00:00+09:00',
     apply_end: '2026-11-20T18:00:00+09:00',

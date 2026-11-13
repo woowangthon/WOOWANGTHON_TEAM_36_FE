@@ -110,14 +110,18 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
         </div>
       </div>
       <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-3">
-        <span className="inline-flex items-center gap-1">
-          <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
+        <span className="inline-flex items-start gap-1">
+          <CalendarClock
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+          />
           <DeadlineText item={item} />
         </span>
         {item.deadline_conflict && <DeadlineConflictNote />}
         {item.benefit_amount_text && (
-          <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-700">
-            <Wallet aria-hidden="true" className="size-4" />
+          <span className="inline-flex items-start gap-1 text-sm font-medium text-brand-700">
+            {/* 글이 길어 여러 줄이 되어도 아이콘이 줄어들지 않고 첫 줄 옆에 붙게 (T68) */}
+            <Wallet aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
             {item.benefit_amount_text}
           </span>
         )}
@@ -176,14 +180,18 @@ function ScholarshipRow({ item, onBookmarkError }: ScholarshipItemProps) {
         </h3>
         <SourceLine item={item} className="text-xs" />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="inline-flex items-center gap-1">
-            <CalendarClock aria-hidden="true" className="size-4 text-muted-foreground" />
+          <span className="inline-flex items-start gap-1">
+            <CalendarClock
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+            />
             <DeadlineText item={item} />
           </span>
           {item.deadline_conflict && <DeadlineConflictNote />}
           {item.benefit_amount_text && (
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-700">
-              <Wallet aria-hidden="true" className="size-4" />
+            <span className="inline-flex items-start gap-1 text-sm font-medium text-brand-700">
+              {/* 글이 길어 여러 줄이 되어도 아이콘이 줄어들지 않고 첫 줄 옆에 붙게 (T68) */}
+              <Wallet aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
               {item.benefit_amount_text}
             </span>
           )}
