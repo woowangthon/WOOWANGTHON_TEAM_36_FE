@@ -61,6 +61,14 @@ describe('대시보드', () => {
     await waitFor(() => expect(cardNames()).toEqual(['두산연강재단 장학금']))
   })
 
+  it('다른 게시판에도 올라온 장학금은 카드에 함께 알린다 (T46)', async () => {
+    renderApp('/dashboard')
+    await waitForCards('두산연강재단 장학금')
+    const card = screen.getByRole('heading', { name: '두산연강재단 장학금' }).closest('li')!
+    expect(within(card).getByText('한국장학재단에도 게시됨')).toBeInTheDocument()
+    expect(screen.getAllByText(/에도 게시됨$/)).toHaveLength(1)
+  })
+
   it('장학금 이름으로 검색한다', async () => {
     const app = renderApp('/dashboard')
     await waitForCards('두산연강재단 장학금')

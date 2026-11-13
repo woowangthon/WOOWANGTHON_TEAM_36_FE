@@ -41,6 +41,8 @@ export function useSaveProfile() {
               profile_completed: true,
               nickname: saved.name,
               completed_semesters: saved.completed_semesters,
+              // 학년 표시가 편입생 여부에 따라 달라집니다(4.1, T46).
+              is_transfer: saved.is_transfer,
               gpa: saved.gpa ?? null,
             }
           : me,

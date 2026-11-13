@@ -72,6 +72,12 @@ export function SourceLine({
   )
 }
 
+/** 같은 장학금이 다른 게시판에도 올라와 목록에서 하나로 묶였을 때 (7.1, T46). */
+export function AlsoPostedNote({ sources }: { sources: string[] }) {
+  if (sources.length === 0) return null
+  return <p className="text-xs text-muted-foreground break-keep">{sources.join('·')}에도 게시됨</p>
+}
+
 export function DeadlineConflictNote() {
   return (
     <span className="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800">
@@ -103,6 +109,7 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
             </Link>
           </h3>
           <SourceLine item={item} className="text-xs" />
+          <AlsoPostedNote sources={item.also_posted_in} />
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <ResultBadge result={item.result} />

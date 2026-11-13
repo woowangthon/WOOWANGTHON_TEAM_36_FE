@@ -86,8 +86,12 @@ const noticeA = {
 type RawCheck = Omit<Schemas['ConditionCheck'], 'ambiguous'> & { ambiguous?: boolean }
 type RawDetail = Omit<
   ScholarshipDetail,
-  'open_conditions' | 'other_unknown' | 'conditions' | 'basic_items'
-> & { conditions: RawCheck[]; basic_items?: Schemas['ConditionTextOut'][] }
+  'open_conditions' | 'other_unknown' | 'conditions' | 'basic_items' | 'also_posted_in'
+> & {
+  conditions: RawCheck[]
+  basic_items?: Schemas['ConditionTextOut'][]
+  also_posted_in?: string[] // 목록에서 묶인 다른 게시판 (T45). 적지 않으면 없음
+}
 
 const rawDetails: RawDetail[] = [
   {
@@ -95,6 +99,7 @@ const rawDetails: RawDetail[] = [
     name: '2026학년도 2학기 (재)두산연강재단 장학생 선발',
     display_name: '두산연강재단 장학금',
     ...sw,
+    also_posted_in: ['한국장학재단'], // 재단 누리집에도 같은 공지 (T46)
     benefit_amount_text: '연 600만원',
     benefit_type: '등록금성',
     apply_start: '2026-10-30T09:00:00+09:00',
@@ -464,6 +469,7 @@ export function withDerived<T extends RawDetail>(d: T): T & ScholarshipDetail {
     basic_items: d.basic_items ?? d.basic_conditions.map((text) => ({ text, summary: null })),
     open_conditions,
     other_unknown: otherUnknown(d),
+    also_posted_in: d.also_posted_in ?? [],
   }
 }
 
@@ -485,6 +491,7 @@ export function toSummary(d: ScholarshipDetail): ScholarshipSummary {
     my_state: d.my_state,
     open_conditions: d.open_conditions,
     other_unknown: d.other_unknown,
+    also_posted_in: d.also_posted_in,
   }
 }
 
