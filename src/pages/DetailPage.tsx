@@ -15,7 +15,7 @@ import {
   SquareCheckBig,
   Wallet,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { ApiError } from '@/api/hooks/request'
@@ -368,24 +368,47 @@ function Evidence({ text, source }: { text: string; source: string | null }) {
   )
 }
 
-// 이 글자 수를 넘는 원문은 2줄로 줄이고 "더 보기"를 둡니다. 360px 화면에서 text-xs 한글이
+// 화면 폭을 잴 수 없을 때(테스트 등) 쓰는 기준. 360px 화면에서 text-xs 한글이
 // 한 줄에 20자 안팎이라 2줄은 대략 40자입니다.
 const CLAMP_CHARS = 40
 
-/** 직접 답하는 조건의 공지 원문. 2줄까지 보이고, 길면 "더 보기"로 펼칩니다. */
+/**
+ * 직접 답하는 조건의 공지 원문. 2줄까지 보이고, 실제로 잘린 글이 있을 때만 "더 보기"를 둡니다.
+ * 글자 수만 보면 넓은 화면에서 한 줄에 다 들어가도 버튼이 생겨 눌러도 바뀌는 게 없었습니다 (T69).
+ * 그래서 2줄로 줄인 상태에서 글이 넘치는지(scrollHeight > clientHeight) 재고, 화면 폭이 바뀌면 다시 잽니다.
+ */
 function OriginalText({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false)
-  const long = text.length > CLAMP_CHARS
+  const [overflowing, setOverflowing] = useState(text.length > CLAMP_CHARS)
+  const ref = useRef<HTMLQuoteElement>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    // 펼친 상태에서는 줄이지 않아 잴 수 없으므로 마지막 값을 그대로 씁니다.
+    if (!el || expanded) return
+    const measure = () => {
+      // 레이아웃이 없는 환경(jsdom)은 높이가 0이라 글자 수 기준을 그대로 둡니다.
+      if (el.clientHeight === 0) return
+      setOverflowing(el.scrollHeight > el.clientHeight + 1)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [expanded, text])
+
   return (
     <>
       <blockquote
+        ref={ref}
         className={`mt-0.5 border-l-2 pl-2 text-xs text-muted-foreground break-keep ${
-          long && !expanded ? 'line-clamp-2' : ''
+          expanded ? '' : 'line-clamp-2'
         }`}
       >
         {text}
       </blockquote>
-      {long && (
+      {(overflowing || expanded) && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
