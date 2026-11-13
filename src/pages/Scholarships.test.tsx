@@ -334,7 +334,7 @@ describe('상세', () => {
     expect(screen.queryByText(/공지 이름:/)).not.toBeInTheDocument()
   })
 
-  it('근거 출처와 읽지 못한 첨부를 보여 준다', async () => {
+  it('읽지 못한 첨부와 잘린 공고문이 있어도 첨부 확인 안내를 숨기고 근거 출처를 보여 준다', async () => {
     renderApp('/scholarships/6')
     const checklist = await screen.findByRole('list', { name: '조건 체크리스트' })
     expect(
@@ -342,18 +342,22 @@ describe('상세', () => {
     ).toBeInTheDocument()
     expect(within(checklist).getByText('출처: 공지 본문')).toBeInTheDocument()
 
-    const unread = screen.getByRole('list', { name: '읽지 못한 첨부' })
-    const link = within(unread).getByRole('link', { name: /추천서 양식\.jpg/ })
-    expect(link).toHaveAttribute('target', '_blank')
-    expect(link).toHaveAttribute('href', expect.stringContaining('kosaf.go.kr'))
-    expect(within(unread).getByText('읽을 수 없는 파일 형식')).toBeInTheDocument()
-    expect(screen.getByText(/공고문이 길어 뒷부분 일부는 읽지 못했어요/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('region', { name: '첨부파일을 직접 확인하세요' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/공고문이 길어 뒷부분 일부는 읽지 못했어요/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '원문 보기' }))
+    const original = screen.getByRole('region', { name: '공지 원문' })
+    expect(within(original).getByRole('link', { name: '원문 사이트에서 보기' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('kosaf.go.kr'),
+    )
   })
 
-  it('첨부를 모두 읽었으면 첨부 안내를 보여 주지 않는다', async () => {
+  it('근거 출처가 없으면 출처를 보여 주지 않는다', async () => {
     renderApp('/scholarships/1')
     await screen.findByRole('list', { name: '조건 체크리스트' })
-    expect(screen.queryByText('첨부파일을 직접 확인하세요')).not.toBeInTheDocument()
     expect(screen.queryByText(/^출처:/)).not.toBeInTheDocument()
   })
 

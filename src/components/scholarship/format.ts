@@ -1,10 +1,5 @@
 // 장학금 화면의 표시 규칙. 날짜는 모두 한국 시간(Asia/Seoul)으로 계산·표시합니다(frontend CLAUDE.md).
-import type {
-  ConditionCheck,
-  ScholarshipSummary,
-  UnreadAttachment,
-  UserState,
-} from '@/api/hooks/scholarships'
+import type { ConditionCheck, ScholarshipSummary, UserState } from '@/api/hooks/scholarships'
 
 const TIME_ZONE = 'Asia/Seoul'
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -92,14 +87,6 @@ export const CONDITION_LABEL = {
 export function evidenceSourceLabel(source: string): string {
   return source === '본문' ? '공지 본문' : `첨부 ${source}`
 }
-
-/** 첨부를 읽지 못한 이유 (5.3). */
-export const UNREAD_REASON = {
-  NO_TEXT: '글자를 읽을 수 없는 파일 (스캔본·이미지)',
-  UNSUPPORTED: '읽을 수 없는 파일 형식',
-  FAILED: '파일을 열지 못함',
-  TOO_LARGE: '파일이 너무 큼',
-} as const satisfies Record<UnreadAttachment['reason'], string>
 
 export const OUTCOME = {
   MET: { mark: '✓', label: '충족' },
