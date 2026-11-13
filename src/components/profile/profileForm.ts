@@ -40,7 +40,7 @@ export function birthYearOptions(now = new Date()): string[] {
   return Array.from({ length: max - MIN_BIRTH_YEAR + 1 }, (_, i) => String(max - i))
 }
 /** 맥에서 복사한 분해형 한글(NFD)을 완성형으로 바꾸고 앞뒤 공백을 지웁니다. */
-const cleanName = (v: string) => v.normalize('NFC').trim()
+export const normalizeNickname = (value: string) => value.normalize('NFC').trim()
 
 // 값이 없을 때(undefined)도 빈 문자열로 받고, 앞뒤 공백은 지웁니다.
 const text = () =>
@@ -94,7 +94,7 @@ const fields = z.object({
   name: z
     .string()
     .optional()
-    .transform((v) => cleanName(v ?? '')),
+    .transform((v) => normalizeNickname(v ?? '')),
   gender: z.enum(['남', '여'], { error: '성별을 고르세요' }),
   birth_year: text(),
   completed_semesters: text(),

@@ -1,8 +1,16 @@
 // 장학금 목록·상세·내 상태 훅 (계획서 7.1, 7.2, 9.8).
-import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
+import {
+  useIsMutating,
+  useMutation,
+  useMutationState,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+} from '@tanstack/react-query'
 
 import type { components, operations } from '@/api/schema.gen'
 
+import { meKey, type Me } from './auth'
 import { apiRequest } from './request'
 
 type Schemas = components['schemas']
@@ -18,6 +26,16 @@ export type ListParams = NonNullable<
 export const scholarshipsKey = ['scholarships'] as const
 const listKey = (params: ListParams) => [...scholarshipsKey, 'list', params] as const
 const detailKey = (id: number) => [...scholarshipsKey, 'detail', id] as const
+const stateWriteKey = ['scholarship-state'] as const
+const stateWriteKeyFor = (id: number) => [...stateWriteKey, id] as const
+type StateWrite = { id: number; state: UserState | null }
+
+function usePendingStates() {
+  return useMutationState({
+    filters: { mutationKey: stateWriteKey, status: 'pending' },
+    select: (mutation) => mutation.state.variables as StateWrite,
+  })
+}
 
 function toQueryString(params: ListParams): string {
   const search = new URLSearchParams()
@@ -30,21 +48,32 @@ function toQueryString(params: ListParams): string {
 
 /** 대시보드·내 장학금 목록. 판정 결과와 내 상태가 함께 옵니다(화면 하나에 API 한 번, 9.8). */
 export function useScholarships(params: ListParams) {
-  return useQuery({
+  const pending = usePendingStates()
+  const query = useQuery({
     queryKey: listKey(params),
     queryFn: () =>
       apiRequest<Schemas['ScholarshipListResponse']>(`/scholarships${toQueryString(params)}`),
     select: (data) => data.items,
   })
+  const data = pending.reduce(
+    (items, write) => (items ? applyStateToList(items, params, write) : items),
+    query.data,
+  )
+  return { ...query, data }
 }
 
 export function useScholarship(id: number) {
-  return useQuery({
+  const pending = usePendingStates().find((write) => write.id === id)
+  const query = useQuery({
     queryKey: detailKey(id),
     queryFn: () => apiRequest<ScholarshipDetail>(`/scholarships/${id}`),
     enabled: Number.isInteger(id) && id > 0,
     retry: false,
   })
+  return {
+    ...query,
+    data: pending && query.data ? { ...query.data, my_state: pending.state } : query.data,
+  }
 }
 
 type ListData = Schemas['ScholarshipListResponse']
@@ -60,46 +89,66 @@ function staysInList(params: ListParams, state: UserState | null): boolean {
   return true
 }
 
+function applyStateToList(
+  items: ScholarshipSummary[],
+  params: ListParams,
+  { id, state }: StateWrite,
+) {
+  if (!staysInList(params, state)) return items.filter((item) => item.id !== id)
+  return items.map((item) => (item.id === id ? { ...item, my_state: state } : item))
+}
+
 /**
  * 관심·신청완료. state=null이면 지웁니다.
- * 서버 응답을 기다리지 않고 캐시를 먼저 바꾸고(optimistic update), 실패하면 되돌립니다(9.8).
+ * 진행 중인 변경은 화면에 바로 반영하고, 서버가 확인한 상태만 캐시에 기록합니다(9.8).
  */
-export function useSetScholarshipState() {
+export function useSetScholarshipState(id: number) {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async ({ id, state }: { id: number; state: UserState | null }) => {
-      if (state === null) await apiRequest<void>(`/scholarships/${id}/state`, 'DELETE')
-      else await apiRequest<Schemas['StateResponse']>(`/scholarships/${id}/state`, 'PUT', { state })
+  const mutationKey = stateWriteKeyFor(id)
+  const isPending = useIsMutating({ mutationKey, exact: true }) > 0
+  const mutation = useMutation({
+    mutationKey,
+    mutationFn: async ({ id, state }: StateWrite) => {
+      if (state === null) {
+        await apiRequest<void>(`/scholarships/${id}/state`, 'DELETE')
+        return null
+      }
+      const response = await apiRequest<Schemas['StateResponse']>(
+        `/scholarships/${id}/state`,
+        'PUT',
+        {
+          state,
+        },
+      )
+      return response.state
     },
-    onMutate: async ({ id, state }): Promise<{ snapshot: Snapshot }> => {
+    onMutate: () => queryClient.getQueryData<Me | null>(meKey)?.id,
+    onSuccess: async (state, { id }, userId) => {
+      if (userId !== queryClient.getQueryData<Me | null>(meKey)?.id) return
+      // 진행 중인 조회가 저장 전의 값으로 캐시를 덮지 않게 합니다.
       await queryClient.cancelQueries({ queryKey: scholarshipsKey })
-      const snapshot: Snapshot = queryClient.getQueriesData({ queryKey: scholarshipsKey })
-
+      if (userId !== queryClient.getQueryData<Me | null>(meKey)?.id) return
       queryClient.setQueryData<ScholarshipDetail>(detailKey(id), (detail) =>
         detail ? { ...detail, my_state: state } : detail,
       )
-      for (const [key, data] of snapshot) {
+      for (const [key, data] of queryClient.getQueriesData<ListData>({
+        queryKey: scholarshipsKey,
+      })) {
         if (!isListKey(key) || !data) continue
-        const params = key[2]
-        const items = (data as ListData).items
-        if (!items.some((item) => item.id === id)) continue
+        if (!data.items.some((item) => item.id === id)) continue
         queryClient.setQueryData<ListData>(key, {
-          items: staysInList(params, state)
-            ? items.map((item) => (item.id === id ? { ...item, my_state: state } : item))
-            : items.filter((item) => item.id !== id),
+          ...data,
+          items: applyStateToList(data.items, key[2], { id, state }),
         })
       }
-      return { snapshot }
     },
-    onError: (_error, _variables, context) => {
-      for (const [key, data] of context?.snapshot ?? []) queryClient.setQueryData(key, data)
-    },
-    // 다른 목록(예: 내 장학금에 새로 들어갈 항목)은 서버 기준으로 다시 맞춥니다. 관련 쿼리만 무효화합니다.
-    // 다시 불러오기를 기다리지 않아야 실패 안내가 바로 보입니다.
-    onSettled: () => {
+    onSettled: (_data, _error, _variables, userId) => {
+      if (userId !== queryClient.getQueryData<Me | null>(meKey)?.id) return
+      // 재조회 중에도 다른 저장의 진행 상태는 각 항목에 그대로 표시됩니다.
       void queryClient.invalidateQueries({ queryKey: scholarshipsKey })
     },
   })
+  return { ...mutation, isPending }
 }
 
 export type ExtraCheck = Schemas['ExtraCheck']

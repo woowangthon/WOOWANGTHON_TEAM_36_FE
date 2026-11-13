@@ -5,7 +5,11 @@ import { useSearchParams } from 'react-router'
 import { useScholarships, type ListParams } from '@/api/hooks/scholarships'
 import { ErrorBox } from '@/components/layout/AppLayout'
 import { SidePanel } from '@/components/layout/SidePanel'
-import { ListSkeleton, ScholarshipList } from '@/components/scholarship/ScholarshipCard'
+import {
+  BookmarkError,
+  ListSkeleton,
+  ScholarshipList,
+} from '@/components/scholarship/ScholarshipCard'
 import { DeadlineSoon, ResultGuide } from '@/components/scholarship/SideExtras'
 import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
 import { UnlockHint } from '@/components/scholarship/UnlockHint'
@@ -58,6 +62,7 @@ function pick<T extends string>(value: string | null, allowed: readonly T[], fal
 // 검색은 이미 받은 목록에서 장학금명·출처로 거르며 API를 더 부르지 않습니다 (T44, 계획서 9.8).
 export default function DashboardPage() {
   const [search, setSearch] = useSearchParams()
+  const [bookmarkError, setBookmarkError] = useState<string | null>(null)
   const tab = pick(search.get('tab'), ['eligible', 'conditional', 'all'], 'eligible')
   const sort = pick(search.get('sort'), ['deadline', 'latest'], 'deadline')
   const source = pick(search.get('source'), ['', 'internal', 'external'], '')
@@ -195,11 +200,9 @@ export default function DashboardPage() {
             value={tab}
             onChange={(value) => update('tab', value, 'eligible')}
           />
-          {list.isPending ? (
-            <ListSkeleton />
-          ) : list.isError ? (
-            <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />
-          ) : (
+          {list.isError && <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />}
+          {list.isPending && <ListSkeleton />}
+          {list.data && (
             <>
               {/* "이것만 확인하면 N개" 안내: 확인 필요 장학금이 있는 탭(확인 필요·전체)에서만 보입니다 */}
               {!keyword && <UnlockHint items={list.data} />}
@@ -218,9 +221,11 @@ export default function DashboardPage() {
               <ScholarshipList
                 items={items ?? []}
                 empty={keyword ? '검색 결과가 없습니다. 다른 이름으로 찾아보세요.' : EMPTY[tab]}
+                onBookmarkError={setBookmarkError}
               />
             </>
           )}
+          <BookmarkError message={bookmarkError} onDismiss={() => setBookmarkError(null)} />
         </div>
         {/* 스크롤해도 따라오는 사이드바. 화면보다 길면 사이드바 안에서만 스크롤됩니다 (상단 바 64px + 여백) */}
         <aside

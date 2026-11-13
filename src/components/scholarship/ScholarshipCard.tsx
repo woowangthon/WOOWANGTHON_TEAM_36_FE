@@ -9,7 +9,6 @@ import {
   Wallet,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
 import { Link } from 'react-router'
 
 import { useSetScholarshipState, type ScholarshipSummary } from '@/api/hooks/scholarships'
@@ -135,7 +134,7 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
  * 신청완료한 장학금은 관심과 함께 둘 수 없어 하트를 숨기고 '신청완료'만 보여 줍니다.
  */
 function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
-  const mutation = useSetScholarshipState()
+  const mutation = useSetScholarshipState(item.id)
   if (item.my_state === 'APPLIED') return null
   const on = item.my_state === 'BOOKMARKED'
   return (
@@ -219,47 +218,58 @@ export function ListSkeleton({ variant = 'card' }: { variant?: 'card' | 'row' })
 export function ScholarshipList({
   items,
   empty,
+  onBookmarkError,
   variant = 'card',
 }: {
   items: ScholarshipSummary[]
   empty: React.ReactNode
+  onBookmarkError: ScholarshipItemProps['onBookmarkError']
   /** card: 대시보드 2열 카드, row: 내 정보 바 형태 */
   variant?: 'card' | 'row'
 }) {
-  const [bookmarkError, setBookmarkError] = useState<string | null>(null)
-
   const Item = variant === 'row' ? ScholarshipRow : ScholarshipCard
   const listClass =
     variant === 'row' ? 'grid divide-y divide-brand-100' : 'grid gap-3 sm:grid-cols-2'
 
+  if (items.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-brand-200 p-8 text-center text-sm text-muted-foreground">
+        {empty}
+      </p>
+    )
+  }
+
   return (
-    <>
-      {items.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-brand-200 p-8 text-center text-sm text-muted-foreground">
-          {empty}
-        </p>
-      ) : (
-        <ul className={listClass}>
-          {items.map((item) => (
-            <Item key={item.id} item={item} onBookmarkError={setBookmarkError} />
-          ))}
-        </ul>
-      )}
-      {bookmarkError && (
-        <div className="fixed inset-x-4 bottom-4 z-20 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-brand-200 bg-background p-2 shadow-lg">
-          <div className="min-w-0 flex-1">
-            <FormError message={bookmarkError} />
-          </div>
-          <button
-            type="button"
-            aria-label="관심 오류 닫기"
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-            onClick={() => setBookmarkError(null)}
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
-        </div>
-      )}
-    </>
+    <ul className={listClass}>
+      {items.map((item) => (
+        <Item key={item.id} item={item} onBookmarkError={onBookmarkError} />
+      ))}
+    </ul>
+  )
+}
+
+export function BookmarkError({
+  message,
+  onDismiss,
+}: {
+  message: string | null
+  onDismiss: () => void
+}) {
+  if (!message) return null
+
+  return (
+    <div className="fixed inset-x-4 bottom-4 z-20 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-brand-200 bg-background p-2 shadow-lg">
+      <div className="min-w-0 flex-1">
+        <FormError message={message} />
+      </div>
+      <button
+        type="button"
+        aria-label="관심 오류 닫기"
+        className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={onDismiss}
+      >
+        <X aria-hidden="true" className="size-4" />
+      </button>
+    </div>
   )
 }

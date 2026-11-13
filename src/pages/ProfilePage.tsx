@@ -19,6 +19,7 @@ import {
   MAX_NICKNAME_LENGTH,
   MAX_SEMESTERS,
   MAX_TRANSFER_SEMESTERS,
+  normalizeNickname,
   profileSchema,
   SPECIAL_FLAGS,
   toFormValues,
@@ -160,7 +161,7 @@ function ProfileForm({
                 placeholder={`한글·영문·숫자 2~${MAX_NICKNAME_LENGTH}자`}
                 onPaste={(event) => {
                   const pasted = event.clipboardData.getData('text')
-                  const normalized = pasted.normalize('NFC')
+                  const normalized = normalizeNickname(pasted)
                   if (normalized === pasted) return
 
                   event.preventDefault()
