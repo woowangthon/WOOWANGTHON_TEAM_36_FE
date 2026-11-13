@@ -398,9 +398,16 @@ describe('관심·신청완료', () => {
     await waitForCards('여성공학인 장학금', '두산연강재단 장학금')
   })
 
-  it('관심 추가에 실패하면 하트를 되돌리고 다시 시도할 수 있게 안내한다', async () => {
-    server.use(http.put('/api/scholarships/3/state', () => HttpResponse.json({}, { status: 500 })))
-    renderApp('/dashboard?tab=all')
+  it('관심 추가 실패 후 다시 누르면 두 번째 요청으로 관심 장학금에 추가한다', async () => {
+    let requests = 0
+    server.use(
+      http.put('/api/scholarships/3/state', () => {
+        requests += 1
+        if (requests === 1) return HttpResponse.json({}, { status: 500 })
+        // 재시도는 기본 목 핸들러에서 실제 관심 상태를 저장합니다.
+      }),
+    )
+    const app = renderApp('/dashboard?tab=all')
     await waitForCards('여성공학인 장학금')
     const card = within(screen.getByText('여성공학인 장학금').closest('li')!)
     fireEvent.click(card.getByRole('button', { name: '관심', pressed: false }))
@@ -408,9 +415,19 @@ describe('관심·신청완료', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '관심 장학금에 추가하지 못했어요. 다시 시도해 주세요.',
     )
-    expect(card.getByRole('button', { name: '관심', pressed: false })).toBeEnabled()
-    fireEvent.click(screen.getByRole('button', { name: '관심 오류 닫기' }))
+    const retry = await card.findByRole('button', { name: '관심', pressed: false })
+    expect(retry).toBeEnabled()
+    expect(requests).toBe(1)
+
+    fireEvent.click(retry)
+    await waitFor(() =>
+      expect(card.getByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled(),
+    )
+    expect(requests).toBe(2)
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    await app.router.navigate('/my')
+    await waitForCards('여성공학인 장학금')
   })
 
   it('내 장학금에서 마지막 관심 해제에 실패하면 항목을 복구하고 오류를 보여 준다', async () => {
@@ -427,6 +444,8 @@ describe('관심·신청완료', () => {
     fireEvent.click(button)
     try {
       expect(await screen.findByText(/관심 장학금이 없습니다/)).toBeInTheDocument()
+      expect(button).not.toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     } finally {
       release()
     }
@@ -434,7 +453,7 @@ describe('관심·신청완료', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '관심을 해제하지 못했어요. 다시 시도해 주세요.',
     )
-    expect(screen.getByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled()
+    expect(await screen.findByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled()
   })
 
   it('저장에 실패하면 되돌리고 오류를 보여 준다', async () => {
