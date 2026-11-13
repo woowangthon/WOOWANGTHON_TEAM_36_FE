@@ -302,8 +302,8 @@ export default function SignupPage() {
           </Button>
         </form>
         <p className="text-xs text-muted-foreground">
-          가입할 때 한 번만 메일로 인증번호를 확인합니다. 비밀번호를 잊으면 같은 이메일의 Google
-          계정으로만 되찾을 수 있으니, Gmail 주소로 가입하는 것을 권합니다.
+          비밀번호를 잊으면 같은 이메일의 Google 계정으로만 되찾을 수 있으니, Gmail 주소로 가입하는
+          것을 권합니다.
         </p>
         <p className="text-center text-sm text-muted-foreground">
           이미 계정이 있나요?{' '}

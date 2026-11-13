@@ -46,6 +46,7 @@ import {
   SourceLine,
 } from '@/components/scholarship/ScholarshipCard'
 import { Button } from '@/components/ui/button'
+import { HelpIcon } from '@/components/ui/help-icon'
 import { conditionLabel } from '@/lib/conditionLabel'
 
 // 상세 (7.1): 조건별 체크리스트(충족·미충족·확인 필요 아이콘), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
@@ -232,11 +233,11 @@ function AskMark() {
   )
 }
 
-function SectionTitle({ title, desc }: { title: string; desc: string }) {
+function SectionTitle({ title, help }: { title: string; help?: string }) {
   return (
-    <div className="mt-3">
+    <div className="mt-3 flex items-center gap-1">
       <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground break-keep">{desc}</p>
+      {help && <HelpIcon label={`${title} 도움말`} description={help} />}
     </div>
   )
 }
@@ -269,10 +270,7 @@ function Checklist({
         <>
           {conditions.length > 0 && (
             <>
-              <SectionTitle
-                title="내 정보로 판정한 조건"
-                desc="프로필에 입력한 정보와 공지를 비교한 결과예요. 물음표는 정보가 없거나 공지가 모호한 조건이에요."
-              />
+              <SectionTitle title="내 정보로 판정한 조건" />
               <ul className="mt-3 grid gap-3" aria-label="조건 체크리스트">
                 {conditions.map((check) => (
                   <li key={check.condition} className="flex gap-3">
@@ -307,7 +305,7 @@ function Checklist({
             <>
               <SectionTitle
                 title="직접 답하는 조건"
-                desc="내 정보로는 판정할 수 없는 조건이에요. 아이콘을 누를 때마다 충족 → 미충족 → 모름으로 바뀌어요."
+                help="내 정보로는 판정할 수 없는 조건이에요. 아이콘을 누를 때마다 충족 → 불충족 → 모름으로 바뀌어요."
               />
               <ul className="mt-3 grid gap-3" aria-label="직접 답하는 조건">
                 {extra.map((check) => (
@@ -417,9 +415,6 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
         <Info aria-hidden="true" className="size-5 text-brand-700" />
         함께 알아 둘 내용
       </h2>
-      <p className="mt-1 text-xs text-muted-foreground break-keep">
-        판정에는 쓰지 않았어요. 신청 전에 한 번 읽어 보세요.
-      </p>
       {basic.length > 0 && (
         <>
           <h3 className="mt-3 font-medium">지원 전 확인</h3>
@@ -614,11 +609,6 @@ function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_
         <Icon aria-hidden="true" className="size-5" />
         신청 완료
       </button>
-      <p className="text-center text-xs text-muted-foreground break-keep">
-        {applied
-          ? '내 정보 > 신청완료에 모아 뒀어요. 다시 누르면 체크가 풀려요.'
-          : '원문 공지에서 신청을 마쳤다면 체크해 두세요.'}
-      </p>
       <FormError
         message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
       />

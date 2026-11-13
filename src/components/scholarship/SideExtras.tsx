@@ -94,7 +94,6 @@ export function DeadlineSoon({
           })}
         </ul>
       )}
-      <p className="text-xs text-muted-foreground">지금 고른 탭·필터 목록 기준이에요.</p>
     </section>
   )
 }
