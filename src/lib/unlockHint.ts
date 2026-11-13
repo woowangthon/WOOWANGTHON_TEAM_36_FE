@@ -17,8 +17,8 @@ type Item = Pick<
 >
 
 export interface QuickQuestion {
-  /** 답할 조건 (모든 target에 같은 문장) */
-  condition: { key: string; text: string }
+  /** 답할 조건 (모든 target에 같은 문장). summary는 질문으로 보일 요약(extract_v10, 없으면 null) */
+  condition: Item['open_conditions'][number]
   /** 답하면 판정이 정해지는 장학금. 마감 빠른 순 */
   targets: Pick<Item, 'id' | 'name'>[]
 }
@@ -56,6 +56,8 @@ export function quickQuestions(
     const condition = item.open_conditions[0]
     if (done.has(condition.key)) continue
     const group = groups.get(condition.key) ?? { condition, targets: [] }
+    // 같은 문장인데 일부만 다시 추출돼 요약이 있으면 그 요약을 질문으로 씁니다(extract_v10)
+    if (!group.condition.summary && condition.summary) group.condition = condition
     group.targets.push({ id: item.id, name: item.display_name }) // 안내 문구에는 쉬운 이름
     groups.set(condition.key, group)
   }

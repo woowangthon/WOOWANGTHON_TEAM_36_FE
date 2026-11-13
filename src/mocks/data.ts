@@ -53,8 +53,12 @@ export function mockConditionKey(text: string): string {
   return hash.toString(16).padStart(16, '0')
 }
 
-function extraChecks(texts: string[]): Schemas['ExtraCheck'][] {
-  return texts.map((text) => ({ key: mockConditionKey(text), text, answer: null }))
+/** 문장만 주면 요약 없음(예전 추출 결과), `[문장, 요약]`이면 요약 있음(extract_v10). */
+function extraChecks(items: (string | [string, string])[]): Schemas['ExtraCheck'][] {
+  return items.map((item) => {
+    const [text, summary] = typeof item === 'string' ? [item, null] : item
+    return { key: mockConditionKey(text), text, summary, answer: null }
+  })
 }
 
 const sw = { source_code: 'SW_DEPT', source_name: '소프트웨어학부', is_internal: true } as const
@@ -78,7 +82,12 @@ const noticeA = {
 }
 
 // 목록용 칸(open_conditions·other_unknown)은 extra_checks에서 계산해 붙입니다(withDerived).
-type RawDetail = Omit<ScholarshipDetail, 'open_conditions' | 'other_unknown'>
+// 조건 요약 칸(ambiguous·basic_items, extract_v10)은 적지 않으면 기본값(모호하지 않음·요약 없음)을 채웁니다.
+type RawCheck = Omit<Schemas['ConditionCheck'], 'ambiguous'> & { ambiguous?: boolean }
+type RawDetail = Omit<
+  ScholarshipDetail,
+  'open_conditions' | 'other_unknown' | 'conditions' | 'basic_items'
+> & { conditions: RawCheck[]; basic_items?: Schemas['ConditionTextOut'][] }
 
 const rawDetails: RawDetail[] = [
   {
@@ -96,14 +105,30 @@ const rawDetails: RawDetail[] = [
     result: 'ELIGIBLE',
     my_state: 'BOOKMARKED',
     conditions: [
-      { condition: 'target_grades', outcome: 'MET', evidence: '2·3학년 재학생' },
+      {
+        condition: 'target_grades',
+        outcome: 'MET',
+        evidence: '2·3학년 재학생',
+        requirement: '2·3학년',
+      },
       {
         condition: 'target_nationality',
         outcome: 'MET',
         evidence: '대한민국 국적의 대학교 재학생',
+        requirement: '대한민국 국적',
       },
-      { condition: 'min_gpa', outcome: 'MET', evidence: '직전학기 평점평균 3.5 이상인 자' },
-      { condition: 'max_income_bracket', outcome: 'MET', evidence: '학자금지원구간 8구간 이하' },
+      {
+        condition: 'min_gpa',
+        outcome: 'MET',
+        evidence: '직전학기 평점평균 3.5 이상인 자',
+        requirement: '직전학기 3.5 이상',
+      },
+      {
+        condition: 'max_income_bracket',
+        outcome: 'MET',
+        evidence: '학자금지원구간 8구간 이하',
+        requirement: '8구간 이하',
+      },
     ],
     unread_attachments: [],
     input_truncated: false,
@@ -142,14 +167,28 @@ const rawDetails: RawDetail[] = [
         condition: 'regions',
         outcome: 'MET',
         evidence: '부모가 논산시에 1년 이상 거주한 학생',
+        requirement: '부모 주소 충청남도 논산시',
       },
-      { condition: 'max_income_bracket', outcome: 'UNKNOWN', evidence: '저소득층 우선 선발' },
+      // 공지 기준이 모호한 조건: 요약 대신 "공지 기준이 명확하지 않아요" (extract_v10)
+      {
+        condition: 'max_income_bracket',
+        outcome: 'UNKNOWN',
+        evidence: '저소득층 우선 선발',
+        requirement: null,
+        ambiguous: true,
+      },
     ],
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: ['직전학기 봉사활동 20시간 이상'],
-    extra_checks: extraChecks(['직전학기 봉사활동 20시간 이상']),
+    extra_checks: extraChecks([
+      ['직전학기 봉사활동 20시간 이상', '직전학기 봉사 20시간 이상 학생'],
+    ]),
     basic_conditions: ['대한민국 국적', '타 장학금과 중복 수혜 불가'],
+    basic_items: [
+      { text: '대한민국 국적', summary: null },
+      { text: '타 장학금과 중복 수혜 불가', summary: '다른 장학금을 받지 않는 학생' },
+    ],
     notes: ['면접 점수 석차순 선발'],
     required_documents: ['주민등록등본', '재학증명서'],
     notice: noticeA,
@@ -355,27 +394,30 @@ const rawDetails: RawDetail[] = [
     siblings: [],
   },
   // 추가 조건 하나만 확인하면 판정이 정해지는 장학금 (대시보드 빠른 확인, 계획서 7.1).
-  // 9·10번은 같은 문장이라 한 질문으로 묶입니다.
+  // 9·10번은 같은 문장이라 한 질문으로 묶입니다. 8번은 요약이 없는 예전 추출 결과입니다.
   ...[
     {
       id: 8,
       name: '청주시 미래인재 장학금',
       apply_end: '2026-11-18T18:00:00+09:00',
       extra: '청주시에 1년 이상 주민등록이 되어 있는 자',
+      summary: null,
     },
     {
       id: 9,
       name: '글로벌 SW 인재 장학금',
       apply_end: '2026-11-25T18:00:00+09:00',
-      extra: 'TOEIC 500점 이상',
+      extra: '※ 2026-1학기 TOEIC 점수 500점 이상 취득',
+      summary: 'TOEIC 500점 이상인 학생',
     },
     {
       id: 10,
       name: '해외 연수 지원 장학금',
       apply_end: '2026-12-05T18:00:00+09:00',
-      extra: 'TOEIC 500점 이상',
+      extra: '※ 2026-1학기 TOEIC 점수 500점 이상 취득',
+      summary: 'TOEIC 500점 이상인 학생',
     },
-  ].map(({ id, name, apply_end, extra }): RawDetail => ({
+  ].map(({ id, name, apply_end, extra, summary }): RawDetail => ({
     id,
     name,
     display_name: name,
@@ -393,7 +435,7 @@ const rawDetails: RawDetail[] = [
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [extra],
-    extra_checks: extraChecks([extra]),
+    extra_checks: extraChecks([summary ? [extra, summary] : extra]),
     basic_conditions: [],
     notes: [],
     required_documents: [],
@@ -415,8 +457,14 @@ export const mockDetails: ScholarshipDetail[] = rawDetails.map(withDerived)
 export function withDerived<T extends RawDetail>(d: T): T & ScholarshipDetail {
   const open_conditions = d.extra_checks
     .filter((check) => check.answer === null)
-    .map(({ key, text }) => ({ key, text }))
-  return { ...d, open_conditions, other_unknown: otherUnknown(d) }
+    .map(({ key, text, summary }) => ({ key, text, summary }))
+  return {
+    ...d,
+    conditions: d.conditions.map((c) => ({ ...c, ambiguous: c.ambiguous ?? false })),
+    basic_items: d.basic_items ?? d.basic_conditions.map((text) => ({ text, summary: null })),
+    open_conditions,
+    other_unknown: otherUnknown(d),
+  }
 }
 
 export function toSummary(d: ScholarshipDetail): ScholarshipSummary {
@@ -445,7 +493,7 @@ export function otherUnknown(d: RawDetail): boolean {
   return d.conditions.some((c) => c.outcome === 'UNKNOWN') || d.unread_attachments.length > 0
 }
 
-/** backend 판정과 같은 규칙 (계획서 5.3): 불충족·✗ → 지원 불가, 모름·미답 → 확인 필요 */
+/** backend 판정과 같은 규칙 (계획서 5.3): 미충족·✗ → 지원 불가, 모름·미답 → 확인 필요 */
 export function judge(d: ScholarshipDetail): ScholarshipDetail['result'] {
   const answers = d.extra_checks.map((check) => check.answer)
   if (d.conditions.some((c) => c.outcome === 'UNMET') || answers.includes('NO')) return 'INELIGIBLE'
