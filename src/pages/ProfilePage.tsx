@@ -214,6 +214,18 @@ function ProfileForm({
                 ))}
               </NativeSelect>
             </Field>
+            {/* 국적·양성인재도 위 칸들과 같은 선택 상자로 (T68). 국적은 대한민국 국적자·외국인 유학생 조건 판정에 씁니다(4.1, T40). */}
+            <Field id="is_foreign" label="국적">
+              <NativeSelect
+                id="is_foreign"
+                {...register('is_foreign', { setValueAs: (v) => v === true || v === 'true' })}
+              >
+                <option value="false">내국인 (대한민국 국적)</option>
+                <option value="true">외국인</option>
+              </NativeSelect>
+              {/* 닉네임 안내 문구 한 줄만큼 비워 두어 줄 간격을 맞춥니다 (T68) */}
+              <span aria-hidden="true" className="block h-4" />
+            </Field>
             <div className="grid content-start gap-1.5">
               <Field
                 id="completed_semesters"
@@ -238,58 +250,30 @@ function ProfileForm({
                 편입생이에요
               </label>
             </div>
-          </div>
-          {/* 국적 조건(대한민국 국적자·외국인 유학생 대상)을 판정합니다(4.1, T40). */}
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox {...register('is_foreign')} />
-            외국인이에요 (대한민국 국적이 아님)
-          </label>
-          <fieldset aria-labelledby="aibc-member-label" className="grid gap-1.5">
-            <legend className="mb-1.5 text-sm font-medium">
-              <span className="flex items-center gap-1">
-                <span id="aibc-member-label">AI부트캠프사업단 양성인재인가요?</span>
+            <Field
+              id="aibc_member"
+              label="AI부트캠프사업단 양성인재"
+              labelAction={
                 <HelpIcon
                   label="AI부트캠프사업단 양성인재 도움말"
                   description="충북대 AI부트캠프사업단 교육과정에 참여 중인 학생이에요. 사업단 장학금은 양성인재만 지원할 수 있어요."
                   link={{ label: '사업단 누리집', href: 'https://aibc.cbnu.ac.kr/' }}
                 />
-              </span>
-            </legend>
-            <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="yes"
-                  className="accent-primary"
-                  {...register('aibc_member')}
-                />
-                예
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="no"
-                  className="accent-primary"
-                  {...register('aibc_member')}
-                />
-                아니오
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="unknown"
-                  className="accent-primary"
-                  {...register('aibc_member')}
-                />
-                모름
-              </label>
-            </div>
-            {errors.aibc_member && (
-              <p role="alert" className="text-xs text-destructive">
-                {errors.aibc_member.message}
-              </p>
-            )}
-          </fieldset>
+              }
+              error={errors.aibc_member?.message}
+            >
+              <NativeSelect
+                id="aibc_member"
+                aria-invalid={!!errors.aibc_member}
+                {...register('aibc_member')}
+              >
+                <option value="">선택</option>
+                <option value="yes">예</option>
+                <option value="no">아니오</option>
+                <option value="unknown">모름</option>
+              </NativeSelect>
+            </Field>
+          </div>
         </section>
 
         {noGrades ? (
