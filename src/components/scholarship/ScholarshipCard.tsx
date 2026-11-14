@@ -4,6 +4,7 @@ import {
   CircleCheck,
   CircleHelp,
   CircleX,
+  ClipboardCheck,
   Heart,
   School,
   Wallet,
@@ -28,16 +29,36 @@ const RESULT_ICON = {
   INELIGIBLE: CircleX,
 } as const
 
+/** 판정 배지와 신청완료 배지가 함께 쓰는 모양. */
+const BADGE_CLASS =
+  'inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset'
+
 export function ResultBadge({ result }: { result: ScholarshipSummary['result'] }) {
   const Icon = RESULT_ICON[result]
   return (
-    <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${RESULT_STYLE[result]}`}
-    >
+    <span className={`${BADGE_CLASS} ${RESULT_STYLE[result]}`}>
       <Icon aria-hidden="true" className="size-3.5" />
       {RESULT_LABEL[result]}
     </span>
   )
+}
+
+/** 신청완료 배지. 판정 배지와 같은 모양이고, 판정 3종(초록·노랑·회색)과 겹치지 않게 파란색을 씁니다. */
+export function AppliedBadge() {
+  return (
+    <span
+      data-testid="applied-badge"
+      className={`${BADGE_CLASS} bg-sky-50 text-sky-700 ring-sky-600/20`}
+    >
+      <ClipboardCheck aria-hidden="true" className="size-3.5" />
+      {STATE_LABEL.APPLIED}
+    </span>
+  )
+}
+
+/** 목록의 상태 배지. 신청완료한 장학금은 판정 배지 자리에 신청완료 배지를 대신 보여 줍니다. */
+function StatusBadge({ item }: { item: Pick<ScholarshipSummary, 'result' | 'my_state'> }) {
+  return item.my_state === 'APPLIED' ? <AppliedBadge /> : <ResultBadge result={item.result} />
 }
 
 const DEADLINE_STYLE = {
@@ -127,8 +148,11 @@ type ScholarshipItemProps = {
  */
 function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
   // 지원 불가 카드는 흐리게 두어 지원할 수 있는 장학금이 먼저 보이게 합니다 (2026-11-14).
+  // 신청완료한 장학금은 배지가 '신청완료'로 바뀌므로 흐리게 하지 않습니다.
   const dim =
-    item.result === 'INELIGIBLE' ? 'opacity-60 hover:opacity-100 focus-within:opacity-100' : ''
+    item.result === 'INELIGIBLE' && item.my_state !== 'APPLIED'
+      ? 'opacity-60 hover:opacity-100 focus-within:opacity-100'
+      : ''
   return (
     <li
       className={`relative isolate flex min-w-0 flex-col gap-1 rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4 ${dim}`}
@@ -142,7 +166,7 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
             {item.display_name}
           </Link>
         </h3>
-        <ResultBadge result={item.result} />
+        <StatusBadge item={item} />
       </div>
       <SourceLine item={item} className="text-xs" />
       <AlsoPostedNote sources={item.also_posted_in} />
@@ -150,11 +174,7 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
         <AmountLine text={item.benefit_amount_text} />
         {item.deadline_conflict && <DeadlineConflictNote />}
         <CompactDeadline item={item} />
-        {item.my_state === 'APPLIED' ? (
-          <span className="shrink-0 text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
-        ) : (
-          <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
-        )}
+        <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
       </div>
     </li>
   )
@@ -162,7 +182,7 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
 
 /**
  * 관심 하트 (T54). 누르면 바로 채워지고(optimistic update) 실패하면 되돌아갑니다.
- * 신청완료한 장학금은 관심과 함께 둘 수 없어 하트를 숨기고 '신청완료'만 보여 줍니다.
+ * 신청완료한 장학금은 관심과 함께 둘 수 없어 하트를 숨기고, 상태 배지가 '신청완료'로 바뀝니다.
  */
 function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
   const mutation = useSetScholarshipState(item.id)
@@ -225,12 +245,8 @@ function ScholarshipRow({ item, onBookmarkError }: ScholarshipItemProps) {
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <ResultBadge result={item.result} />
-        {item.my_state === 'APPLIED' ? (
-          <span className="text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
-        ) : (
-          <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
-        )}
+        <StatusBadge item={item} />
+        <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
       </div>
     </li>
   )

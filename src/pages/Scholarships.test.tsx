@@ -743,6 +743,46 @@ describe('내 장학금', () => {
     expect(screen.getByText('마감')).toBeInTheDocument()
     expect(screen.queryByText('두산연강재단 장학금')).not.toBeInTheDocument()
   })
+
+  it('신청완료한 장학금은 판정 배지 대신 신청완료 배지를 보여 주고 하트는 숨긴다', async () => {
+    // 바 형태 (내 정보)
+    renderApp('/my')
+    fireEvent.click(await screen.findByRole('tab', { name: '신청완료' }))
+    await waitForCards('국가근로장학금')
+    const row = within(screen.getByText('국가근로장학금').closest('li')!)
+    expect(row.getByTestId('applied-badge')).toHaveTextContent('신청완료')
+    expect(row.queryByText('지원 가능')).not.toBeInTheDocument()
+    expect(row.queryByRole('button', { name: /관심/ })).not.toBeInTheDocument()
+  })
+
+  it('대시보드 카드에서도 신청완료 배지는 신청완료한 장학금에만 보인다', async () => {
+    // 상세에서 신청 완료로 표시한 뒤 목록으로 돌아옵니다
+    const app = renderApp('/scholarships/3')
+    fireEvent.click(await screen.findByRole('button', { name: '신청 완료', pressed: false }))
+    await screen.findByRole('button', { name: '신청 완료', pressed: true })
+
+    await app.router.navigate('/dashboard?tab=all')
+    await waitForCards('여성공학인 장학금', '두산연강재단 장학금')
+    const card = (name: string) => within(screen.getByText(name).closest('li')!)
+    await waitFor(() =>
+      expect(card('여성공학인 장학금').getByTestId('applied-badge')).toHaveTextContent('신청완료'),
+    )
+    expect(card('여성공학인 장학금').queryByText('지원 불가')).not.toBeInTheDocument()
+    // 판정이 지원 불가여도 신청완료 배지로 바뀐 카드는 흐리게 하지 않습니다
+    expect(screen.getByText('여성공학인 장학금').closest('li')).not.toHaveClass('opacity-60')
+    expect(
+      card('여성공학인 장학금').queryByRole('button', { name: /관심/ }),
+    ).not.toBeInTheDocument()
+
+    // 신청완료하지 않은 장학금은 판정 배지와 하트가 그대로
+    expect(card('두산연강재단 장학금').queryByTestId('applied-badge')).not.toBeInTheDocument()
+    expect(
+      card('두산연강재단 장학금').getByText(/지원 가능|확인 필요|지원 불가/),
+    ).toBeInTheDocument()
+    expect(
+      card('두산연강재단 장학금').getByRole('button', { name: '관심 해제' }),
+    ).toBeInTheDocument()
+  })
 })
 
 describe('사이드바 (T40)', () => {
