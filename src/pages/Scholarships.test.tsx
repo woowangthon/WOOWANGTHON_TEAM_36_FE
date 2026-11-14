@@ -568,7 +568,7 @@ describe('관심·신청완료', () => {
     let release!: () => void
     const gate = new Promise<void>((resolve) => (release = resolve))
     server.use(
-      http.delete('/api/scholarships/1/state', async () => {
+      http.put('/api/scholarships/1/state', async () => {
         await gate
         return HttpResponse.json({}, { status: 500 })
       }),
@@ -596,7 +596,7 @@ describe('관심·신청완료', () => {
     const saving = new Promise<void>((resolve) => (finishSave = resolve))
     const loading = new Promise<void>((resolve) => (finishLoad = resolve))
     server.use(
-      http.delete('/api/scholarships/1/state', async () => {
+      http.put('/api/scholarships/1/state', async () => {
         await saving
         return HttpResponse.json({}, { status: 500 })
       }),
@@ -625,7 +625,7 @@ describe('관심·신청완료', () => {
   it('관심 해제와 목록 재조회가 모두 실패해도 항목과 저장 오류를 표시한다', async () => {
     let failRefresh = false
     server.use(
-      http.delete('/api/scholarships/1/state', () => {
+      http.put('/api/scholarships/1/state', () => {
         failRefresh = true
         return HttpResponse.json({}, { status: 500 })
       }),
@@ -733,6 +733,9 @@ describe('관심·신청완료', () => {
 })
 
 describe('내 장학금', () => {
+  /** 이름으로 찾은 줄(카드). 다시 그려져도 최신 요소를 봅니다. */
+  const row = (name: string) => within(screen.getByText(name).closest('li')!)
+
   it('관심·신청완료 목록을 보여 주고 마감된 장학금도 포함한다', async () => {
     renderApp('/my')
     await waitForCards('두산연강재단 장학금')
@@ -744,15 +747,86 @@ describe('내 장학금', () => {
     expect(screen.queryByText('두산연강재단 장학금')).not.toBeInTheDocument()
   })
 
-  it('신청완료한 장학금은 판정 배지 대신 신청완료 배지를 보여 주고 하트는 숨긴다', async () => {
+  it('신청완료한 장학금도 하트를 켜고 끌 수 있다', async () => {
     // 바 형태 (내 정보)
-    renderApp('/my')
-    fireEvent.click(await screen.findByRole('tab', { name: '신청완료' }))
+    renderApp('/my?tab=applied')
     await waitForCards('국가근로장학금')
-    const row = within(screen.getByText('국가근로장학금').closest('li')!)
-    expect(row.getByTestId('applied-badge')).toHaveTextContent('신청완료')
-    expect(row.queryByText('지원 가능')).not.toBeInTheDocument()
-    expect(row.queryByRole('button', { name: /관심/ })).not.toBeInTheDocument()
+    expect(row('국가근로장학금').getByTestId('applied-badge')).toHaveTextContent('신청완료')
+    expect(row('국가근로장학금').queryByText('지원 가능')).not.toBeInTheDocument()
+
+    fireEvent.click(row('국가근로장학금').getByRole('button', { name: '관심', pressed: false }))
+    await waitFor(() =>
+      expect(
+        row('국가근로장학금').getByRole('button', { name: '관심 해제', pressed: true }),
+      ).toBeEnabled(),
+    )
+    expect(row('국가근로장학금').getByTestId('applied-badge')).toBeInTheDocument()
+
+    // 관심 탭에도 신청완료 배지와 함께 나옵니다
+    fireEvent.click(screen.getByRole('tab', { name: '관심' }))
+    await waitForCards('국가근로장학금', '두산연강재단 장학금')
+    expect(row('국가근로장학금').getByTestId('applied-badge')).toBeInTheDocument()
+    expect(
+      row('국가근로장학금').getByRole('button', { name: '관심 해제', pressed: true }),
+    ).toBeInTheDocument()
+  })
+
+  it('신청완료 탭에서 하트를 꺼도 줄은 남고 관심 탭에서만 사라진다', async () => {
+    renderApp('/my?tab=applied')
+    await waitForCards('국가근로장학금')
+    fireEvent.click(row('국가근로장학금').getByRole('button', { name: '관심', pressed: false }))
+    await waitFor(() =>
+      expect(
+        row('국가근로장학금').getByRole('button', { name: '관심 해제', pressed: true }),
+      ).toBeEnabled(),
+    )
+
+    fireEvent.click(row('국가근로장학금').getByRole('button', { name: '관심 해제' }))
+    await waitFor(() =>
+      expect(
+        row('국가근로장학금').getByRole('button', { name: '관심', pressed: false }),
+      ).toBeEnabled(),
+    )
+    expect(row('국가근로장학금').getByTestId('applied-badge')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: '관심' }))
+    await waitForCards('두산연강재단 장학금')
+    expect(screen.queryByText('국가근로장학금')).not.toBeInTheDocument()
+  })
+
+  it('관심 장학금을 신청완료로 표시해도 관심은 그대로다', async () => {
+    const app = renderApp('/scholarships/1')
+    fireEvent.click(await screen.findByRole('button', { name: '신청 완료', pressed: false }))
+    await screen.findByRole('button', { name: '신청 완료', pressed: true })
+
+    await app.router.navigate('/my')
+    await waitForCards('두산연강재단 장학금')
+    await waitFor(() =>
+      expect(row('두산연강재단 장학금').getByTestId('applied-badge')).toBeInTheDocument(),
+    )
+    expect(
+      row('두산연강재단 장학금').getByRole('button', { name: '관심 해제', pressed: true }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: '신청완료' }))
+    await waitForCards('두산연강재단 장학금', '국가근로장학금')
+  })
+
+  it('신청완료한 장학금의 하트 저장이 실패하면 되돌린다', async () => {
+    server.use(http.put('/api/scholarships/5/state', () => HttpResponse.json({}, { status: 500 })))
+    renderApp('/my?tab=applied')
+    await waitForCards('국가근로장학금')
+    fireEvent.click(row('국가근로장학금').getByRole('button', { name: '관심', pressed: false }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '관심 장학금에 추가하지 못했어요. 다시 시도해 주세요.',
+    )
+    await waitFor(() =>
+      expect(
+        row('국가근로장학금').getByRole('button', { name: '관심', pressed: false }),
+      ).toBeEnabled(),
+    )
+    expect(row('국가근로장학금').getByTestId('applied-badge')).toBeInTheDocument()
   })
 
   it('대시보드 카드에서도 신청완료 배지는 신청완료한 장학금에만 보인다', async () => {
@@ -770,9 +844,10 @@ describe('내 장학금', () => {
     expect(card('여성공학인 장학금').queryByText('지원 불가')).not.toBeInTheDocument()
     // 판정이 지원 불가여도 신청완료 배지로 바뀐 카드는 흐리게 하지 않습니다
     expect(screen.getByText('여성공학인 장학금').closest('li')).not.toHaveClass('opacity-60')
+    // 신청완료와 관계없이 하트는 그대로 둡니다
     expect(
-      card('여성공학인 장학금').queryByRole('button', { name: /관심/ }),
-    ).not.toBeInTheDocument()
+      card('여성공학인 장학금').getByRole('button', { name: '관심', pressed: false }),
+    ).toBeInTheDocument()
 
     // 신청완료하지 않은 장학금은 판정 배지와 하트가 그대로
     expect(card('두산연강재단 장학금').queryByTestId('applied-badge')).not.toBeInTheDocument()

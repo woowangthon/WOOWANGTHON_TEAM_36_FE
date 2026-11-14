@@ -108,7 +108,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: false,
     posted_at: noticeA.posted_at,
     result: 'ELIGIBLE',
-    my_state: 'BOOKMARKED',
+    bookmarked: true,
+    applied: false,
     conditions: [
       {
         condition: 'target_grades',
@@ -166,7 +167,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: true,
     posted_at: noticeA.posted_at,
     result: 'CONDITIONAL',
-    my_state: null,
+    bookmarked: false,
+    applied: false,
     conditions: [
       {
         condition: 'regions',
@@ -220,7 +222,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: false,
     posted_at: noticeA.posted_at,
     result: 'INELIGIBLE',
-    my_state: null,
+    bookmarked: false,
+    applied: false,
     conditions: [
       { condition: 'gender', outcome: 'MET', evidence: '여학생' },
       { condition: 'target_grades', outcome: 'UNMET', evidence: '4학년 재학생' },
@@ -261,7 +264,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: false,
     posted_at: '2026-03-02T10:00:00+09:00',
     result: 'INELIGIBLE',
-    my_state: null,
+    bookmarked: false,
+    applied: false,
     conditions: [
       { condition: 'target_program', outcome: 'UNMET', evidence: 'AIBC 양성인재' },
       {
@@ -301,7 +305,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: false,
     posted_at: '2026-07-28T14:00:00+09:00',
     result: 'ELIGIBLE',
-    my_state: 'APPLIED',
+    bookmarked: false,
+    applied: true,
     conditions: [{ condition: 'max_income_bracket', outcome: 'MET', evidence: '8구간 이하' }],
     unread_attachments: [],
     input_truncated: false,
@@ -335,7 +340,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: false,
     posted_at: '2026-11-01T09:00:00+09:00',
     result: 'CONDITIONAL',
-    my_state: null,
+    bookmarked: false,
+    applied: false,
     conditions: [
       {
         condition: 'min_gpa',
@@ -387,7 +393,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: false,
     posted_at: '2026-11-05T09:00:00+09:00',
     result: 'ELIGIBLE',
-    my_state: null,
+    bookmarked: false,
+    applied: false,
     conditions: [
       { condition: 'max_income_bracket', outcome: 'MET', evidence: '학자금지원 8구간 이하' },
       {
@@ -451,7 +458,8 @@ const rawDetails: RawDetail[] = [
     deadline_conflict: false,
     posted_at: '2026-11-05T09:00:00+09:00',
     result: 'CONDITIONAL',
-    my_state: null,
+    bookmarked: false,
+    applied: false,
     conditions: [{ condition: 'min_gpa', outcome: 'MET', evidence: '직전학기 평점 3.0 이상' }],
     unread_attachments: [],
     input_truncated: false,
@@ -504,7 +512,8 @@ export function toSummary(d: ScholarshipDetail): ScholarshipSummary {
     deadline_conflict: d.deadline_conflict,
     posted_at: d.posted_at,
     result: d.result,
-    my_state: d.my_state,
+    bookmarked: d.bookmarked,
+    applied: d.applied,
     open_conditions: d.open_conditions,
     other_unknown: d.other_unknown,
     also_posted_in: d.also_posted_in,

@@ -119,7 +119,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
             공지 제목과 본문의 마감일이 다릅니다. 원문에서 마감일을 확인하세요.
           </p>
         )}
-        <StateButtons id={item.id} state={item.my_state} />
+        <StateButtons id={item.id} applied={item.applied} />
       </section>
 
       <Checklist id={item.id} conditions={item.conditions} extra={item.extra_checks ?? []} />
@@ -603,12 +603,12 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
 
 /**
  * 신청 완료 체크박스 (T63). 관심은 목록 카드의 하트로 옮겼고(T54), 상세에는 신청 완료만 둡니다.
+ * 신청 완료를 켜고 꺼도 관심은 바뀌지 않습니다 (T71).
  * 글자는 항상 '신청 완료'이고 체크 여부(aria-pressed)로 상태를 보여 줍니다. 다시 누르면 체크가 풀립니다.
  * 우리 서비스가 대신 신청하지 않으므로, 원문 공지에서 신청한 뒤 표시해 두는 용도입니다.
  */
-function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_state'] }) {
+function StateButtons({ id, applied }: { id: number; applied: boolean }) {
   const mutation = useSetScholarshipState(id)
-  const applied = state === 'APPLIED'
   const Icon = applied ? SquareCheckBig : Square
   return (
     <div className="mt-5 grid gap-1.5">
@@ -616,7 +616,7 @@ function StateButtons({ id, state }: { id: number; state: ScholarshipDetail['my_
         type="button"
         aria-pressed={applied}
         disabled={mutation.isPending}
-        onClick={() => mutation.mutate({ id, state: applied ? null : 'APPLIED' })}
+        onClick={() => mutation.mutate({ id, applied: !applied })}
         className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
           applied
             ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
