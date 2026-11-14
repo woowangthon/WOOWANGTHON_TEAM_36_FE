@@ -532,7 +532,7 @@ export interface components {
              * Condition
              * @enum {string}
              */
-            condition: "target_grades" | "excludes_extra_semester" | "excludes_new_students" | "excludes_transfer_students" | "min_remaining_semesters" | "enrollment_status" | "school_excluded" | "min_gpa" | "min_score_100" | "min_credits" | "target_nationality" | "gender" | "max_age" | "max_income_bracket" | "regions" | "required_special" | "excludes_full_tuition" | "target_department" | "target_program";
+            condition: "target_grades" | "excludes_extra_semester" | "excludes_new_students" | "excludes_transfer_students" | "min_admission_year" | "min_remaining_semesters" | "min_completed_semesters" | "enrollment_status" | "school_excluded" | "min_gpa" | "min_score_100" | "min_credits" | "target_nationality" | "gender" | "max_age" | "max_income_bracket" | "regions" | "required_special" | "excludes_full_tuition" | "target_department" | "target_program";
             /**
              * Outcome
              * @enum {string}
