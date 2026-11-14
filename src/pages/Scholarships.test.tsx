@@ -286,9 +286,12 @@ describe('상세', () => {
     expect(within(items[1]).getByRole('img', { name: '확인 필요' })).toBeInTheDocument()
     expect(within(items[1]).getByText('공지 기준이 명확하지 않아요')).toBeInTheDocument()
     const extra = screen.getByRole('list', { name: '직접 답하는 조건' })
-    // 직접 답하는 조건은 요약을 질문으로, 원문을 대조용으로 함께 보여 줍니다
+    // 직접 답하는 조건은 요약을 질문으로 쓰고, 원문은 "근거 보기" 안에 접어 둡니다 (T53)
     expect(within(extra).getByText('직전학기 봉사 20시간 이상 학생')).toBeInTheDocument()
-    expect(within(extra).getByText('직전학기 봉사활동 20시간 이상')).toBeInTheDocument()
+    const extraEvidence = within(extra).getByText('근거 보기').closest('details')
+    expect(extraEvidence).not.toHaveAttribute('open')
+    expect(extraEvidence).toHaveTextContent('직전학기 봉사활동 20시간 이상')
+    expect(within(extra).queryByRole('button', { name: '더 보기' })).not.toBeInTheDocument()
     expect(within(extra).queryByText('기타 조건')).not.toBeInTheDocument()
 
     // 판정에 쓰지 않는 기본 조건·안내는 체크리스트 밖에 따로 (extract_v5)
@@ -432,6 +435,9 @@ describe('상세', () => {
     expect(within(checklist).getByText('부모가 논산시에 1년 이상 거주한 학생')).toBeInTheDocument()
     const extra = screen.getByRole('list', { name: '직접 답하는 조건' })
     expect(within(extra).getByText('기타 조건')).toBeInTheDocument() // 요약 대신 단어 규칙 이름
+    // 요약이 없으면 이름만으로 답할 수 없으므로 원문을 접지 않습니다 (T53)
+    expect(within(extra).getByText('직전학기 봉사활동 20시간 이상')).toBeInTheDocument()
+    expect(within(extra).queryByText('근거 보기')).not.toBeInTheDocument()
     const basic = screen.getByRole('list', { name: '지원 전 확인' })
     expect(within(basic).getByText('타 장학금과 중복 수혜 불가')).toBeInTheDocument()
     expect(within(basic).queryByText('공지 문장 보기')).not.toBeInTheDocument()
@@ -471,7 +477,7 @@ describe('상세', () => {
     expect(newcomer).toHaveTextContent(/^신·편입생 제외충족근거 보기신·편입생 제외$/)
   })
 
-  it('직접 답하는 조건의 긴 원문은 2줄로 줄이고 더 보기로 펼친다', async () => {
+  it('요약이 없는 직접 답하는 조건의 긴 원문은 2줄로 줄이고 더 보기로 펼친다', async () => {
     const long =
       '대한민국 국적보유자로서 대한민국에서 고등학교를 졸업한 자(단, 국외에서 고등학교 과정을 수학한 경우와 검정고시 합격자는 지원 가능)'
     const second = mockDetails[1]

@@ -316,8 +316,13 @@ function Checklist({
                           {check.answer ? ANSWER_LABEL[check.answer] : '눌러서 답하기'}
                         </span>
                       </p>
-                      {/* 요약이 틀렸을 때 대조할 수 있게 원문을 접지 않고 2줄까지 보여 줍니다(T44) */}
-                      <OriginalText text={check.text} />
+                      {/* 요약이 있으면 원문은 판정 조건처럼 "근거 보기"에 접어 둡니다(T53).
+                          요약이 없으면 이름만으로 답할 수 없으므로 원문을 2줄까지 그대로 보입니다. */}
+                      {check.summary ? (
+                        <Evidence text={check.text} source={null} />
+                      ) : (
+                        <OriginalText text={check.text} />
+                      )}
                     </div>
                   </li>
                 ))}
@@ -338,7 +343,10 @@ function extraTitle(check: ExtraCheck): string {
   return check.summary ?? conditionLabel(check.text)
 }
 
-/** ✓/✗ 조건의 공지 원문 근거와 출처. 요약 한 줄을 먼저 보이고 원문은 접어 둡니다(T44). */
+/**
+ * 조건의 공지 원문 근거와 출처. 요약 한 줄을 먼저 보이고 원문은 접어 둡니다(T44).
+ * 요약이 있는 직접 답하는 조건도 같은 모양으로 씁니다(T53, 출처 없음).
+ */
 function Evidence({ text, source }: { text: string; source: string | null }) {
   return (
     <details className="mt-0.5 text-muted-foreground">
@@ -356,7 +364,7 @@ function Evidence({ text, source }: { text: string; source: string | null }) {
 const CLAMP_CHARS = 40
 
 /**
- * 직접 답하는 조건의 공지 원문. 2줄까지 보이고, 실제로 잘린 글이 있을 때만 "더 보기"를 둡니다.
+ * 요약이 없는 직접 답하는 조건의 공지 원문. 2줄까지 보이고, 실제로 잘린 글이 있을 때만 "더 보기"를 둡니다.
  * 글자 수만 보면 넓은 화면에서 한 줄에 다 들어가도 버튼이 생겨 눌러도 바뀌는 게 없었습니다 (T69).
  * 그래서 2줄로 줄인 상태에서 글이 넘치는지(scrollHeight > clientHeight) 재고, 화면 폭이 바뀌면 다시 잽니다.
  */
