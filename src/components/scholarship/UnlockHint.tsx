@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
+import { Award } from 'lucide-react'
 import { useState } from 'react'
 
 import { meKey, useMe, type Me } from '@/api/hooks/auth'
@@ -8,7 +9,7 @@ import {
   type ScholarshipSummary,
 } from '@/api/hooks/scholarships'
 import { FormError } from '@/components/form/Field'
-import { questionNote, quickQuestions, type QuickQuestion } from '@/lib/unlockHint'
+import { quickQuestions, targetLabel, type QuickQuestion } from '@/lib/unlockHint'
 
 // 저장에 성공했거나 건너뛴 질문은 같은 계정과 브라우저 탭에서 다시 묻지 않습니다.
 // 화면 편의용이라 저장소를 쓸 수 없으면(사생활 보호 모드 등) 화면 안에서만 기억합니다.
@@ -92,14 +93,19 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
 
   return (
     <section aria-label="빠른 확인" className={CARD}>
-      <p className="flex items-center justify-between text-xs font-semibold text-brand-700">
+      <p className="flex items-center justify-between text-xs text-muted-foreground">
         빠른 확인
-        <span aria-label={`${remaining}개 남음`} className="font-normal tabular-nums">
+        <span aria-label={`${remaining}개 남음`} className="tabular-nums">
           {done.size + 1}/{done.size + remaining}
         </span>
       </p>
+      {/* 답하면 판정이 정해지는 장학금을 질문 바로 위에 크게 보여 줍니다 */}
+      <p className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-lg bg-brand-100 px-2.5 py-1 text-sm font-semibold text-brand-800">
+        <Award aria-hidden="true" className="size-4 shrink-0" />
+        <span className="break-keep">{targetLabel(question)}</span>
+      </p>
       <p className="mt-2 text-xs text-muted-foreground">이 조건에 맞나요?</p>
-      <p className="mt-0.5 text-base font-semibold text-brand-900 break-keep">
+      <p className="mt-0.5 text-lg font-semibold text-brand-900 break-keep sm:text-xl">
         {question.condition.summary ?? question.condition.text}
       </p>
       {question.condition.summary && (
@@ -108,23 +114,38 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
           {question.condition.text}
         </p>
       )}
-      <p className="mt-1.5 text-xs text-muted-foreground break-keep">{questionNote(question)}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={() => void next('YES')} disabled={saving} className={BUTTON}>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => void next('YES')}
+          disabled={saving}
+          className={`${ANSWER} border-emerald-300 hover:bg-emerald-50`}
+        >
           맞아요
-        </button>
-        <button type="button" onClick={() => void next('NO')} disabled={saving} className={BUTTON}>
-          안 맞아요
+          <span aria-hidden="true" className="block text-xs font-normal text-emerald-700">
+            → 지원 가능으로 바뀌어요
+          </span>
         </button>
         <button
           type="button"
-          onClick={() => void next(null)}
+          onClick={() => void next('NO')}
           disabled={saving}
-          className="h-9 px-2 text-sm text-muted-foreground underline underline-offset-4"
+          className={`${ANSWER} border-brand-200 hover:bg-brand-100`}
         >
-          모르겠어요
+          안 맞아요
+          <span aria-hidden="true" className="block text-xs font-normal text-muted-foreground">
+            → 지원 불가로 정리돼요
+          </span>
         </button>
       </div>
+      <button
+        type="button"
+        onClick={() => void next(null)}
+        disabled={saving}
+        className="mt-1 h-8 px-0 text-sm text-muted-foreground underline underline-offset-4"
+      >
+        모르겠어요
+      </button>
       <FormError
         message={
           attempt?.status === 'failed' ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null
@@ -135,5 +156,6 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
 }
 
 const CARD = 'rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm sm:p-4'
-const BUTTON =
-  'h-9 rounded-lg border border-brand-200 bg-white px-4 text-sm font-medium text-brand-900 hover:bg-brand-100 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
+// 답 버튼에는 누르면 판정이 어떻게 바뀌는지를 함께 적습니다
+const ANSWER =
+  'rounded-lg border bg-white px-4 py-2.5 text-left text-sm font-medium text-brand-900 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'

@@ -182,9 +182,7 @@ describe('대시보드 빠른 확인 (계획서 7.1)', () => {
     expect(screen.getByRole('heading', { name: '글로벌 SW 인재 장학금' })).toBeInTheDocument()
     const quickCheck = within(await card())
     expect(quickCheck.getByText('1/1')).toBeInTheDocument()
-    expect(
-      quickCheck.getByText('답하면 ‘해외 연수 지원 장학금’의 지원 가능 여부를 바로 알려 드려요.'),
-    ).toBeInTheDocument()
+    expect(quickCheck.getByText('해외 연수 지원 장학금')).toBeInTheDocument()
   })
 
   it('같은 문장은 한 번만 묻고, 답하면 묶인 장학금이 모두 정해진다', async () => {
@@ -194,11 +192,7 @@ describe('대시보드 빠른 확인 (계획서 7.1)', () => {
     // 질문은 요약(extract_v10)으로, 공지 원문은 대조할 수 있게 아래에 작게 보여 줍니다
     expect(within(first).getByText('TOEIC 500점 이상인 학생')).toBeInTheDocument()
     expect(within(first).getByText('※ 2026-1학기 TOEIC 점수 500점 이상 취득')).toBeInTheDocument()
-    expect(
-      within(first).getByText(
-        '답하면 ‘글로벌 SW 인재 장학금’ 외 1개의 지원 가능 여부를 바로 알려 드려요.',
-      ),
-    ).toBeInTheDocument()
+    expect(within(first).getByText('글로벌 SW 인재 장학금 외 1개')).toBeInTheDocument()
 
     fireEvent.click(within(first).getByRole('button', { name: '안 맞아요' }))
     // 두 장학금 모두 지원 불가가 되어 확인 필요 탭에서 빠집니다
