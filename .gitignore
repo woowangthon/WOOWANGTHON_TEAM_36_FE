@@ -31,3 +31,5 @@ dist-ssr
 # Playwright 결과물
 test-results
 playwright-report
+
+GEMINI.md
