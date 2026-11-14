@@ -309,7 +309,7 @@ describe('상세', () => {
       'href',
       '/scholarships/1',
     )
-    // 원문 링크는 원문 보기 안에만 있습니다(제목은 글자로만).
+    // 원문 링크는 공지 원문 상자 안에만 있습니다(제목은 글자로만).
     expect(screen.getByText(/교외장학금 3종 모집/)).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /교외장학금 3종 모집/ })).not.toBeInTheDocument()
     expect(screen.getByText(/다른 게시판에도 같은 장학금이 있을 수 있습니다/)).toBeInTheDocument()
@@ -344,7 +344,6 @@ describe('상세', () => {
     ).not.toBeInTheDocument()
     expect(screen.queryByText(/공고문이 길어 뒷부분 일부는 읽지 못했어요/)).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '원문 보기' }))
     const original = screen.getByRole('region', { name: '공지 원문' })
     expect(within(original).getByRole('link', { name: '원문 사이트에서 보기' })).toHaveAttribute(
       'href',
@@ -364,14 +363,15 @@ describe('상세', () => {
     expect(within(checklist).getByRole('img', { name: '미충족' })).toBeInTheDocument()
   })
 
-  it('원문 보기를 누르면 공지 본문과 읽은 첨부를 같은 페이지에서 보여 준다', async () => {
+  it('원문 공지 상자는 접혀 있고, 그 안에 공지 본문과 첨부를 따로 접지 않고 보여 준다', async () => {
     renderApp('/scholarships/1')
-    const toggle = await screen.findByRole('button', { name: '원문 보기' })
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
+    const heading = await screen.findByRole('heading', { level: 2, name: '원문 공지' })
+    // 제출 서류처럼 상자 전체를 접어 둡니다. 안쪽에 '원문 보기' 버튼은 따로 없습니다.
+    const box = heading.closest('details')
+    expect(box).not.toHaveAttribute('open')
+    expect(screen.queryByRole('button', { name: '원문 보기' })).not.toBeInTheDocument()
 
-    fireEvent.click(toggle)
-    const original = screen.getByRole('region', { name: '공지 원문' })
+    const original = within(box as HTMLElement).getByRole('region', { name: '공지 원문' })
     expect(
       within(original).getByText(/교외장학금 3종 장학생을 아래와 같이 모집/),
     ).toBeInTheDocument()
@@ -388,12 +388,11 @@ describe('상세', () => {
       'href',
       expect.stringContaining('software.cbnu.ac.kr'),
     )
-
-    fireEvent.click(screen.getByRole('button', { name: '원문 접기' }))
-    expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
+    // 같은 공지의 다른 장학금과 안내 문구도 같은 상자 안에 접힙니다.
+    expect(within(box as HTMLElement).getByText('같은 공지의 다른 장학금')).toBeInTheDocument()
   })
 
-  it('저장된 본문과 첨부가 모두 없으면 원문 보기를 숨긴다', async () => {
+  it('저장된 본문과 첨부가 모두 없으면 공지 원문 상자를 숨긴다', async () => {
     const [first] = mockDetails
     server.use(
       http.get('/api/scholarships/:id', () =>
@@ -405,8 +404,8 @@ describe('상세', () => {
     )
     renderApp('/scholarships/1')
     await screen.findByRole('list', { name: '조건 체크리스트' })
-    expect(screen.queryByRole('button', { name: '원문 보기' })).not.toBeInTheDocument()
-    // 원문 보기가 없으면 제목이 원문 링크가 됩니다.
+    expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
+    // 공지 원문 상자가 없으면 제목이 원문 링크가 됩니다.
     expect(screen.getByRole('link', { name: /교외장학금 3종 모집/ })).toHaveAttribute(
       'target',
       '_blank',

@@ -43,7 +43,6 @@ import {
   ResultBadge,
   SourceLine,
 } from '@/components/scholarship/ScholarshipCard'
-import { Button } from '@/components/ui/button'
 import { HelpIcon } from '@/components/ui/help-icon'
 import { conditionLabel } from '@/lib/conditionLabel'
 import { cleanNoticeText, splitDocuments, stripConditionalMark } from '@/lib/noticeText'
@@ -135,21 +134,21 @@ function Detail({ item }: { item: ScholarshipDetail }) {
 
       <Documents docs={item.required_documents} />
 
-      <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
-        <h2 className="flex items-center gap-1.5 font-semibold">
-          <Megaphone aria-hidden="true" className="size-5 text-brand-700" />
-          원문 공지
-        </h2>
+      {/* 원문 공지도 다른 참고 상자처럼 상자 전체를 접어 둡니다. 펼치면 원문이 바로 보입니다. */}
+      <FoldSection
+        icon={<Megaphone aria-hidden="true" className="size-5 text-brand-700" />}
+        title="원문 공지"
+      >
         {hasOriginal(item.notice) ? (
-          // 원문 링크는 원문 보기 안(맨 아래)에 둡니다.
-          <p className="mt-2 break-all">{item.notice.title}</p>
+          // 원문 링크는 공지 원문 상자 안(맨 아래)에 둡니다.
+          <p className="mt-3 break-all">{item.notice.title}</p>
         ) : (
-          // 저장된 본문·첨부가 없으면 원문 보기가 없으므로 제목을 원문 링크로 둡니다.
+          // 저장된 본문·첨부가 없으면 공지 원문 상자가 없으므로 제목을 원문 링크로 둡니다.
           <a
             href={item.notice.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-flex items-start gap-1 break-all underline underline-offset-4"
+            className="mt-3 inline-flex items-start gap-1 break-all underline underline-offset-4"
           >
             {item.notice.title}
             <ExternalLink aria-hidden className="mt-0.5 size-3.5 shrink-0" />
@@ -179,7 +178,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
         <p className="mt-4 text-xs text-muted-foreground">
           다른 게시판에도 같은 장학금이 있을 수 있습니다. 신청 전에 원문을 꼭 확인하세요.
         </p>
-      </section>
+      </FoldSection>
     </article>
   )
 }
@@ -471,8 +470,9 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
 }
 
 /**
- * 판정에 쓰지 않는 참고 상자(함께 알아 둘 내용, 제출 서류). 처음에는 제목과 항목 수만 보이고,
- * 제목을 누르면 펼칩니다. 판정 체크리스트와 원문 공지가 아래로 밀리지 않게 하기 위함입니다.
+ * 판정에 쓰지 않는 참고 상자(함께 알아 둘 내용, 제출 서류, 원문 공지). 처음에는 제목과 항목 수만
+ * 보이고, 제목을 누르면 펼칩니다. 판정 체크리스트 아래가 길어지지 않게 하기 위함입니다.
+ * 항목을 셀 수 없는 상자(원문 공지)는 count를 주지 않습니다.
  */
 function FoldSection({
   icon,
@@ -482,7 +482,7 @@ function FoldSection({
 }: {
   icon: ReactNode
   title: string
-  count: number
+  count?: number
   children: ReactNode
 }) {
   return (
@@ -490,7 +490,9 @@ function FoldSection({
       <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-sm font-semibold focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
         {icon}
         <h2>{title}</h2>
-        <span className="text-xs font-normal text-muted-foreground">{count}개</span>
+        {count !== undefined && (
+          <span className="text-xs font-normal text-muted-foreground">{count}개</span>
+        )}
         <ChevronDown
           aria-hidden="true"
           className="ml-auto size-5 text-muted-foreground transition-transform group-open:rotate-180"
@@ -537,8 +539,8 @@ function Documents({ docs }: { docs: string[] }) {
 }
 
 /**
- * 공지 원문 (7.1): 수집 때 저장한 본문과 첨부파일 목록을 같은 페이지에서 펼쳐 봅니다.
- * 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다. 첨부 내용은 PDF 추출 글자라
+ * 공지 원문 (7.1): 수집 때 저장한 본문과 첨부파일 목록을 같은 페이지에서 봅니다.
+ * 따로 접지 않고, 원문 공지 상자를 펼치면 함께 보입니다. 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다. 첨부 내용은 PDF 추출 글자라
  * 읽기 어려워 보여 주지 않고, 파일 이름과 내려받기만 둡니다.
  */
 function hasOriginal(notice: ScholarshipDetail['notice']) {
@@ -546,75 +548,55 @@ function hasOriginal(notice: ScholarshipDetail['notice']) {
 }
 
 function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
-  const [open, setOpen] = useState(false)
   const hasBody = notice.body_text.trim().length > 0
   if (!hasOriginal(notice)) return null
   return (
-    <div className="mt-3">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        aria-expanded={open}
-        aria-controls="notice-original"
-        onClick={() => setOpen((v) => !v)}
-      >
-        {open ? '원문 접기' : '원문 보기'}
-        <ChevronDown
-          aria-hidden="true"
-          className={`transition-transform ${open ? 'rotate-180' : ''}`}
-        />
-      </Button>
-      {open && (
-        <div
-          id="notice-original"
-          role="region"
-          aria-label="공지 원문"
-          className="mt-3 grid max-h-[70vh] gap-4 overflow-y-auto rounded-lg border bg-muted/30 p-3"
-        >
-          {hasBody && (
-            <p className="text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap">
-              {notice.body_text}
-            </p>
-          )}
-          {notice.attachments.length > 0 && (
-            // 첨부 내용은 조건 확인(서버 추출)에만 쓰고, 화면에는 파일 이름과 내려받기만 둡니다.
-            <ul className="grid gap-1.5 border-t pt-3" aria-label="첨부파일">
-              {notice.attachments.map((file) => (
-                <li
-                  key={`${file.url}#${file.name}`}
-                  className="flex items-start gap-1.5 text-sm break-all"
-                >
-                  <FileText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-700" />
-                  <span className="min-w-0">
-                    {file.name}{' '}
-                    <a
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-1 inline-flex items-center gap-0.5 text-xs text-muted-foreground underline underline-offset-4"
-                    >
-                      내려받기
-                      <ExternalLink aria-hidden className="size-3" />
-                    </a>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="border-t pt-3">
-            <a
-              href={notice.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
-            >
-              원문 사이트에서 보기
-              <ExternalLink aria-hidden className="size-3.5 shrink-0" />
-            </a>
-          </div>
-        </div>
+    <div
+      role="region"
+      aria-label="공지 원문"
+      className="mt-3 grid max-h-[70vh] gap-4 overflow-y-auto rounded-lg border bg-muted/30 p-3"
+    >
+      {hasBody && (
+        <p className="text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap">
+          {notice.body_text}
+        </p>
       )}
+      {notice.attachments.length > 0 && (
+        // 첨부 내용은 조건 확인(서버 추출)에만 쓰고, 화면에는 파일 이름과 내려받기만 둡니다.
+        <ul className="grid gap-1.5 border-t pt-3" aria-label="첨부파일">
+          {notice.attachments.map((file) => (
+            <li
+              key={`${file.url}#${file.name}`}
+              className="flex items-start gap-1.5 text-sm break-all"
+            >
+              <FileText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-700" />
+              <span className="min-w-0">
+                {file.name}{' '}
+                <a
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 inline-flex items-center gap-0.5 text-xs text-muted-foreground underline underline-offset-4"
+                >
+                  내려받기
+                  <ExternalLink aria-hidden className="size-3" />
+                </a>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="border-t pt-3">
+        <a
+          href={notice.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-sm font-medium underline underline-offset-4"
+        >
+          원문 사이트에서 보기
+          <ExternalLink aria-hidden className="size-3.5 shrink-0" />
+        </a>
+      </div>
     </div>
   )
 }
