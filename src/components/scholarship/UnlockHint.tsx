@@ -11,9 +11,11 @@ import {
 import { FormError } from '@/components/form/Field'
 import { quickQuestions, targetLabel, type QuickQuestion } from '@/lib/unlockHint'
 
-// 저장에 성공했거나 건너뛴 질문은 같은 계정과 브라우저 탭에서 다시 묻지 않습니다.
+// [모르겠어요]로 건너뛴 질문은 같은 계정과 브라우저 탭에서 다시 묻지 않습니다.
+// 답한 질문은 기억하지 않습니다. 답한 조건은 open_conditions에서 빠지므로 저절로 안 나오고,
+// 상세에서 답을 지워 다시 조건 하나만 남으면 다시 물어야 하기 때문입니다.
 // 화면 편의용이라 저장소를 쓸 수 없으면(사생활 보호 모드 등) 화면 안에서만 기억합니다.
-function loadDone(storageKey: string): Set<string> {
+function loadSkipped(storageKey: string): Set<string> {
   try {
     return new Set(JSON.parse(sessionStorage.getItem(storageKey) ?? '[]') as string[])
   } catch {
@@ -21,9 +23,9 @@ function loadDone(storageKey: string): Set<string> {
   }
 }
 
-function saveDone(storageKey: string, done: Set<string>) {
+function saveSkipped(storageKey: string, skipped: Set<string>) {
   try {
-    sessionStorage.setItem(storageKey, JSON.stringify([...done]))
+    sessionStorage.setItem(storageKey, JSON.stringify([...skipped]))
   } catch {
     // 저장하지 못해도 화면 안에서는 기억합니다.
   }
@@ -42,14 +44,19 @@ export function UnlockHint({ items }: { items: ScholarshipSummary[] }) {
 type AnswerAttempt = { question: QuickQuestion; status: 'saving' | 'failed' }
 
 function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSummary[] }) {
-  const storageKey = `quick-check-done:${userId}`
+  // 예전 키(quick-check-done)에는 답한 질문도 들어 있어 읽지 않습니다.
+  const storageKey = `quick-check-skipped:${userId}`
   const queryClient = useQueryClient()
   const { mutateAsync } = useSetConditionAnswer()
-  const [done, setDone] = useState(() => loadDone(storageKey))
+  const [skipped, setSkipped] = useState(() => loadSkipped(storageKey))
+  // 이번 차례에 답하거나 건너뛴 질문 수. 질문이 다 떨어지면 0으로 돌려, 새 질문은 1번부터 셉니다.
+  const [handled, setHandled] = useState(0)
   const [finished, setFinished] = useState(false)
   const [attempt, setAttempt] = useState<AnswerAttempt | null>(null)
-  const questions = quickQuestions(items, done)
+  const questions = quickQuestions(items, skipped)
   const question = attempt?.question ?? questions[0]
+
+  if (!question && handled !== 0) setHandled(0)
 
   if (!question) {
     if (!finished) return null
@@ -84,9 +91,12 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
         return
       }
     }
-    const updated = new Set([...loadDone(storageKey), ...done, question.condition.key])
-    saveDone(storageKey, updated)
-    setDone(updated)
+    if (answer === null) {
+      const updated = new Set([...loadSkipped(storageKey), ...skipped, question.condition.key])
+      saveSkipped(storageKey, updated)
+      setSkipped(updated)
+    }
+    setHandled((count) => count + 1)
     setFinished(true)
     setAttempt(null)
   }
@@ -96,7 +106,7 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
       <p className="flex items-center justify-between text-xs text-muted-foreground">
         빠른 확인
         <span aria-label={`${remaining}개 남음`} className="tabular-nums">
-          {done.size + 1}/{done.size + remaining}
+          {handled + 1}/{handled + remaining}
         </span>
       </p>
       {/* 답하면 판정이 정해지는 장학금을 질문 바로 위에 크게 보여 줍니다 */}
