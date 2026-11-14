@@ -347,15 +347,14 @@ export interface paths {
         get?: never;
         /**
          * Put State
-         * @description 관심 / 신청완료. 장학금마다 상태는 하나이며 새 값으로 바꿉니다.
+         * @description 관심·신청완료를 따로 켜고 끕니다. 보낸 값만 바꾸고 나머지는 그대로 둡니다.
+         *
+         *     읽고 나서 쓰지 않고 문장 하나로 저장합니다. 하트와 신청완료를 거의 동시에 눌러도
+         *     두 요청이 서로의 값을 덮어쓰지 않습니다.
          */
         put: operations["put_state_scholarships__scholarship_id__state_put"];
         post?: never;
-        /**
-         * Delete State
-         * @description 상태를 지웁니다. 상태가 없어도 204.
-         */
-        delete: operations["delete_state_scholarships__scholarship_id__state_delete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -929,8 +928,10 @@ export interface components {
              * @enum {string}
              */
             result: "ELIGIBLE" | "CONDITIONAL" | "INELIGIBLE";
-            /** My State */
-            my_state: ("BOOKMARKED" | "APPLIED") | null;
+            /** Bookmarked */
+            bookmarked: boolean;
+            /** Applied */
+            applied: boolean;
             /**
              * Open Conditions
              * @default []
@@ -1021,8 +1022,10 @@ export interface components {
              * @enum {string}
              */
             result: "ELIGIBLE" | "CONDITIONAL" | "INELIGIBLE";
-            /** My State */
-            my_state: ("BOOKMARKED" | "APPLIED") | null;
+            /** Bookmarked */
+            bookmarked: boolean;
+            /** Applied */
+            applied: boolean;
             /**
              * Open Conditions
              * @default []
@@ -1100,20 +1103,24 @@ export interface components {
             /** Expires In */
             expires_in: number;
         };
-        /** StateRequest */
+        /**
+         * StateRequest
+         * @description 보낸 값만 바꿉니다. 빼거나 null로 보낸 칸은 그대로 둡니다.
+         */
         StateRequest: {
-            /**
-             * State
-             * @enum {string}
-             */
-            state: "BOOKMARKED" | "APPLIED";
+            /** Bookmarked */
+            bookmarked?: boolean | null;
+            /** Applied */
+            applied?: boolean | null;
         };
         /** StateResponse */
         StateResponse: {
             /** Scholarship Id */
             scholarship_id: number;
-            /** State */
-            state: ("BOOKMARKED" | "APPLIED") | null;
+            /** Bookmarked */
+            bookmarked: boolean;
+            /** Applied */
+            applied: boolean;
         };
         /**
          * UnreadAttachment
@@ -1932,49 +1939,6 @@ export interface operations {
             };
             /** @description 장학금 없음 */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_state_scholarships__scholarship_id__state_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                scholarship_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description 로그인 필요 */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description 개인정보 동의 필요 */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -51,14 +51,14 @@ export function AppliedBadge() {
       className={`${BADGE_CLASS} bg-sky-50 text-sky-700 ring-sky-600/20`}
     >
       <ClipboardCheck aria-hidden="true" className="size-3.5" />
-      {STATE_LABEL.APPLIED}
+      {STATE_LABEL.applied}
     </span>
   )
 }
 
 /** 목록의 상태 배지. 신청완료한 장학금은 판정 배지 자리에 신청완료 배지를 대신 보여 줍니다. */
-function StatusBadge({ item }: { item: Pick<ScholarshipSummary, 'result' | 'my_state'> }) {
-  return item.my_state === 'APPLIED' ? <AppliedBadge /> : <ResultBadge result={item.result} />
+function StatusBadge({ item }: { item: Pick<ScholarshipSummary, 'result' | 'applied'> }) {
+  return item.applied ? <AppliedBadge /> : <ResultBadge result={item.result} />
 }
 
 const DEADLINE_STYLE = {
@@ -153,7 +153,7 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
   // 지원 불가 카드는 흐리게 두어 지원할 수 있는 장학금이 먼저 보이게 합니다 (2026-11-14).
   // 신청완료한 장학금은 배지가 '신청완료'로 바뀌므로 흐리게 하지 않습니다.
   const dim =
-    item.result === 'INELIGIBLE' && item.my_state !== 'APPLIED'
+    item.result === 'INELIGIBLE' && !item.applied
       ? 'opacity-60 hover:opacity-100 focus-within:opacity-100'
       : ''
   return (
@@ -188,12 +188,11 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
 
 /**
  * 관심 하트 (T54). 누르면 바로 채워지고(optimistic update) 실패하면 되돌아갑니다.
- * 신청완료한 장학금은 관심과 함께 둘 수 없어 하트를 숨기고, 상태 배지가 '신청완료'로 바뀝니다.
+ * 관심과 신청완료는 따로 켜고 끕니다. 신청완료한 장학금에서도 하트는 그대로 쓸 수 있습니다.
  */
 function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
   const mutation = useSetScholarshipState(item.id)
-  if (item.my_state === 'APPLIED') return null
-  const on = item.my_state === 'BOOKMARKED'
+  const on = item.bookmarked
   return (
     <button
       type="button"
@@ -203,7 +202,7 @@ function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
       disabled={mutation.isPending}
       onClick={() => {
         onBookmarkError(null)
-        void mutation.mutateAsync({ id: item.id, state: on ? null : 'BOOKMARKED' }).catch(() => {
+        void mutation.mutateAsync({ id: item.id, bookmarked: !on }).catch(() => {
           const action = on ? '관심을 해제하지 못했어요.' : '관심 장학금에 추가하지 못했어요.'
           onBookmarkError(`${action} 다시 시도해 주세요.`)
         })

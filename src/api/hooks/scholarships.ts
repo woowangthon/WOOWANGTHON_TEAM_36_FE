@@ -18,7 +18,8 @@ export type ScholarshipSummary = Schemas['ScholarshipSummary']
 export type ScholarshipDetail = Schemas['ScholarshipDetail']
 export type ConditionCheck = Schemas['ConditionCheck']
 export type UnreadAttachment = Schemas['UnreadAttachment']
-export type UserState = Schemas['StateRequest']['state']
+/** 관심·신청완료 중 바꿀 값. 보낸 칸만 바뀌고 나머지는 그대로입니다 (7.2). */
+export type StateChange = Schemas['StateRequest']
 export type ListParams = NonNullable<
   operations['list_scholarships_scholarships_get']['parameters']['query']
 >
@@ -35,7 +36,17 @@ const listKey = (params: ListParams) => [...scholarshipsKey, 'list', params] as 
 const detailKey = (id: number) => [...scholarshipsKey, 'detail', id] as const
 const stateWriteKey = ['scholarship-state'] as const
 const stateWriteKeyFor = (id: number) => [...stateWriteKey, id] as const
-type StateWrite = { id: number; state: UserState | null }
+type StateWrite = { id: number } & StateChange
+type StateFlags = Pick<ScholarshipSummary, 'bookmarked' | 'applied'>
+
+/** 보낸 칸만 덮어씁니다. 관심과 신청완료는 서로 영향을 주지 않습니다. */
+function withChange<T extends StateFlags>(item: T, { bookmarked, applied }: StateChange): T {
+  return {
+    ...item,
+    bookmarked: bookmarked ?? item.bookmarked,
+    applied: applied ?? item.applied,
+  }
+}
 
 function usePendingStates() {
   return useMutationState({
@@ -78,7 +89,7 @@ export function useScholarships(params: ListParams) {
 }
 
 export function useScholarship(id: number) {
-  const pending = usePendingStates().find((write) => write.id === id)
+  const pending = usePendingStates().filter((write) => write.id === id)
   const query = useQuery({
     queryKey: detailKey(id),
     queryFn: () => apiRequest<ScholarshipDetail>(`/scholarships/${id}`),
@@ -87,7 +98,9 @@ export function useScholarship(id: number) {
   })
   return {
     ...query,
-    data: pending && query.data ? { ...query.data, my_state: pending.state } : query.data,
+    data:
+      query.data &&
+      pending.reduce<ScholarshipDetail>((detail, write) => withChange(detail, write), query.data),
   }
 }
 
@@ -97,23 +110,19 @@ function isListKey(key: QueryKey): key is ReturnType<typeof listKey> {
   return key[1] === 'list'
 }
 
-/** 상태를 바꾼 뒤 이 목록에 그 장학금이 남아 있어야 하는지 (backend 목록 규칙과 같게, 7.2). */
-function staysInList(params: ListParams, state: UserState | null): boolean {
-  if (params.state) return state === params.state.toUpperCase()
-  return true
-}
-
-function applyStateToList(
-  items: ScholarshipSummary[],
-  params: ListParams,
-  { id, state }: StateWrite,
-) {
-  if (!staysInList(params, state)) return items.filter((item) => item.id !== id)
-  return items.map((item) => (item.id === id ? { ...item, my_state: state } : item))
+/**
+ * 목록에 변경을 반영합니다. 내 장학금 목록(state)은 그 표시가 꺼진 장학금만 뺍니다
+ * (backend 목록 규칙과 같게, 7.2). 예: 신청완료 목록에서 관심을 꺼도 그 줄은 남습니다.
+ */
+function applyStateToList(items: ScholarshipSummary[], params: ListParams, write: StateWrite) {
+  const shown = params.state
+  return items
+    .map((item) => (item.id === write.id ? withChange(item, write) : item))
+    .filter((item) => item.id !== write.id || !shown || item[shown])
 }
 
 /**
- * 관심·신청완료. state=null이면 지웁니다.
+ * 관심·신청완료를 따로 켜고 끕니다. 예: `{ id, bookmarked: true }`, `{ id, applied: false }`.
  * 진행 중인 변경은 화면에 바로 반영하고, 서버가 확인한 상태만 캐시에 기록합니다(9.8).
  */
 export function useSetScholarshipState(id: number) {
@@ -122,28 +131,22 @@ export function useSetScholarshipState(id: number) {
   const isPending = useIsMutating({ mutationKey, exact: true }) > 0
   const mutation = useMutation({
     mutationKey,
-    mutationFn: async ({ id, state }: StateWrite) => {
-      if (state === null) {
-        await apiRequest<void>(`/scholarships/${id}/state`, 'DELETE')
-        return null
-      }
-      const response = await apiRequest<Schemas['StateResponse']>(
+    mutationFn: async ({ id, ...change }: StateWrite): Promise<StateFlags> => {
+      const { bookmarked, applied } = await apiRequest<Schemas['StateResponse']>(
         `/scholarships/${id}/state`,
         'PUT',
-        {
-          state,
-        },
+        change satisfies StateChange,
       )
-      return response.state
+      return { bookmarked, applied }
     },
     onMutate: () => queryClient.getQueryData<Me | null>(meKey)?.id,
-    onSuccess: async (state, { id }, userId) => {
+    onSuccess: async (saved, { id }, userId) => {
       if (userId !== queryClient.getQueryData<Me | null>(meKey)?.id) return
       // 진행 중인 조회가 저장 전의 값으로 캐시를 덮지 않게 합니다.
       await queryClient.cancelQueries({ queryKey: scholarshipsKey })
       if (userId !== queryClient.getQueryData<Me | null>(meKey)?.id) return
       queryClient.setQueryData<ScholarshipDetail>(detailKey(id), (detail) =>
-        detail ? { ...detail, my_state: state } : detail,
+        detail ? withChange(detail, saved) : detail,
       )
       for (const [key, data] of queryClient.getQueriesData<ListData>({
         queryKey: scholarshipsKey,
@@ -152,7 +155,7 @@ export function useSetScholarshipState(id: number) {
         if (!data.items.some((item) => item.id === id)) continue
         queryClient.setQueryData<ListData>(key, {
           ...data,
-          items: applyStateToList(data.items, key[2], { id, state }),
+          items: applyStateToList(data.items, key[2], { id, ...saved }),
         })
       }
     },

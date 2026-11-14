@@ -56,15 +56,33 @@ describe('MSW 핸들러', () => {
     expect((await fetch(api('/scholarships/999'))).status).toBe(404)
   })
 
-  it('상태를 바꾸고 지울 수 있다', async () => {
-    const put = await fetch(api('/scholarships/3/state'), {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: 'BOOKMARKED' }),
+  it('관심과 신청완료를 따로 바꾼다', async () => {
+    const put = async (body: Schemas['StateRequest']) => {
+      const response = await fetch(api('/scholarships/3/state'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      return (await response.json()) as Schemas['StateResponse']
+    }
+    expect(await put({ bookmarked: true })).toEqual({
+      scholarship_id: 3,
+      bookmarked: true,
+      applied: false,
     })
-    expect(await put.json()).toEqual({ scholarship_id: 3, state: 'BOOKMARKED' })
-    expect((await fetch(api('/scholarships/3/state'), { method: 'DELETE' })).status).toBe(204)
+    expect(await put({ applied: true })).toEqual({
+      scholarship_id: 3,
+      bookmarked: true,
+      applied: true,
+    })
+    expect(await put({ bookmarked: false })).toEqual({
+      scholarship_id: 3,
+      bookmarked: false,
+      applied: true,
+    })
     const detail = await getJson<Schemas['ScholarshipDetail']>('/scholarships/3')
-    expect(detail.my_state).toBeNull()
+    expect([detail.bookmarked, detail.applied]).toEqual([false, true])
+    expect((await list('?state=applied')).map((i) => i.id)).toContain(3)
+    expect((await list('?state=bookmarked')).map((i) => i.id)).not.toContain(3)
   })
 })

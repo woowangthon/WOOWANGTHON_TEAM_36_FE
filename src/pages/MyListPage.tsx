@@ -23,12 +23,13 @@ const TABS = [
 type Tab = (typeof TABS)[number]['value']
 
 const EMPTY: Record<Tab, string> = {
-  bookmarked: '관심 장학금이 없습니다. 상세 화면에서 ‘관심’을 누르면 여기에 모입니다.',
+  bookmarked: '관심 장학금이 없습니다. 장학금 카드의 하트를 누르면 여기에 모입니다.',
   applied: '신청완료로 표시한 장학금이 없습니다.',
 }
 
 // 내 정보 (T52): 프로필 요약 + 내 장학금(관심 / 신청완료) + 로그아웃.
 // 마감된 장학금도 포함합니다(backend가 state 조회 때 포함).
+// 관심과 신청완료는 따로 켜고 끄며, 둘 다 켠 장학금은 두 탭에 모두 나옵니다 (T71).
 // 넓은 화면에서는 왼쪽에 프로필 상자, 오른쪽 큰 상자에 내 장학금(바 형태)을 둡니다 (T58).
 // 프로필 요약은 모든 화면이 이미 불러오는 /auth/me 값을 써서, 이 화면은 목록 API만 부릅니다(계획서 9.8, BE #44).
 export default function MyListPage() {

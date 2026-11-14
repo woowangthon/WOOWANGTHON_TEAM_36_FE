@@ -17,7 +17,7 @@ import {
 } from './data'
 
 type Schemas = components['schemas']
-type UserState = NonNullable<Schemas['StateRequest']['state']>
+type StateFilter = 'bookmarked' | 'applied'
 
 type Me = Schemas['MeResponse']
 
@@ -89,8 +89,8 @@ function listScholarships(url: URL): Schemas['ScholarshipListResponse'] {
 
   let items = details
   if (state) {
-    // 내 장학금 화면: 마감된 장학금도 포함
-    items = items.filter((d) => d.my_state === state.toUpperCase())
+    // 내 장학금 화면: 마감된 장학금도 포함. 둘 다 켠 장학금은 두 목록에 모두 나옵니다.
+    items = items.filter((d) => d[state as StateFilter])
   } else {
     items = items.filter((d) => d.status !== 'CLOSED')
   }
@@ -292,16 +292,19 @@ export const handlers: RequestHandler[] = [
   http.put('/api/scholarships/:id/state', async ({ params, request }) => {
     const detail = findDetail(params.id)
     if (!detail) return notFound()
+    // backend와 같이 보낸 값만 바꿉니다. 관심과 신청완료는 서로 영향을 주지 않습니다.
     const body = (await request.json()) as Schemas['StateRequest']
-    detail.my_state = body.state as UserState
-    const response: Schemas['StateResponse'] = { scholarship_id: detail.id, state: detail.my_state }
+    if (body.bookmarked == null && body.applied == null) {
+      return HttpResponse.json({ detail: '바꿀 값이 없습니다' }, { status: 422 })
+    }
+    if (body.bookmarked != null) detail.bookmarked = body.bookmarked
+    if (body.applied != null) detail.applied = body.applied
+    const response: Schemas['StateResponse'] = {
+      scholarship_id: detail.id,
+      bookmarked: detail.bookmarked,
+      applied: detail.applied,
+    }
     return HttpResponse.json(response)
-  }),
-  http.delete('/api/scholarships/:id/state', ({ params }) => {
-    const detail = findDetail(params.id)
-    if (!detail) return notFound()
-    detail.my_state = null
-    return new HttpResponse(null, { status: 204 })
   }),
   // 추가 조건에 답하기 (계획서 5.3). 답을 바꾸고 판정을 다시 계산해 돌려줍니다.
   http.put('/api/scholarships/:id/conditions/:key', async ({ params, request }) => {

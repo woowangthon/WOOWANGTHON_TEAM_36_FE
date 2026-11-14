@@ -1,5 +1,5 @@
 // 장학금 화면의 표시 규칙. 날짜는 모두 한국 시간(Asia/Seoul)으로 계산·표시합니다(frontend CLAUDE.md).
-import type { ConditionCheck, ScholarshipSummary, UserState } from '@/api/hooks/scholarships'
+import type { ConditionCheck, ListParams, ScholarshipSummary } from '@/api/hooks/scholarships'
 
 const TIME_ZONE = 'Asia/Seoul'
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -56,9 +56,9 @@ export const RESULT_LABEL = {
 } as const satisfies Record<ScholarshipSummary['result'], string>
 
 export const STATE_LABEL = {
-  BOOKMARKED: '관심',
-  APPLIED: '신청완료',
-} as const satisfies Record<UserState, string>
+  bookmarked: '관심',
+  applied: '신청완료',
+} as const satisfies Record<NonNullable<ListParams['state']>, string>
 
 /** 체크리스트에 쓰는 조건 이름 (5.2, 5.3). */
 export const CONDITION_LABEL = {
