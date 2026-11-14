@@ -42,3 +42,10 @@ describe('CONDITION_LABEL (T40)', () => {
     expect(CONDITION_LABEL.excludes_transfer_students).toBe('편입생 제외')
   })
 })
+
+describe('CONDITION_LABEL (T49·T52)', () => {
+  it('입학 학년도·이수 학기 조건 이름이 있다', () => {
+    expect(CONDITION_LABEL.min_admission_year).toBe('입학 학년도')
+    expect(CONDITION_LABEL.min_completed_semesters).toBe('이수 학기')
+  })
+})

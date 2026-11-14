@@ -262,7 +262,15 @@ const rawDetails: RawDetail[] = [
     posted_at: '2026-03-02T10:00:00+09:00',
     result: 'INELIGIBLE',
     my_state: null,
-    conditions: [{ condition: 'target_program', outcome: 'UNMET', evidence: 'AIBC 양성인재' }],
+    conditions: [
+      { condition: 'target_program', outcome: 'UNMET', evidence: 'AIBC 양성인재' },
+      {
+        condition: 'min_admission_year',
+        outcome: 'UNMET',
+        evidence: '2027학년도 신입생',
+        requirement: '2027학년도 이후 입학생',
+      },
+    ],
     unread_attachments: [],
     input_truncated: false,
     extra_conditions: [],
@@ -382,6 +390,12 @@ const rawDetails: RawDetail[] = [
     my_state: null,
     conditions: [
       { condition: 'max_income_bracket', outcome: 'MET', evidence: '학자금지원 8구간 이하' },
+      {
+        condition: 'min_completed_semesters',
+        outcome: 'MET',
+        evidence: '4∼5개 학기를 이수한 학생',
+        requirement: '4~5학기 이수',
+      },
     ],
     unread_attachments: [],
     input_truncated: false,
