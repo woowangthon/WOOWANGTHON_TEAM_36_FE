@@ -140,9 +140,6 @@ export default function DashboardPage() {
             <br />
             놓치지 말고 한 번에 찾아보세요
           </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            소프트웨어학부 재학생 기준 · 학부·사업단·한국장학재단 공지를 모았어요
-          </p>
 
           <div className="mt-6 grid grid-cols-3 gap-2 lg:grid-cols-[minmax(0,1fr)_repeat(3,10rem)_auto] lg:items-center">
             <div className="relative col-span-3 lg:col-span-1">
