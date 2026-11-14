@@ -27,15 +27,15 @@ const SORTS = [
 ] as const
 
 const SOURCES = [
-  { value: '', label: '전체 출처' },
+  { value: '', label: '교내·교외' },
   { value: 'internal', label: '교내' },
   { value: 'external', label: '교외' },
 ] as const
 
 const BENEFITS = [
-  { value: '', label: '전체 형태' },
-  { value: '등록금성', label: '등록금성' },
-  { value: '생활비성', label: '생활비성' },
+  { value: '', label: '등록금·생활비' },
+  { value: '등록금성', label: '등록금' },
+  { value: '생활비성', label: '생활비' },
 ] as const
 
 const EMPTY: Record<Tab, string> = {
@@ -139,9 +139,6 @@ export default function DashboardPage() {
             내 조건에 맞는 장학금,
             <br />
             놓치지 말고 한 번에 찾아보세요
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            소프트웨어학부 재학생 기준 · 학부·사업단·한국장학재단 공지를 모았어요
           </p>
 
           <div className="mt-6 grid grid-cols-3 gap-2 lg:grid-cols-[minmax(0,1fr)_repeat(3,10rem)_auto] lg:items-center">
