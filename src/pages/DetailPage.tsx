@@ -76,11 +76,8 @@ function Detail({ item }: { item: ScholarshipDetail }) {
               <p className="text-xs break-keep text-muted-foreground">공지 이름: {item.name}</p>
             )}
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className="shrink-0">
             <ResultBadge result={item.result} />
-            {item.result === 'ELIGIBLE' && (item.extra_checks ?? []).length > 0 && (
-              <span className="text-xs text-muted-foreground">본인 확인 포함</span>
-            )}
           </div>
         </div>
         <SourceLine item={item} className="mt-1 text-sm" />
