@@ -64,7 +64,7 @@ function StatusBadge({ item }: { item: Pick<ScholarshipSummary, 'result' | 'my_s
 const DEADLINE_STYLE = {
   urgent: 'text-destructive font-semibold',
   normal: 'text-foreground font-semibold',
-  muted: 'text-muted-foreground',
+  muted: 'text-muted-foreground font-medium',
 } as const
 
 export function DeadlineText({ item }: { item: Pick<ScholarshipSummary, 'status' | 'apply_end'> }) {
@@ -73,7 +73,7 @@ export function DeadlineText({ item }: { item: Pick<ScholarshipSummary, 'status'
 }
 
 /**
- * 카드 오른쪽 아래의 작은 마감 표시 (2026-11-14, 7.1). 상시 공고는 "상시"로 줄이고
+ * 카드 오른쪽 아래의 마감 표시 (2026-11-14, 7.1). 상시 공고는 "상시"로 줄이고
  * 자세한 "상시·확인 필요"는 상세에서 보여 줍니다. 판정의 '확인 필요' 배지와 헷갈리지 않게 하려는 것입니다.
  */
 function CompactDeadline({ item }: { item: Pick<ScholarshipSummary, 'status' | 'apply_end'> }) {
@@ -82,8 +82,9 @@ function CompactDeadline({ item }: { item: Pick<ScholarshipSummary, 'status' | '
   return (
     <span
       title={deadline.label}
-      className={`shrink-0 text-xs whitespace-nowrap ${DEADLINE_STYLE[deadline.tone]}`}
+      className={`inline-flex shrink-0 items-center gap-1 text-sm whitespace-nowrap ${DEADLINE_STYLE[deadline.tone]}`}
     >
+      <CalendarClock aria-hidden="true" className="size-4 shrink-0" />
       {label}
     </span>
   )
