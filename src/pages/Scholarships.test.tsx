@@ -128,7 +128,7 @@ describe('직접 답하는 조건 (계획서 5.3)', () => {
     fireEvent.click(await button('모름'))
     expect(await button('충족')).toBeInTheDocument()
     expect(await screen.findByText('지원 가능')).toBeInTheDocument()
-    expect(screen.getByText('본인 확인 포함')).toBeInTheDocument()
+    expect(screen.queryByText('본인 확인 포함')).not.toBeInTheDocument()
 
     fireEvent.click(await button('충족'))
     expect(await button('미충족')).toBeInTheDocument()
@@ -137,7 +137,6 @@ describe('직접 답하는 조건 (계획서 5.3)', () => {
     fireEvent.click(await button('미충족'))
     expect(await button('모름')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('지원 불가')).not.toBeInTheDocument())
-    expect(screen.queryByText('본인 확인 포함')).not.toBeInTheDocument()
   })
 
   it('저장에 실패하면 아이콘을 되돌리고 안내한다', async () => {
