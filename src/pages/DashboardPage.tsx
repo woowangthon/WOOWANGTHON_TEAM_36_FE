@@ -27,15 +27,15 @@ const SORTS = [
 ] as const
 
 const SOURCES = [
-  { value: '', label: '전체 출처' },
+  { value: '', label: '교내·교외' },
   { value: 'internal', label: '교내' },
   { value: 'external', label: '교외' },
 ] as const
 
 const BENEFITS = [
-  { value: '', label: '전체 형태' },
-  { value: '등록금성', label: '등록금성' },
-  { value: '생활비성', label: '생활비성' },
+  { value: '', label: '등록금·생활비' },
+  { value: '등록금성', label: '등록금' },
+  { value: '생활비성', label: '생활비' },
 ] as const
 
 const EMPTY: Record<Tab, string> = {
