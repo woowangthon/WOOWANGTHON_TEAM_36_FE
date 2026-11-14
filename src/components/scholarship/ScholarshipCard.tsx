@@ -51,6 +51,36 @@ export function DeadlineText({ item }: { item: Pick<ScholarshipSummary, 'status'
   return <span className={`text-sm ${DEADLINE_STYLE[deadline.tone]}`}>{deadline.label}</span>
 }
 
+/**
+ * 카드 오른쪽 아래의 작은 마감 표시 (2026-11-14, 7.1). 상시 공고는 "상시"로 줄이고
+ * 자세한 "상시·확인 필요"는 상세에서 보여 줍니다. 판정의 '확인 필요' 배지와 헷갈리지 않게 하려는 것입니다.
+ */
+function CompactDeadline({ item }: { item: Pick<ScholarshipSummary, 'status' | 'apply_end'> }) {
+  const deadline = deadlineOf(item)
+  const label = item.status === 'ALWAYS' ? '상시' : deadline.label
+  return (
+    <span
+      title={deadline.label}
+      className={`shrink-0 text-xs whitespace-nowrap ${DEADLINE_STYLE[deadline.tone]}`}
+    >
+      {label}
+    </span>
+  )
+}
+
+/** 지원 금액 한 줄. 길면 말줄임하고 전체 문장은 상세와 마우스를 올렸을 때 보여 줍니다 (2026-11-14). */
+function AmountLine({ text }: { text: string | null | undefined }) {
+  if (!text) return <span className="flex-1" />
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-1 text-sm text-muted-foreground">
+      <Wallet aria-hidden="true" className="size-4 shrink-0 text-brand-600" />
+      <span title={text} className="truncate">
+        {text}
+      </span>
+    </span>
+  )
+}
+
 /** 출처 · 교내/교외 · 지원 형태 한 줄. 교내는 학교, 교외는 건물 아이콘 (T38). */
 export function SourceLine({
   item,
@@ -96,44 +126,34 @@ type ScholarshipItemProps = {
  * 카드 전체를 누르면 상세로 가고(제목 링크를 카드 크기로 넓힘), 하트는 따로 눌러 관심을 켜고 끕니다.
  */
 function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
+  // 지원 불가 카드는 흐리게 두어 지원할 수 있는 장학금이 먼저 보이게 합니다 (2026-11-14).
+  const dim =
+    item.result === 'INELIGIBLE' ? 'opacity-60 hover:opacity-100 focus-within:opacity-100' : ''
   return (
-    <li className="relative isolate flex flex-col rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4">
+    <li
+      className={`relative isolate flex min-w-0 flex-col gap-1 rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4 ${dim}`}
+    >
       <div className="flex items-start justify-between gap-3">
-        <div className="grid min-w-0 gap-1">
-          <h3 className="font-medium break-keep">
-            <Link
-              to={`/scholarships/${item.id}`}
-              className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
-            >
-              {item.display_name}
-            </Link>
-          </h3>
-          <SourceLine item={item} className="text-xs" />
-          <AlsoPostedNote sources={item.also_posted_in} />
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <ResultBadge result={item.result} />
-          <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
-        </div>
+        <h3 className="min-w-0 font-semibold break-keep">
+          <Link
+            to={`/scholarships/${item.id}`}
+            className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
+          >
+            {item.display_name}
+          </Link>
+        </h3>
+        <ResultBadge result={item.result} />
       </div>
-      <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-3">
-        <span className="inline-flex items-start gap-1">
-          <CalendarClock
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-          />
-          <DeadlineText item={item} />
-        </span>
+      <SourceLine item={item} className="text-xs" />
+      <AlsoPostedNote sources={item.also_posted_in} />
+      <div className="mt-auto flex items-center gap-2 pt-2">
+        <AmountLine text={item.benefit_amount_text} />
         {item.deadline_conflict && <DeadlineConflictNote />}
-        {item.benefit_amount_text && (
-          <span className="inline-flex items-start gap-1 text-sm font-medium text-brand-700">
-            {/* 글이 길어 여러 줄이 되어도 아이콘이 줄어들지 않고 첫 줄 옆에 붙게 (T68) */}
-            <Wallet aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            {item.benefit_amount_text}
-          </span>
-        )}
-        {item.my_state === 'APPLIED' && (
-          <span className="ml-auto text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
+        <CompactDeadline item={item} />
+        {item.my_state === 'APPLIED' ? (
+          <span className="shrink-0 text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
+        ) : (
+          <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
         )}
       </div>
     </li>
@@ -162,7 +182,7 @@ function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
           onBookmarkError(`${action} 다시 시도해 주세요.`)
         })
       }}
-      className="relative z-10 -mr-1 grid size-8 place-items-center rounded-full text-rose-500 transition-colors hover:bg-rose-50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className="relative z-10 -my-1 -mr-1 grid size-8 shrink-0 place-items-center rounded-full text-rose-500 transition-colors hover:bg-rose-50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <Heart aria-hidden="true" className={`size-5 ${on ? 'fill-current' : ''}`} />
     </button>

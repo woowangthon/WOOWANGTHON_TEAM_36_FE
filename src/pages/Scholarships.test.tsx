@@ -38,7 +38,7 @@ describe('대시보드', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: '전체' }))
     await waitForCards('여성공학인 장학금', 'AI부트캠프 양성인재 학업장려금')
-    expect(screen.getByText('상시·확인 필요')).toBeInTheDocument() // ALWAYS
+    expect(screen.getAllByText('상시').length).toBeGreaterThan(0) // ALWAYS는 카드에서 줄여 씀
     expect(screen.getAllByText('지원 불가').length).toBeGreaterThan(0)
   })
 
