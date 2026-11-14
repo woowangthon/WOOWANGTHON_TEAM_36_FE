@@ -52,7 +52,7 @@ export function DeadlineText({ item }: { item: Pick<ScholarshipSummary, 'status'
 }
 
 /**
- * 카드 오른쪽 아래의 마감 표시 (2026-11-14, 7.1). 상시 공고는 "상시"로 줄이고
+ * 카드의 장학금명 바로 아래 마감 표시 (2026-11-14, 7.1). 상시 공고는 "상시"로 줄이고
  * 자세한 "상시·확인 필요"는 상세에서 보여 줍니다. 판정의 '확인 필요' 배지와 헷갈리지 않게 하려는 것입니다.
  */
 function CompactDeadline({ item }: { item: Pick<ScholarshipSummary, 'status' | 'apply_end'> }) {
@@ -145,12 +145,14 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
         </h3>
         <ResultBadge result={item.result} />
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <CompactDeadline item={item} />
+        {item.deadline_conflict && <DeadlineConflictNote />}
+      </div>
       <SourceLine item={item} className="text-xs" />
       <AlsoPostedNote sources={item.also_posted_in} />
       <div className="mt-auto flex items-center gap-2 pt-2">
         <AmountLine text={item.benefit_amount_text} />
-        {item.deadline_conflict && <DeadlineConflictNote />}
-        <CompactDeadline item={item} />
         {item.my_state === 'APPLIED' ? (
           <span className="shrink-0 text-xs font-medium text-primary">{STATE_LABEL.APPLIED}</span>
         ) : (
