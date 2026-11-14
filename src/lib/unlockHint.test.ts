@@ -1,6 +1,6 @@
 import type { ScholarshipSummary } from '@/api/hooks/scholarships'
 
-import { questionNote, quickQuestions, unlockCandidates } from './unlockHint'
+import { quickQuestions, targetLabel, unlockCandidates } from './unlockHint'
 
 type Item = Parameters<typeof quickQuestions>[0][number]
 
@@ -62,9 +62,9 @@ describe('quickQuestions', () => {
   })
 })
 
-it('questionNote: 장학금이 여럿이면 "외 N개"', () => {
+it('targetLabel: 장학금이 여럿이면 "외 N개"', () => {
   const [one] = quickQuestions([item(1)])
-  expect(questionNote(one)).toBe('답하면 ‘장학금1’의 지원 가능 여부를 바로 알려 드려요.')
+  expect(targetLabel(one)).toBe('장학금1')
   const [many] = quickQuestions([item(1), item(2), item(3)])
-  expect(questionNote(many)).toBe('답하면 ‘장학금1’ 외 2개의 지원 가능 여부를 바로 알려 드려요.')
+  expect(targetLabel(many)).toBe('장학금1 외 2개')
 })

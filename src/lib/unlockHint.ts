@@ -65,9 +65,8 @@ export function quickQuestions(
   return [...groups.values()].sort((a, b) => b.targets.length - a.targets.length)
 }
 
-/** "답하면 '○○' 외 N개의 지원 가능 여부를 바로 알려 드려요." */
-export function questionNote(question: QuickQuestion): string {
+/** 답하면 판정이 정해지는 장학금 이름. 여럿이면 "○○ 외 N개". */
+export function targetLabel(question: QuickQuestion): string {
   const [first, ...rest] = question.targets
-  const who = rest.length > 0 ? `‘${first.name}’ 외 ${rest.length}개의` : `‘${first.name}’의`
-  return `답하면 ${who} 지원 가능 여부를 바로 알려 드려요.`
+  return rest.length > 0 ? `${first.name} 외 ${rest.length}개` : first.name
 }
