@@ -9,6 +9,7 @@ import {
   Info,
   ExternalLink,
   FileText,
+  Heart,
   ListChecks,
   Megaphone,
   Square,
@@ -119,7 +120,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
             공지 제목과 본문의 마감일이 다릅니다. 원문에서 마감일을 확인하세요.
           </p>
         )}
-        <StateButtons id={item.id} applied={item.applied} />
+        <StateButtons id={item.id} bookmarked={item.bookmarked} applied={item.applied} />
       </section>
 
       <Checklist id={item.id} conditions={item.conditions} extra={item.extra_checks ?? []} />
@@ -602,30 +603,54 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
 }
 
 /**
- * 신청 완료 체크박스 (T63). 관심은 목록 카드의 하트로 옮겼고(T54), 상세에는 신청 완료만 둡니다.
- * 신청 완료를 켜고 꺼도 관심은 바뀌지 않습니다 (T71).
- * 글자는 항상 '신청 완료'이고 체크 여부(aria-pressed)로 상태를 보여 줍니다. 다시 누르면 체크가 풀립니다.
- * 우리 서비스가 대신 신청하지 않으므로, 원문 공지에서 신청한 뒤 표시해 두는 용도입니다.
+ * 관심(하트)과 신청 완료 버튼. 관심과 신청 완료는 서로 영향을 주지 않고 따로 켜고 끕니다 (T71).
+ * 두 버튼 모두 누르면 바로 반영되고(optimistic update), 실패하면 되돌아가며 오류를 보여 줍니다.
+ * 우리 서비스가 대신 신청하지 않으므로, 신청 완료는 원문 공지에서 신청한 뒤 표시해 두는 용도입니다.
  */
-function StateButtons({ id, applied }: { id: number; applied: boolean }) {
+function StateButtons({
+  id,
+  bookmarked,
+  applied,
+}: {
+  id: number
+  bookmarked: boolean
+  applied: boolean
+}) {
   const mutation = useSetScholarshipState(id)
-  const Icon = applied ? SquareCheckBig : Square
+  const AppliedIcon = applied ? SquareCheckBig : Square
   return (
     <div className="mt-5 grid gap-1.5">
-      <button
-        type="button"
-        aria-pressed={applied}
-        disabled={mutation.isPending}
-        onClick={() => mutation.mutate({ id, applied: !applied })}
-        className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
-          applied
-            ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-            : 'border-brand-200 bg-white text-foreground hover:border-brand-400 hover:bg-brand-50'
-        }`}
-      >
-        <Icon aria-hidden="true" className="size-5" />
-        신청 완료
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-pressed={bookmarked}
+          aria-label={bookmarked ? '관심 해제' : '관심'}
+          title={bookmarked ? '관심 해제' : '관심'}
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate({ id, bookmarked: !bookmarked })}
+          className={`grid size-11 shrink-0 place-items-center rounded-xl border transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
+            bookmarked
+              ? 'border-rose-200 bg-rose-50 text-rose-500 hover:bg-rose-100'
+              : 'border-brand-200 bg-white text-rose-500 hover:border-rose-200 hover:bg-rose-50'
+          }`}
+        >
+          <Heart aria-hidden="true" className={`size-5 ${bookmarked ? 'fill-current' : ''}`} />
+        </button>
+        <button
+          type="button"
+          aria-pressed={applied}
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate({ id, applied: !applied })}
+          className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
+            applied
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              : 'border-brand-200 bg-white text-foreground hover:border-brand-400 hover:bg-brand-50'
+          }`}
+        >
+          <AppliedIcon aria-hidden="true" className="size-5" />
+          신청 완료
+        </button>
+      </div>
       <FormError
         message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
       />

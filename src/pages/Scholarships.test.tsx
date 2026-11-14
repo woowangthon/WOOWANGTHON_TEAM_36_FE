@@ -727,8 +727,59 @@ describe('관심·신청완료', () => {
     renderApp('/scholarships/3')
     await screen.findByRole('button', { name: '신청 완료' })
     expect(screen.queryByRole('button', { name: '숨기기' })).not.toBeInTheDocument()
-    // 관심은 목록 카드 하트로 옮겨 상세에는 없음 (T54)
-    expect(screen.queryByRole('button', { name: '관심' })).not.toBeInTheDocument()
+  })
+
+  it('상세 화면에서 관심 하트를 켜고 끌 수 있으며 신청 완료와 따로 저장된다', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.put('/api/scholarships/3/state', async () => {
+        await gate
+      }),
+    )
+    const app = renderApp('/scholarships/3')
+    const bookmark = await screen.findByRole('button', { name: '관심', pressed: false })
+    fireEvent.click(bookmark)
+    expect(await screen.findByRole('button', { name: '관심 해제', pressed: true })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '신청 완료', pressed: false })).toBeDisabled()
+    release()
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '관심 해제', pressed: true })).toBeEnabled(),
+    )
+    expect(screen.getByRole('button', { name: '신청 완료', pressed: false })).toBeEnabled()
+
+    await app.router.navigate('/my')
+    await waitForCards('여성공학인 장학금', '두산연강재단 장학금')
+
+    await app.router.navigate('/scholarships/3')
+    fireEvent.click(await screen.findByRole('button', { name: '관심 해제', pressed: true }))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '관심', pressed: false })).toBeEnabled(),
+    )
+  })
+
+  it('상세 화면에서 관심 저장에 실패하면 되돌리고 오류를 보여 준다', async () => {
+    server.use(
+      http.put('/api/scholarships/3/state', async () => {
+        await delay(30)
+        return HttpResponse.json({ detail: '오류' }, { status: 500 })
+      }),
+    )
+    renderApp('/scholarships/3')
+    const bookmark = await screen.findByRole('button', { name: '관심', pressed: false })
+    server.use(
+      http.get('/api/scholarships/3', async () => {
+        await delay(500)
+      }),
+    )
+    fireEvent.click(bookmark)
+    expect(
+      await screen.findByRole('button', { name: '관심 해제', pressed: true }),
+    ).toBeInTheDocument()
+
+    expect(await screen.findByText(/저장하지 못했습니다/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '관심', pressed: false })).toBeEnabled()
   })
 })
 
