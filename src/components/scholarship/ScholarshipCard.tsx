@@ -107,14 +107,16 @@ function AmountLine({ text }: { text: string | null | undefined }) {
 export function SourceLine({
   item,
   className = '',
+  iconClassName = 'size-3.5',
 }: {
   item: Pick<ScholarshipSummary, 'source_name' | 'is_internal' | 'benefit_type'>
   className?: string
+  iconClassName?: string
 }) {
   const Icon = item.is_internal ? School : Building2
   return (
     <p className={`flex items-center gap-1 text-muted-foreground ${className}`}>
-      <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+      <Icon aria-hidden="true" className={`shrink-0 ${iconClassName}`} />
       {/* 단어 중간에서 줄이 바뀌지 않게 ('생활비 / 성' 방지, T67) */}
       <span className="min-w-0 break-keep">
         {item.source_name} · {item.is_internal ? '교내' : '교외'}
@@ -173,7 +175,8 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
         <CompactDeadline item={item} />
         {item.deadline_conflict && <DeadlineConflictNote />}
       </div>
-      <SourceLine item={item} className="text-xs" />
+      {/* 마감·출처·금액 세 줄은 글씨와 아이콘 크기를 맞춥니다 (2026-11-14) */}
+      <SourceLine item={item} className="text-sm" iconClassName="size-4" />
       <AlsoPostedNote sources={item.also_posted_in} />
       <div className="mt-auto flex items-center gap-2 pt-2">
         <AmountLine text={item.benefit_amount_text} />
