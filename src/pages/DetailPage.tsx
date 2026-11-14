@@ -15,7 +15,7 @@ import {
   SquareCheckBig,
   Wallet,
 } from 'lucide-react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { ApiError } from '@/api/hooks/request'
@@ -46,6 +46,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { HelpIcon } from '@/components/ui/help-icon'
 import { conditionLabel } from '@/lib/conditionLabel'
+import { cleanNoticeText, splitDocuments, stripConditionalMark } from '@/lib/noticeText'
 
 // 상세 (7.1): 조건별 체크리스트(충족·미충족·확인 필요 아이콘), 원문 근거, 제출 서류, 원문 링크, 같은 공지의 다른 장학금,
 // 관심·신청완료 버튼, 중복 안내 문구.
@@ -132,19 +133,7 @@ function Detail({ item }: { item: ScholarshipDetail }) {
         notes={item.notes ?? []}
       />
 
-      {item.required_documents.length > 0 && (
-        <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
-          <h2 className="flex items-center gap-1.5 font-semibold">
-            <FileText aria-hidden="true" className="size-5 text-brand-700" />
-            제출 서류
-          </h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-            {item.required_documents.map((doc) => (
-              <li key={doc}>{doc}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <Documents docs={item.required_documents} />
 
       <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
         <h2 className="flex items-center gap-1.5 font-semibold">
@@ -427,11 +416,11 @@ type BasicItem = ScholarshipDetail['basic_items'][number]
 function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
   if (basic.length === 0 && notes.length === 0) return null
   return (
-    <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
-      <h2 className="flex items-center gap-1.5 font-semibold">
-        <Info aria-hidden="true" className="size-5 text-brand-700" />
-        함께 알아 둘 내용
-      </h2>
+    <FoldSection
+      icon={<Info aria-hidden="true" className="size-5 text-brand-700" />}
+      title="함께 알아 둘 내용"
+      count={basic.length + notes.length}
+    >
       {basic.length > 0 && (
         <>
           <h3 className="mt-3 font-medium">지원 전 확인</h3>
@@ -440,7 +429,7 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
               <li key={text}>
                 {summary ? (
                   <>
-                    {summary}
+                    {cleanNoticeText(summary)}
                     <details className="text-muted-foreground">
                       <summary className="w-fit cursor-pointer text-xs underline-offset-4 hover:underline">
                         공지 문장 보기
@@ -449,7 +438,7 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
                     </details>
                   </>
                 ) : (
-                  text
+                  cleanNoticeText(text)
                 )}
               </li>
             ))}
@@ -464,12 +453,78 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
             aria-label="참고 안내"
           >
             {notes.map((text) => (
-              <li key={text}>{text}</li>
+              <li key={text}>{cleanNoticeText(text)}</li>
             ))}
           </ul>
         </>
       )}
-    </section>
+    </FoldSection>
+  )
+}
+
+/**
+ * 판정에 쓰지 않는 참고 상자(함께 알아 둘 내용, 제출 서류). 처음에는 제목과 항목 수만 보이고,
+ * 제목을 누르면 펼칩니다. 판정 체크리스트와 원문 공지가 아래로 밀리지 않게 하기 위함입니다.
+ */
+function FoldSection({
+  icon,
+  title,
+  count,
+  children,
+}: {
+  icon: ReactNode
+  title: string
+  count: number
+  children: ReactNode
+}) {
+  return (
+    <details className="group rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-sm font-semibold focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+        {icon}
+        <h2>{title}</h2>
+        <span className="text-xs font-normal text-muted-foreground">{count}개</span>
+        <ChevronDown
+          aria-hidden="true"
+          className="ml-auto size-5 text-muted-foreground transition-transform group-open:rotate-180"
+        />
+      </summary>
+      {children}
+    </details>
+  )
+}
+
+/**
+ * 제출 서류. 모두 내는 서류를 먼저 두고, "(해당자)" 서류는 "해당자 추가 서류" 아래에 모읍니다.
+ * 해당자 서류만 있으면 나누지 않고 원문 그대로 보여 줍니다.
+ */
+function Documents({ docs }: { docs: string[] }) {
+  if (docs.length === 0) return null
+  const { common, conditional } = splitDocuments(docs)
+  const list = (items: string[], label: string, strip = false) => (
+    <ul className="mt-2 list-disc space-y-1 pl-5" aria-label={label}>
+      {items.map((doc) => (
+        <li key={doc}>{cleanNoticeText(strip ? stripConditionalMark(doc) : doc)}</li>
+      ))}
+    </ul>
+  )
+  return (
+    <FoldSection
+      icon={<FileText aria-hidden="true" className="size-5 text-brand-700" />}
+      title="제출 서류"
+      count={docs.length}
+    >
+      {common.length > 0 && conditional.length > 0 ? (
+        <>
+          <h3 className="mt-3 font-medium">공통 서류</h3>
+          {list(common, '공통 서류')}
+          <h3 className="mt-3 font-medium">해당자 추가 서류</h3>
+          {list(conditional, '해당자 추가 서류', true)}
+        </>
+      ) : (
+        // 한쪽만 있으면 나누지 않고 원문 그대로 보여 줍니다.
+        list(docs, '제출 서류')
+      )}
+    </FoldSection>
   )
 }
 
