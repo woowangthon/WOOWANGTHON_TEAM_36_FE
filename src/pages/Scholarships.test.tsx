@@ -264,6 +264,56 @@ describe('대시보드 빠른 확인 (계획서 7.1)', () => {
     expect(screen.getByText('글로벌 SW 인재 장학금')).toBeInTheDocument() // 그대로 확인 필요
   })
 
+  it('답한 뒤 상세에서 답을 지워 조건 하나만 남으면 다시 묻는다', async () => {
+    renderApp('/dashboard?tab=conditional')
+    fireEvent.click(within(await card()).getByRole('button', { name: '맞아요' })) // TOEIC (9·10)
+    expect(await screen.findByText('청주시에 1년 이상 주민등록이 되어 있는 자')).toBeInTheDocument()
+    fireEvent.click(within(await card()).getByRole('button', { name: '맞아요' })) // 청주 (8)
+    expect(await screen.findByText('빠르게 확인할 질문을 다 끝냈어요.')).toBeInTheDocument()
+
+    // 상세에서 해외 연수 지원 장학금의 답을 충족 → 미충족 → 모름으로 지웁니다
+    cleanup()
+    renderApp('/scholarships/10')
+    fireEvent.click(await screen.findByRole('button', { name: /답 바꾸기, 지금: 충족$/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /답 바꾸기, 지금: 미충족$/ }))
+    expect(
+      await screen.findByRole('button', { name: /답 바꾸기, 지금: 모름$/ }),
+    ).toBeInTheDocument()
+
+    cleanup()
+    renderApp('/dashboard?tab=conditional')
+    const again = within(await card())
+    expect(again.getByText('TOEIC 500점 이상인 학생')).toBeInTheDocument()
+    expect(again.getByText('해외 연수 지원 장학금')).toBeInTheDocument()
+    expect(again.getByText('1/1')).toBeInTheDocument()
+  })
+
+  it('새 질문이 생기면 이전에 답하거나 건너뛴 수를 빼고 1번부터 센다', async () => {
+    renderApp('/dashboard?tab=conditional')
+    fireEvent.click(within(await card()).getByRole('button', { name: '모르겠어요' }))
+    fireEvent.click(within(await card()).getByRole('button', { name: '모르겠어요' }))
+    expect(await screen.findByText('빠르게 확인할 질문을 다 끝냈어요.')).toBeInTheDocument()
+
+    // 다음 방문에 다른 문장의 질문 2개가 새로 생깁니다
+    const summary = (id: number, key: string, text: string) => ({
+      ...toSummary(mockDetails.find((item) => item.id === id)!),
+      open_conditions: [{ key, text, summary: null }],
+    })
+    server.use(
+      http.get('/api/scholarships', () =>
+        HttpResponse.json({
+          items: [summary(8, 'new-1', '새 조건 하나'), summary(9, 'new-2', '새 조건 둘')],
+        }),
+      ),
+    )
+    cleanup()
+    renderApp('/dashboard?tab=conditional')
+    const next = within(await card())
+    expect(next.getByText('1/2')).toBeInTheDocument()
+    fireEvent.click(next.getByRole('button', { name: '모르겠어요' }))
+    expect(within(await card()).getByText('2/2')).toBeInTheDocument()
+  })
+
   it('지원 가능 탭에는 확인 필요 장학금이 없어 카드가 나오지 않는다', async () => {
     renderApp('/dashboard')
     await waitForCards('두산연강재단 장학금')
