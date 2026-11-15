@@ -175,7 +175,7 @@ export default function SignupPage() {
               ) : (
                 !verified && (
                   <Button type="button" variant="ghost" className="h-11" onClick={() => restart()}>
-                    이메일 바꾸기
+                    다시 입력
                   </Button>
                 )
               )}
