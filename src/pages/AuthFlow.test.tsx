@@ -437,6 +437,36 @@ describe('프로필 화면', () => {
     expect(screen.queryByText('내 정보로')).not.toBeInTheDocument()
   })
 
+  it('처음 입력하는 화면의 이전 버튼은 로그아웃하고 로그인 화면으로 보낸다', async () => {
+    server.use(
+      http.get('/api/profile', () =>
+        HttpResponse.json({ detail: '프로필을 입력하세요' }, { status: 404 }),
+      ),
+    )
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '프로필 입력' })
+    fireEvent.click(screen.getByRole('button', { name: '로그인 화면으로' }))
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(app.path()).toBe('/login')
+  })
+
+  it('처음 입력하던 값이 있으면 로그아웃 전에 묻는다', async () => {
+    server.use(
+      http.get('/api/profile', () =>
+        HttpResponse.json({ detail: '프로필을 입력하세요' }, { status: 404 }),
+      ),
+    )
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '프로필 입력' })
+    type('닉네임', '김충북')
+    fireEvent.click(screen.getByRole('button', { name: '로그인 화면으로' }))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(within(dialog).getByText(/입력한 내용은 저장되지 않습니다/)).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: '나가기' }))
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(app.path()).toBe('/login')
+  })
+
   it('계정 칸에서 개인정보처리방침을 새 탭으로 연다 (입력하던 폼 유지)', async () => {
     server.use(
       http.get('/api/profile', () =>

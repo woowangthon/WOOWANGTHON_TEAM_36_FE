@@ -8,6 +8,7 @@ import { useDeleteAccount, useMe, useWithdrawSensitive, type Me } from '@/api/ho
 import { useProfile, useSaveProfile, type Profile } from '@/api/hooks/profile'
 import { ApiError } from '@/api/hooks/request'
 import { AuthLayout, PageSkeleton } from '@/components/auth/AuthLayout'
+import { BackToLogin } from '@/components/auth/BackToLogin'
 import { Field, FormError } from '@/components/form/Field'
 import { PasswordChange } from '@/components/profile/PasswordChange'
 import {
@@ -47,7 +48,8 @@ export default function ProfilePage() {
       wide
       title={profile.data ? '내 프로필' : '프로필 입력'}
       description="입력한 정보로 지원 가능한 장학금을 판정합니다. AI에는 보내지 않습니다."
-      back={profile.data ? <BackToList dirty={dirty} /> : undefined}
+      // 첫 입력 화면은 가드가 다시 /profile로 보내므로, 이전 버튼은 로그아웃하고 로그인 화면으로 갑니다.
+      back={profile.data ? <BackToList dirty={dirty} /> : <BackToLogin dirty={dirty} />}
     >
       {profile.isError ? (
         <FormError message={profile.error.message} />
