@@ -29,10 +29,10 @@ const ACADEMIC_LINKS: LinkItem[] = [
   },
 ]
 
-/** 넓은 화면(1024px 이상) 왼쪽 사이드바의 바로가기 (T40). API를 부르지 않습니다. */
+/** 넓은 화면(1024px 이상) 사이드바의 바로가기 (T40). 상자 없이 글 목록으로 가볍게 둡니다. API를 부르지 않습니다. */
 export function SidePanel({ className = '' }: { className?: string }) {
   return (
-    <div className={`gap-4 ${className}`}>
+    <div className={`gap-6 ${className}`}>
       <LinkGroup title="공지 출처 바로가기" links={SOURCE_LINKS} />
       <LinkGroup title="학사·서류" links={ACADEMIC_LINKS} />
     </div>
@@ -43,26 +43,23 @@ function LinkGroup({ title, links }: { title: string; links: LinkItem[] }) {
   // 제목에 띄어쓰기가 있어 id로 쓰면 aria-labelledby가 여러 id로 나뉘어 이름이 붙지 않습니다. useId로 만듭니다.
   const id = useId()
   return (
-    <section
-      aria-labelledby={id}
-      className="grid min-w-0 gap-2 rounded-xl border border-brand-200 bg-background p-3 break-keep sm:p-4"
-    >
-      <h2 id={id} className="text-sm font-semibold text-brand-900">
+    <section aria-labelledby={id} className="grid min-w-0 gap-2.5 break-keep">
+      <h2 id={id} className="text-[13px] font-bold">
         {title}
       </h2>
-      <ul className="grid gap-1.5 text-sm">
+      <ul className="grid gap-2 text-sm">
         {links.map((link) => (
           <li key={link.href}>
             <a
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-start gap-1 text-foreground hover:text-brand-800 hover:underline"
+              className="inline-flex items-start gap-1 text-muted-foreground transition-colors hover:text-foreground hover:underline"
             >
               {link.label}
-              <ExternalLink aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+              <ExternalLink aria-hidden="true" className="mt-1 size-3 shrink-0 opacity-60" />
             </a>
-            {link.note && <p className="text-xs text-muted-foreground">{link.note}</p>}
+            {link.note && <p className="mt-0.5 text-xs text-muted-foreground/80">{link.note}</p>}
           </li>
         ))}
       </ul>

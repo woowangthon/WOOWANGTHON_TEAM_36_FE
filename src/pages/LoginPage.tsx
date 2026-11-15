@@ -41,7 +41,7 @@ export default function LoginPage() {
     <AuthLayout title="로그인" description="내 조건에 맞는 장학금을 한 화면에서 확인하세요.">
       <div className="grid gap-4">
         {withdrawn && (
-          <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">
+          <p role="status" className="rounded-xl bg-muted px-3.5 py-2.5 text-sm break-keep">
             회원 탈퇴가 끝났어요. 계정과 입력한 정보를 모두 지웠어요.
           </p>
         )}
@@ -74,13 +74,13 @@ export default function LoginPage() {
             {login.isPending ? '로그인 중…' : '로그인'}
           </Button>
         </form>
-        <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+        <p className="text-xs leading-relaxed break-keep text-muted-foreground">
           비밀번호를 잊었다면 같은 이메일의 Google 계정으로 로그인하세요. 이후에는 Google
           로그인으로만 들어올 수 있습니다.
         </p>
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="border-t border-border pt-4 text-center text-sm text-muted-foreground">
           처음이신가요?{' '}
-          <Link to="/signup" className="font-medium text-foreground underline underline-offset-4">
+          <Link to="/signup" className="font-semibold text-foreground underline underline-offset-4">
             회원가입
           </Link>
         </p>

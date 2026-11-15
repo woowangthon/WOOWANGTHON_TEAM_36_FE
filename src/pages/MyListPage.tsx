@@ -39,41 +39,34 @@ export default function MyListPage() {
   const list = useScholarships({ result: 'all', sort: 'deadline', state: tab })
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <div className="grid gap-3">
         <Link
           to="/dashboard"
-          className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-brand-800"
+          className="inline-flex w-fit items-center gap-1 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
           장학금 목록으로
         </Link>
-        <h1 className="text-xl font-semibold text-brand-900">내 정보</h1>
+        <h1 className="text-2xl font-bold tracking-tight">내 정보</h1>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[17.5rem_minmax(0,1fr)] lg:items-start">
-        <aside className="grid gap-4 rounded-xl border border-brand-200 bg-background p-4 lg:sticky lg:top-20">
+      <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <aside className="grid gap-5 surface p-5 lg:sticky lg:top-22">
           <ProfileSummary />
           <AccountFooter />
         </aside>
-        <section
-          aria-labelledby="my-scholarships"
-          className="grid gap-4 rounded-xl border border-brand-200 bg-background p-3 sm:p-5"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="my-scholarships" className="text-lg font-semibold text-brand-900">
-              내 장학금
-            </h2>
-            <div className="w-full sm:w-64">
-              <SegmentedTabs
-                label="내 장학금 구분"
-                options={TABS}
-                value={tab}
-                onChange={(value) =>
-                  setSearch(value === 'bookmarked' ? {} : { tab: value }, { replace: true })
-                }
-              />
-            </div>
-          </div>
+        <section aria-labelledby="my-scholarships" className="grid gap-3 surface p-4 sm:p-6">
+          <h2 id="my-scholarships" className="text-lg font-bold">
+            내 장학금
+          </h2>
+          <SegmentedTabs
+            label="내 장학금 구분"
+            options={TABS}
+            value={tab}
+            onChange={(value) =>
+              setSearch(value === 'bookmarked' ? {} : { tab: value }, { replace: true })
+            }
+          />
           {list.isError && <ErrorBox message={list.error.message} onRetry={() => list.refetch()} />}
           {list.isPending && <ListSkeleton variant="row" />}
           {list.data && (
@@ -100,15 +93,18 @@ function ProfileSummary() {
   const facts = me ? summaryFacts(me) : []
 
   return (
-    <section aria-label="프로필 요약" className="grid justify-items-center gap-3 text-center">
-      {me && <Avatar userId={me.id} className="size-40" />}
-      <div className="grid min-w-0 gap-1">
-        <p className="text-lg font-semibold text-brand-900">{me?.nickname ?? '닉네임 없음'}</p>
-        <p className="truncate text-xs text-muted-foreground">{me?.email}</p>
+    <section aria-label="프로필 요약" className="grid justify-items-center gap-4 text-center">
+      {/* 캐릭터는 연한 바탕 위에 세워 둡니다 (그림이 바닥 맞춤이라 아래 여백 없이) */}
+      <div className="grid w-full place-items-end justify-center rounded-xl bg-canvas px-4 pt-2">
+        {me && <Avatar userId={me.id} className="size-36" />}
+      </div>
+      <div className="grid w-full min-w-0 gap-0.5">
+        <p className="text-lg font-bold">{me?.nickname ?? '닉네임 없음'}</p>
+        <p className="truncate text-[13px] text-muted-foreground">{me?.email}</p>
       </div>
       {facts.length > 0 && (
         // 학년·평점을 한 줄씩 (좁은 상자에서 글자 중간에 줄이 바뀌지 않게)
-        <ul className="grid w-full gap-0.5 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900 break-keep">
+        <ul className="grid w-full gap-1 border-y border-border py-3 text-sm break-keep">
           {facts.map((fact) => (
             <li key={fact}>{fact}</li>
           ))}
@@ -138,12 +134,11 @@ function AccountFooter() {
   const logout = useLogout()
 
   return (
-    <section aria-label="계정" className="grid gap-2 border-t border-brand-100 pt-3">
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        {/* 투명 버튼이 약해 보여 연한 살구색으로 채움 (T64) */}
+    <section aria-label="계정" className="grid gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-1">
         <Button
           variant="ghost"
-          className="bg-brand-100 text-brand-800 hover:bg-brand-200! hover:text-brand-900!"
+          className="text-muted-foreground"
           disabled={logout.isPending}
           onClick={() =>
             logout.mutate(undefined, { onSuccess: () => navigate('/login', { replace: true }) })

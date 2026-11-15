@@ -1,20 +1,13 @@
 import {
   ArrowLeft,
-  CalendarClock,
-  ChevronDown,
-  CalendarDays,
   CircleCheck,
   CircleHelp,
   CircleX,
-  Info,
   ExternalLink,
   FileText,
   Heart,
-  ListChecks,
-  Megaphone,
   Square,
   SquareCheckBig,
-  Wallet,
 } from 'lucide-react'
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -32,6 +25,7 @@ import {
 import { FormError } from '@/components/form/Field'
 import { ErrorBox } from '@/components/layout/AppLayout'
 import {
+  deadlineOf,
   CONDITION_LABEL,
   evidenceSourceLabel,
   formatDateTime,
@@ -44,6 +38,7 @@ import {
   ResultBadge,
   SourceLine,
 } from '@/components/scholarship/ScholarshipCard'
+import { SegmentedTabs } from '@/components/scholarship/SegmentedTabs'
 import { HelpIcon } from '@/components/ui/help-icon'
 import { conditionLabel } from '@/lib/conditionLabel'
 import { cleanNoticeText, splitDocuments, stripConditionalMark } from '@/lib/noticeText'
@@ -60,123 +55,216 @@ export default function DetailPage() {
     if (detail.error instanceof ApiError && detail.error.status === 404) return <NotFound />
     return <ErrorBox message={detail.error.message} onRetry={() => detail.refetch()} />
   }
-  return <Detail item={detail.data} />
+  // 다른 장학금으로 넘어가면 탭을 처음(조건 확인)으로 되돌립니다
+  return <Detail key={detail.data.id} item={detail.data} />
 }
 
+type DetailTab = 'conditions' | 'notes' | 'documents' | 'notice'
+
 function Detail({ item }: { item: ScholarshipDetail }) {
+  const closed = deadlineOf(item).label === '마감'
+  // 관심(하트)과 신청 완료는 서로 영향을 주지 않고 따로 켜고 끕니다 (T71). 누르면 바로 반영되고
+  // (optimistic update), 실패하면 되돌아가며 오류를 보여 줍니다.
+  const mutation = useSetScholarshipState(item.id)
+  const { bookmarked, applied } = item
+  // basic_items가 없는 backend(T43 이전) 응답이면 원문 목록을 요약 없이 보여 줍니다
+  const basic =
+    item.basic_items ?? (item.basic_conditions ?? []).map((text) => ({ text, summary: null }))
+  const notes = item.notes ?? []
+  const docs = item.required_documents
+  // 탭을 누르면 아래에 그 내용만 보입니다. 내용이 없는 탭은 만들지 않습니다.
+  const [tab, setTab] = useState<DetailTab>('conditions')
+  const tabs: { value: DetailTab; label: string; count?: number }[] = [
+    { value: 'conditions', label: '조건 확인' },
+    ...(basic.length + notes.length > 0
+      ? [{ value: 'notes' as const, label: '알아 둘 내용', count: basic.length + notes.length }]
+      : []),
+    ...(docs.length > 0
+      ? [{ value: 'documents' as const, label: '제출 서류', count: docs.length }]
+      : []),
+    { value: 'notice', label: '원문 공지' },
+  ]
   return (
     <article className="grid gap-4">
       <BackLink />
-      <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="grid min-w-0 gap-0.5">
-            <h1 className="text-xl font-semibold break-keep">{item.display_name}</h1>
-            {item.name !== item.display_name && (
-              // 재단 누리집에서 찾을 때 쓰는 공지 원래 이름 (계획서 5.2)
-              <p className="text-xs break-keep text-muted-foreground">공지 이름: {item.name}</p>
-            )}
-          </div>
-          <div className="shrink-0">
+      {/* 넓은 화면은 왼쪽에 내용, 오른쪽에 따라오는 요약 상자. 좁은 화면은 제목 → 요약 → 탭 순서로 쌓습니다. */}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-5">
+        <section className="surface p-5 sm:p-7 lg:col-start-1">
+          <div className="flex items-start justify-between gap-3">
             <ResultBadge result={item.result} />
+            {/* 하트는 목록 카드처럼 오른쪽 위에 둡니다 */}
+            <button
+              type="button"
+              aria-pressed={bookmarked}
+              aria-label={bookmarked ? '관심 해제' : '관심'}
+              title={bookmarked ? '관심 해제' : '관심'}
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate({ id: item.id, bookmarked: !bookmarked })}
+              className={`-mt-2 -mr-2 grid size-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-rose-50 hover:text-rose-500 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
+                bookmarked ? 'text-rose-500' : 'text-muted-foreground'
+              }`}
+            >
+              <Heart aria-hidden="true" className={`size-6 ${bookmarked ? 'fill-current' : ''}`} />
+            </button>
           </div>
-        </div>
-        <SourceLine item={item} className="mt-1 text-sm" />
-        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="flex items-center gap-1 text-muted-foreground">
-            <CalendarClock aria-hidden="true" className="size-4" />
-            마감
-          </dt>
-          <dd className="flex flex-wrap items-center gap-2">
-            <DeadlineText item={item} />
-            {item.apply_end && (
-              <span className="text-muted-foreground">{formatDateTime(item.apply_end)}까지</span>
+          <h1 className="mt-3 text-[22px] leading-snug font-bold tracking-tight break-keep sm:text-[28px]">
+            {item.display_name}
+          </h1>
+          {item.name !== item.display_name && (
+            // 재단 누리집에서 찾을 때 쓰는 공지 원래 이름 (계획서 5.2)
+            <p className="mt-1 text-xs break-keep text-muted-foreground">공지 이름: {item.name}</p>
+          )}
+          <SourceLine item={item} className="mt-1.5 text-sm" />
+        </section>
+
+        {/* 요약 상자: 마감·금액과 원문 공지 버튼. 어느 탭에서나 보입니다. */}
+        <aside
+          aria-label="신청 정보"
+          className="surface p-5 lg:sticky lg:top-[5.25rem] lg:col-start-2 lg:row-span-2"
+        >
+          <dl className="grid grid-cols-[4.75rem_minmax(0,1fr)] gap-y-2.5 text-sm lg:grid-cols-1 lg:gap-y-0">
+            <dt className="text-muted-foreground lg:text-xs">마감</dt>
+            <dd className="flex flex-wrap items-center gap-x-2 gap-y-1 lg:mt-1 lg:mb-4">
+              {closed ? (
+                // 이미 끝난 공고는 "마감 · 마감"으로 겹치지 않게 날짜와 함께 한 번만 적습니다
+                <span className="text-muted-foreground">
+                  {item.apply_end ? `${formatDateTime(item.apply_end)}에 마감됨` : '마감됨'}
+                </span>
+              ) : (
+                <>
+                  <DeadlineText item={item} />
+                  {item.apply_end && (
+                    <span className="text-muted-foreground">
+                      {formatDateTime(item.apply_end)}까지
+                    </span>
+                  )}
+                </>
+              )}
+              {item.deadline_conflict && <DeadlineConflictNote />}
+            </dd>
+            {item.apply_start && (
+              <>
+                <dt className="text-muted-foreground lg:text-xs">신청 시작</dt>
+                <dd className="lg:mt-1 lg:mb-4">{formatDateTime(item.apply_start)}</dd>
+              </>
             )}
-            {item.deadline_conflict && <DeadlineConflictNote />}
-          </dd>
-          {item.apply_start && (
-            <>
-              <dt className="flex items-center gap-1 text-muted-foreground">
-                <CalendarDays aria-hidden="true" className="size-4" />
-                신청 시작
-              </dt>
-              <dd>{formatDateTime(item.apply_start)}</dd>
-            </>
+            {item.benefit_amount_text && (
+              <>
+                <dt className="text-muted-foreground lg:text-xs">금액</dt>
+                <dd className="font-semibold break-keep lg:mt-1 lg:mb-4">
+                  {item.benefit_amount_text}
+                </dd>
+              </>
+            )}
+          </dl>
+          {item.deadline_conflict && (
+            <p className="mt-3 text-xs text-amber-800 lg:mt-0 lg:mb-4">
+              공지 제목과 본문의 마감일이 다릅니다. 원문에서 마감일을 확인하세요.
+            </p>
           )}
-          {item.benefit_amount_text && (
-            <>
-              <dt className="flex items-center gap-1 text-muted-foreground">
-                <Wallet aria-hidden="true" className="size-4" />
-                금액
-              </dt>
-              <dd>{item.benefit_amount_text}</dd>
-            </>
-          )}
-        </dl>
-        {item.deadline_conflict && (
-          <p className="mt-3 text-xs text-amber-800">
-            공지 제목과 본문의 마감일이 다릅니다. 원문에서 마감일을 확인하세요.
-          </p>
-        )}
-        <StateButtons id={item.id} bookmarked={item.bookmarked} applied={item.applied} />
-      </section>
-
-      <Checklist id={item.id} conditions={item.conditions} extra={item.extra_checks ?? []} />
-
-      <OtherNotes
-        // basic_items가 없는 backend(T43 이전) 응답이면 원문 목록을 요약 없이 보여 줍니다
-        basic={
-          item.basic_items ?? (item.basic_conditions ?? []).map((text) => ({ text, summary: null }))
-        }
-        notes={item.notes ?? []}
-      />
-
-      <Documents docs={item.required_documents} />
-
-      {/* 원문 공지도 다른 참고 상자처럼 상자 전체를 접어 둡니다. 펼치면 원문이 바로 보입니다. */}
-      <FoldSection
-        icon={<Megaphone aria-hidden="true" className="size-5 text-brand-700" />}
-        title="원문 공지"
-      >
-        {hasOriginal(item.notice) ? (
-          // 원문 링크는 공지 원문 상자 안(맨 아래)에 둡니다.
-          <p className="mt-3 break-all">{item.notice.title}</p>
-        ) : (
-          // 저장된 본문·첨부가 없으면 공지 원문 상자가 없으므로 제목을 원문 링크로 둡니다.
+          {/* 우리 서비스가 대신 신청하지 않으므로, 원문 공지에서 신청한 뒤 표시해 두는 용도입니다 */}
           <a
             href={item.notice.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 inline-flex items-start gap-1 break-all underline underline-offset-4"
+            className="mt-4 flex h-12 items-center justify-center gap-1.5 rounded-xl bg-primary text-[15px] font-bold text-primary-foreground transition-colors hover:bg-brand-600 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none lg:mt-1"
           >
-            {item.notice.title}
-            <ExternalLink aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+            원문 공지 보기
+            <ExternalLink aria-hidden="true" className="size-4" />
           </a>
-        )}
-        <p className="mt-1 text-xs text-muted-foreground">
-          게시일 {formatDate(item.notice.posted_at)}
-        </p>
-        <NoticeOriginal notice={item.notice} />
-        {item.siblings.length > 0 && (
-          <div className="mt-4">
-            <h3 className="font-medium">같은 공지의 다른 장학금</h3>
-            <ul className="mt-2 grid gap-1">
-              {item.siblings.map((sibling) => (
-                <li key={sibling.id}>
-                  <Link to={`/scholarships/${sibling.id}`} className="underline underline-offset-4">
-                    {sibling.display_name}
-                  </Link>
-                  {sibling.status === 'CLOSED' && (
-                    <span className="ml-1 text-xs text-muted-foreground">(마감)</span>
-                  )}
-                </li>
-              ))}
-            </ul>
+          <button
+            type="button"
+            aria-pressed={applied}
+            aria-label="신청 완료"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate({ id: item.id, applied: !applied })}
+            className={`mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-2 text-sm font-semibold transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
+              applied ? 'text-emerald-700' : 'text-foreground'
+            }`}
+          >
+            {applied ? (
+              <SquareCheckBig aria-hidden="true" className="size-5" />
+            ) : (
+              <Square aria-hidden="true" className="size-5 text-muted-foreground" />
+            )}
+            {applied ? '신청 완료했어요' : '신청 완료'}
+          </button>
+          <FormError
+            message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
+          />
+        </aside>
+
+        <div className="grid min-w-0 gap-4 lg:col-start-1">
+          {/* 좁은 화면에서 탭이 넘치면 옆으로 밀어 봅니다 */}
+          <div className="-mx-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="min-w-max">
+              <SegmentedTabs<DetailTab>
+                label="상세 내용"
+                options={tabs}
+                value={tab}
+                onChange={setTab}
+              />
+            </div>
           </div>
-        )}
-        <p className="mt-4 text-xs text-muted-foreground">
-          다른 게시판에도 같은 장학금이 있을 수 있습니다. 신청 전에 원문을 꼭 확인하세요.
-        </p>
-      </FoldSection>
+          <div role="tabpanel" aria-label={tabs.find((t) => t.value === tab)?.label}>
+            {tab === 'conditions' && (
+              <Checklist
+                id={item.id}
+                conditions={item.conditions}
+                extra={item.extra_checks ?? []}
+              />
+            )}
+            {tab === 'notes' && <OtherNotes basic={basic} notes={notes} />}
+            {tab === 'documents' && <Documents docs={docs} />}
+            {tab === 'notice' && (
+              <Panel title="원문 공지">
+                {hasOriginal(item.notice) ? (
+                  // 원문 링크는 공지 원문 상자 안(맨 아래)에 둡니다.
+                  <p className="mt-3 break-all">{item.notice.title}</p>
+                ) : (
+                  // 저장된 본문·첨부가 없으면 공지 원문 상자가 없으므로 제목을 원문 링크로 둡니다.
+                  <a
+                    href={item.notice.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-start gap-1 break-all underline underline-offset-4"
+                  >
+                    {item.notice.title}
+                    <ExternalLink aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+                  </a>
+                )}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  게시일 {formatDate(item.notice.posted_at)}
+                </p>
+                <NoticeOriginal notice={item.notice} />
+                {item.siblings.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="font-semibold">같은 공지의 다른 장학금</h3>
+                    <ul className="mt-2 grid gap-1">
+                      {item.siblings.map((sibling) => (
+                        <li key={sibling.id}>
+                          <Link
+                            to={`/scholarships/${sibling.id}`}
+                            className="underline underline-offset-4"
+                          >
+                            {sibling.display_name}
+                          </Link>
+                          {sibling.status === 'CLOSED' && (
+                            <span className="ml-1 text-xs text-muted-foreground">(마감)</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <p className="mt-4 text-xs text-muted-foreground">
+                  다른 게시판에도 같은 장학금이 있을 수 있습니다. 신청 전에 원문을 꼭 확인하세요.
+                </p>
+              </Panel>
+            )}
+          </div>
+        </div>
+      </div>
     </article>
   )
 }
@@ -215,8 +303,8 @@ function AskMark() {
 
 function SectionTitle({ title, help }: { title: string; help?: string }) {
   return (
-    <div className="mt-3 flex items-center gap-1">
-      <h3 className="text-sm font-semibold">{title}</h3>
+    <div className="mt-4 flex items-center gap-1">
+      <h3 className="text-[13px] font-semibold text-muted-foreground">{title}</h3>
       {help && <HelpIcon label={`${title} 도움말`} description={help} />}
     </div>
   )
@@ -239,11 +327,8 @@ function Checklist({
 }) {
   const mutation = useSetConditionAnswer()
   return (
-    <section className="rounded-xl border border-brand-200 bg-background p-3 sm:p-4">
-      <h2 className="flex items-center gap-1.5 font-semibold">
-        <ListChecks aria-hidden="true" className="size-5 text-brand-700" />
-        조건 확인
-      </h2>
+    <section className="surface p-5 sm:p-7">
+      <h2 className="text-base font-bold">조건 확인</h2>
       {conditions.length === 0 && extra.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">공지에 따로 적힌 지원 조건이 없습니다.</p>
       ) : (
@@ -251,12 +336,12 @@ function Checklist({
           {conditions.length > 0 && (
             <>
               <SectionTitle title="내 정보로 판정한 조건" />
-              <ul className="mt-3 grid gap-3" aria-label="조건 체크리스트">
+              <ul className="mt-3 grid gap-4" aria-label="조건 체크리스트">
                 {conditions.map((check) => (
                   <li key={check.condition} className="flex gap-3">
                     <Mark outcome={check.outcome} />
                     <div className="min-w-0 text-sm">
-                      <p className="font-medium">
+                      <p className="font-semibold">
                         {CONDITION_LABEL[check.condition]}
                         <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                           {OUTCOME[check.outcome].label}
@@ -280,14 +365,14 @@ function Checklist({
               </ul>
             </>
           )}
-          {conditions.length > 0 && extra.length > 0 && <hr className="mt-4 border-brand-100" />}
+          {conditions.length > 0 && extra.length > 0 && <hr className="mt-5 border-border" />}
           {extra.length > 0 && (
             <>
               <SectionTitle
                 title="직접 답하는 조건"
                 help="내 정보로는 판정할 수 없는 조건이에요. 아이콘을 누를 때마다 충족 → 불충족 → 모름으로 바뀌어요."
               />
-              <ul className="mt-3 grid gap-3" aria-label="직접 답하는 조건">
+              <ul className="mt-3 grid gap-4" aria-label="직접 답하는 조건">
                 {extra.map((check) => (
                   <li key={check.key} className="flex gap-3">
                     <button
@@ -303,7 +388,7 @@ function Checklist({
                       {check.answer ? <Mark outcome={ANSWER_OUTCOME[check.answer]} /> : <AskMark />}
                     </button>
                     <div className="min-w-0 text-sm">
-                      <p className="font-medium break-keep">
+                      <p className="font-semibold break-keep">
                         {extraTitle(check)}
                         <span
                           className={`ml-1.5 text-xs font-normal ${
@@ -350,7 +435,7 @@ function Evidence({ text, source }: { text: string; source: string | null }) {
       <summary className="w-fit cursor-pointer text-xs underline-offset-4 hover:underline">
         근거 보기
       </summary>
-      <blockquote className="mt-0.5 border-l-2 pl-2 break-keep">{text}</blockquote>
+      <blockquote className="mt-1 border-l-2 border-border pl-2.5 break-keep">{text}</blockquote>
       {source && <p className="mt-0.5 text-xs break-all">출처: {evidenceSourceLabel(source)}</p>}
     </details>
   )
@@ -390,7 +475,7 @@ function OriginalText({ text }: { text: string }) {
     <>
       <blockquote
         ref={ref}
-        className={`mt-0.5 border-l-2 pl-2 text-xs text-muted-foreground break-keep ${
+        className={`mt-1 border-l-2 border-border pl-2.5 text-xs text-muted-foreground break-keep ${
           expanded ? '' : 'line-clamp-2'
         }`}
       >
@@ -421,14 +506,10 @@ type BasicItem = ScholarshipDetail['basic_items'][number]
 function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
   if (basic.length === 0 && notes.length === 0) return null
   return (
-    <FoldSection
-      icon={<Info aria-hidden="true" className="size-5 text-brand-700" />}
-      title="함께 알아 둘 내용"
-      count={basic.length + notes.length}
-    >
+    <Panel title="함께 알아 둘 내용">
       {basic.length > 0 && (
         <>
-          <h3 className="mt-3 font-medium">지원 전 확인</h3>
+          <h3 className="mt-4 font-semibold">지원 전 확인</h3>
           <ul className="mt-1 list-disc space-y-1 pl-5 break-keep" aria-label="지원 전 확인">
             {basic.map(({ text, summary }) => (
               <li key={text}>
@@ -452,7 +533,7 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
       )}
       {notes.length > 0 && (
         <>
-          <h3 className="mt-3 font-medium">참고 안내</h3>
+          <h3 className="mt-4 font-semibold">참고 안내</h3>
           <ul
             className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground break-keep"
             aria-label="참고 안내"
@@ -463,41 +544,17 @@ function OtherNotes({ basic, notes }: { basic: BasicItem[]; notes: string[] }) {
           </ul>
         </>
       )}
-    </FoldSection>
+    </Panel>
   )
 }
 
-/**
- * 판정에 쓰지 않는 참고 상자(함께 알아 둘 내용, 제출 서류, 원문 공지). 처음에는 제목과 항목 수만
- * 보이고, 제목을 누르면 펼칩니다. 판정 체크리스트 아래가 길어지지 않게 하기 위함입니다.
- * 항목을 셀 수 없는 상자(원문 공지)는 count를 주지 않습니다.
- */
-function FoldSection({
-  icon,
-  title,
-  count,
-  children,
-}: {
-  icon: ReactNode
-  title: string
-  count?: number
-  children: ReactNode
-}) {
+/** 탭 하나의 내용 상자(함께 알아 둘 내용, 제출 서류, 원문 공지). 판정에 쓰지 않는 참고 내용입니다. */
+function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <details className="group rounded-xl border border-brand-200 bg-background p-3 sm:p-4 text-sm">
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-sm font-semibold focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
-        {icon}
-        <h2>{title}</h2>
-        {count !== undefined && (
-          <span className="text-xs font-normal text-muted-foreground">{count}개</span>
-        )}
-        <ChevronDown
-          aria-hidden="true"
-          className="ml-auto size-5 text-muted-foreground transition-transform group-open:rotate-180"
-        />
-      </summary>
+    <section className="surface px-5 py-5 text-sm sm:px-7 sm:py-6">
+      <h2 className="text-base font-bold">{title}</h2>
       {children}
-    </details>
+    </section>
   )
 }
 
@@ -516,29 +573,25 @@ function Documents({ docs }: { docs: string[] }) {
     </ul>
   )
   return (
-    <FoldSection
-      icon={<FileText aria-hidden="true" className="size-5 text-brand-700" />}
-      title="제출 서류"
-      count={docs.length}
-    >
+    <Panel title="제출 서류">
       {common.length > 0 && conditional.length > 0 ? (
         <>
-          <h3 className="mt-3 font-medium">공통 서류</h3>
+          <h3 className="mt-4 font-semibold">공통 서류</h3>
           {list(common, '공통 서류')}
-          <h3 className="mt-3 font-medium">해당자 추가 서류</h3>
+          <h3 className="mt-4 font-semibold">해당자 추가 서류</h3>
           {list(conditional, '해당자 추가 서류', true)}
         </>
       ) : (
         // 한쪽만 있으면 나누지 않고 원문 그대로 보여 줍니다.
         list(docs, '제출 서류')
       )}
-    </FoldSection>
+    </Panel>
   )
 }
 
 /**
  * 공지 원문 (7.1): 수집 때 저장한 본문과 첨부파일 목록을 같은 페이지에서 봅니다.
- * 따로 접지 않고, 원문 공지 상자를 펼치면 함께 보입니다. 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다. 첨부 내용은 PDF 추출 글자라
+ * 원문 공지 탭에서 접지 않고 그대로 보여 줍니다. 서버가 HTML이 아닌 평문을 주므로 그대로 텍스트로 보여 줍니다. 첨부 내용은 PDF 추출 글자라
  * 읽기 어려워 보여 주지 않고, 파일 이름과 내려받기만 둡니다.
  */
 function hasOriginal(notice: ScholarshipDetail['notice']) {
@@ -552,7 +605,7 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
     <div
       role="region"
       aria-label="공지 원문"
-      className="mt-3 grid max-h-[70vh] gap-4 overflow-y-auto rounded-lg border bg-muted/30 p-3"
+      className="mt-3 grid gap-4 rounded-xl border border-border bg-canvas/70 p-4"
     >
       {hasBody && (
         <p className="text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap">
@@ -567,7 +620,10 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
               key={`${file.url}#${file.name}`}
               className="flex items-start gap-1.5 text-sm break-all"
             >
-              <FileText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-700" />
+              <FileText
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              />
               <span className="min-w-0">
                 {file.name}{' '}
                 <a
@@ -599,69 +655,13 @@ function NoticeOriginal({ notice }: { notice: ScholarshipDetail['notice'] }) {
   )
 }
 
-/**
- * 관심(하트)과 신청 완료 버튼. 관심과 신청 완료는 서로 영향을 주지 않고 따로 켜고 끕니다 (T71).
- * 두 버튼 모두 누르면 바로 반영되고(optimistic update), 실패하면 되돌아가며 오류를 보여 줍니다.
- * 우리 서비스가 대신 신청하지 않으므로, 신청 완료는 원문 공지에서 신청한 뒤 표시해 두는 용도입니다.
- */
-function StateButtons({
-  id,
-  bookmarked,
-  applied,
-}: {
-  id: number
-  bookmarked: boolean
-  applied: boolean
-}) {
-  const mutation = useSetScholarshipState(id)
-  const AppliedIcon = applied ? SquareCheckBig : Square
-  return (
-    <div className="mt-5 grid gap-1.5">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-pressed={bookmarked}
-          aria-label={bookmarked ? '관심 해제' : '관심'}
-          title={bookmarked ? '관심 해제' : '관심'}
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate({ id, bookmarked: !bookmarked })}
-          className={`grid size-11 shrink-0 place-items-center rounded-xl border transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
-            bookmarked
-              ? 'border-rose-200 bg-rose-50 text-rose-500 hover:bg-rose-100'
-              : 'border-brand-200 bg-white text-rose-500 hover:border-rose-200 hover:bg-rose-50'
-          }`}
-        >
-          <Heart aria-hidden="true" className={`size-5 ${bookmarked ? 'fill-current' : ''}`} />
-        </button>
-        <button
-          type="button"
-          aria-pressed={applied}
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate({ id, applied: !applied })}
-          className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${
-            applied
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-              : 'border-brand-200 bg-white text-foreground hover:border-brand-400 hover:bg-brand-50'
-          }`}
-        >
-          <AppliedIcon aria-hidden="true" className="size-5" />
-          신청 완료
-        </button>
-      </div>
-      <FormError
-        message={mutation.isError ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null}
-      />
-    </div>
-  )
-}
-
 function BackLink() {
   const navigate = useNavigate()
   return (
     <button
       type="button"
       onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/dashboard'))}
-      className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      className="inline-flex w-fit items-center gap-1 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <ArrowLeft aria-hidden="true" className="size-4" />
       목록으로
@@ -671,9 +671,12 @@ function BackLink() {
 
 function NotFound() {
   return (
-    <div className="rounded-xl border border-brand-200 bg-background p-6 text-center text-sm">
+    <div className="surface mx-auto max-w-3xl p-8 text-center text-sm">
       <p className="text-muted-foreground">장학금을 찾을 수 없습니다.</p>
-      <Link to="/dashboard" className="mt-3 inline-block underline underline-offset-4">
+      <Link
+        to="/dashboard"
+        className="mt-3 inline-block font-semibold text-brand-800 underline underline-offset-4"
+      >
         목록으로
       </Link>
     </div>
@@ -683,9 +686,9 @@ function NotFound() {
 function DetailSkeleton() {
   return (
     <div className="grid gap-4" aria-busy="true" aria-label="불러오는 중">
-      <div className="h-5 w-20 animate-pulse rounded bg-muted" />
-      <div className="h-56 animate-pulse rounded-xl bg-muted/60" />
-      <div className="h-40 animate-pulse rounded-xl bg-muted/60" />
+      <div className="h-5 w-20 animate-pulse rounded bg-foreground/[0.06]" />
+      <div className="h-56 animate-pulse rounded-2xl bg-foreground/[0.06]" />
+      <div className="h-40 animate-pulse rounded-2xl bg-foreground/[0.06]" />
     </div>
   )
 }

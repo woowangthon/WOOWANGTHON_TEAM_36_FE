@@ -180,8 +180,8 @@ export default function SignupPage() {
               {sent === null ? (
                 <Button
                   type="button"
-                  size="lg"
                   variant="outline"
+                  className="h-11"
                   onClick={requestCode}
                   disabled={sendCode.isPending}
                 >
@@ -189,7 +189,7 @@ export default function SignupPage() {
                 </Button>
               ) : (
                 !verified && (
-                  <Button type="button" size="lg" variant="ghost" onClick={() => restart()}>
+                  <Button type="button" variant="ghost" className="h-11" onClick={() => restart()}>
                     이메일 바꾸기
                   </Button>
                 )
@@ -199,10 +199,10 @@ export default function SignupPage() {
           {alreadyRegistered ? (
             <p
               role="alert"
-              className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              className="rounded-xl bg-destructive/8 px-3.5 py-2.5 text-sm text-destructive"
             >
               이미 가입된 이메일이에요.{' '}
-              <Link to="/login" className="font-medium underline underline-offset-4">
+              <Link to="/login" className="font-semibold underline underline-offset-4">
                 로그인
               </Link>
               해 주세요.
@@ -236,8 +236,8 @@ export default function SignupPage() {
                   />
                   <Button
                     type="button"
-                    size="lg"
                     variant="outline"
+                    className="h-11"
                     onClick={checkCode}
                     disabled={verify.isPending || expired}
                   >
@@ -301,13 +301,13 @@ export default function SignupPage() {
             {signup.isPending ? '가입 중…' : '가입하기'}
           </Button>
         </form>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs leading-relaxed break-keep text-muted-foreground">
           비밀번호를 잊으면 같은 이메일의 Google 계정으로만 되찾을 수 있으니, Gmail 주소로 가입하는
           것을 권합니다.
         </p>
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="border-t border-border pt-4 text-center text-sm text-muted-foreground">
           이미 계정이 있나요?{' '}
-          <Link to="/login" className="font-medium text-foreground underline underline-offset-4">
+          <Link to="/login" className="font-semibold text-foreground underline underline-offset-4">
             로그인
           </Link>
         </p>

@@ -8,14 +8,14 @@ export function PasswordInput(props: Omit<React.ComponentProps<'input'>, 'type'>
   const [visible, setVisible] = useState(false)
   return (
     <div className="relative">
-      <Input {...props} type={visible ? 'text' : 'password'} className="pr-10" />
+      <Input {...props} type={visible ? 'text' : 'password'} className="pr-11" />
       <button
         type="button"
         aria-label={visible ? '비밀번호 숨기기' : '비밀번호 보기'}
         aria-pressed={visible}
         disabled={props.disabled}
         onClick={() => setVisible((v) => !v)}
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50"
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
       >
         {visible ? (
           <EyeOff aria-hidden="true" className="size-4" />

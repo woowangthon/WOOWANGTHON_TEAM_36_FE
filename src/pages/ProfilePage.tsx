@@ -62,7 +62,7 @@ export default function ProfilePage() {
 function BackToList({ dirty }: { dirty: boolean }) {
   const navigate = useNavigate()
   const className =
-    'inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-800'
+    'inline-flex w-fit items-center gap-1 rounded-md text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
   const label = (
     <>
       <ArrowLeft className="size-4" aria-hidden="true" />내 정보로
@@ -149,14 +149,14 @@ function ProfileForm({
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={onSubmit} className="grid gap-6" noValidate>
+      <form onSubmit={onSubmit} className="grid gap-7" noValidate>
         {initial && initial.name == null && (
-          <p role="status" className="rounded-md border bg-muted px-3 py-2 text-sm">
+          <p role="status" className="rounded-xl bg-muted px-3.5 py-2.5 text-sm break-keep">
             이름 대신 닉네임을 쓰도록 바뀌었어요. 닉네임을 정하고 저장해 주세요.
           </p>
         )}
         <section className="grid gap-4">
-          <h2 className="text-sm font-semibold">기본 정보</h2>
+          <h2 className="text-base font-bold">기본 정보</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               id="name"
@@ -280,19 +280,25 @@ function ProfileForm({
         </section>
 
         {noGrades ? (
-          <section className="grid gap-1" aria-labelledby="grades-heading">
-            <h2 id="grades-heading" className="text-sm font-semibold">
+          <section
+            className="grid gap-1.5 border-t border-border pt-7"
+            aria-labelledby="grades-heading"
+          >
+            <h2 id="grades-heading" className="text-base font-bold">
               성적
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[13px] break-keep text-muted-foreground">
               이수학기가 0이면 아직 성적이 없어 입력하지 않아요. 성적 조건이 있는 장학금은
               &lsquo;확인 필요&rsquo;로 보이니, 신입생 성적 기준은 공지 원문을 확인하세요.
             </p>
           </section>
         ) : (
-          <section className="grid gap-4" aria-labelledby="grades-heading">
+          <section
+            className="grid gap-4 border-t border-border pt-7"
+            aria-labelledby="grades-heading"
+          >
             <div className="flex items-center gap-1">
-              <h2 id="grades-heading" className="text-sm font-semibold">
+              <h2 id="grades-heading" className="text-base font-bold">
                 {priorGrades ? '전 학교 성적' : '성적'}
               </h2>
               <HelpIcon
@@ -305,7 +311,7 @@ function ProfileForm({
               />
             </div>
             {priorGrades && (
-              <p className="text-xs text-muted-foreground">
+              <p className="-mt-2 text-[13px] break-keep text-muted-foreground">
                 편입 첫 학기에는 편입 전 학교 성적으로 판정해요. 4.5 만점이 아니면 4.5 만점으로 바꿔
                 적어 주세요.
               </p>
@@ -357,10 +363,10 @@ function ProfileForm({
           </section>
         )}
 
-        <section className="grid gap-4 border-t pt-5">
+        <section className="grid gap-4 border-t border-border pt-7">
           <div>
-            <h2 className="text-sm font-semibold">선택 정보</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h2 className="text-base font-bold">선택 정보</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">
               비워 두면 해당 조건은 &lsquo;확인 필요&rsquo;로 표시됩니다.
             </p>
           </div>
@@ -424,7 +430,10 @@ function ProfileForm({
             ) : (
               <p className="text-xs text-muted-foreground">
                 장애·보훈은 민감정보라 따로 동의해야 입력할 수 있습니다.{' '}
-                <Link to="/consent" className="underline underline-offset-4">
+                <Link
+                  to="/consent"
+                  className="font-semibold text-foreground underline underline-offset-4 whitespace-nowrap"
+                >
                   동의 화면으로
                 </Link>
               </p>
@@ -438,7 +447,13 @@ function ProfileForm({
         </section>
 
         <FormError message={serverMessage ?? save.error?.message} />
-        <Button type="submit" size="lg" disabled={save.isPending}>
+        {/* 넓은 화면에서는 칸 전체를 채우지 않고 오른쪽 아래에 알맞은 크기로 둡니다. 휴대폰은 가득 채웁니다. */}
+        <Button
+          type="submit"
+          size="lg"
+          disabled={save.isPending}
+          className="rounded-xl sm:min-w-56 sm:justify-self-end sm:px-8"
+        >
           {save.isPending ? '저장 중…' : '저장하고 장학금 보기'}
         </Button>
       </form>
@@ -453,11 +468,14 @@ function AccountActions({ me }: { me: Me }) {
   const toLogin = () => navigate('/login?withdrawn=1', { replace: true })
 
   return (
-    <section className="mt-8 grid gap-3 border-t pt-5">
-      <h2 className="text-sm font-semibold">계정</h2>
-      <p className="text-xs text-muted-foreground">{me.email}</p>
+    <section className="mt-10 grid gap-5 border-t border-border pt-7">
+      <div>
+        <h2 className="text-base font-bold">계정</h2>
+        <p className="mt-1 text-sm break-all text-muted-foreground">{me.email}</p>
+      </div>
       <NotificationToggle me={me} />
-      <div className="flex flex-wrap gap-2">
+      <PasswordChange me={me} />
+      <div className="flex flex-wrap gap-2 border-t border-border pt-5">
         {me.sensitive_agreed && (
           <ConfirmDialog
             trigger={<Button variant="outline">민감정보 동의 철회</Button>}
@@ -478,7 +496,6 @@ function AccountActions({ me }: { me: Me }) {
         />
       </div>
       <FormError message={withdraw.error?.message ?? deleteAccount.error?.message} />
-      <PasswordChange me={me} />
     </section>
   )
 }

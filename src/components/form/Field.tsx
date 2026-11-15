@@ -41,7 +41,7 @@ export function Field({ id, label, labelAction, error, hint, optional, children 
 export function FormError({ message }: { message?: string | null }) {
   if (!message) return null
   return (
-    <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+    <p role="alert" className="rounded-xl bg-destructive/8 px-3.5 py-2.5 text-sm text-destructive">
       {message}
     </p>
   )
