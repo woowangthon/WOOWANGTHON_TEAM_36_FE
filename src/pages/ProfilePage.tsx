@@ -502,6 +502,15 @@ function AccountActions({ me }: { me: Me }) {
         />
       </div>
       <FormError message={withdraw.error?.message ?? deleteAccount.error?.message} />
+      {/* 같은 탭으로 이동하면 입력하던 프로필 폼이 사라지므로 동의 화면처럼 새 탭으로 엽니다. */}
+      <Link
+        to="/privacy"
+        target="_blank"
+        rel="noreferrer"
+        className="w-fit text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+      >
+        개인정보처리방침
+      </Link>
     </section>
   )
 }

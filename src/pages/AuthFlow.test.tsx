@@ -437,6 +437,20 @@ describe('프로필 화면', () => {
     expect(screen.queryByText('내 정보로')).not.toBeInTheDocument()
   })
 
+  it('계정 칸에서 개인정보처리방침을 새 탭으로 연다 (입력하던 폼 유지)', async () => {
+    server.use(
+      http.get('/api/profile', () =>
+        HttpResponse.json({ detail: '프로필을 입력하세요' }, { status: 404 }),
+      ),
+    )
+    renderApp('/profile')
+    await screen.findByRole('heading', { name: '프로필 입력' })
+    const account = screen.getByRole('heading', { name: '계정' }).closest('section')!
+    const link = within(account).getByRole('link', { name: '개인정보처리방침' })
+    expect(link).toHaveAttribute('href', '/privacy')
+    expect(link).toHaveAttribute('target', '_blank')
+  })
+
   it('필수 항목과 범위를 검증한다', async () => {
     server.use(
       http.get('/api/profile', () =>
