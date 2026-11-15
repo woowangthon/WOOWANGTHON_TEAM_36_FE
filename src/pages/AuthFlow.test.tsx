@@ -372,6 +372,42 @@ describe('라우팅 가드', () => {
   })
 })
 
+describe('동의 화면', () => {
+  it('동의 전이면 이전 버튼이 로그아웃하고 로그인 화면으로 보낸다', async () => {
+    let loggedOut = false
+    server.use(
+      http.get('/api/auth/me', () =>
+        loggedOut
+          ? HttpResponse.json({ detail: '로그인이 필요합니다' }, { status: 401 })
+          : HttpResponse.json({
+              id: 1,
+              email: 'g@gmail.com',
+              privacy_agreed: false,
+              sensitive_agreed: false,
+              profile_completed: false,
+              is_admin: false,
+              google_linked: true,
+              has_password: false,
+            }),
+      ),
+      http.post('/api/auth/logout', () => {
+        loggedOut = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const app = renderApp('/consent')
+    fireEvent.click(await screen.findByRole('button', { name: '로그인 화면으로' }))
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(app.path()).toBe('/login')
+  })
+
+  it('이미 동의했으면 이전 버튼으로 프로필에 돌아간다', async () => {
+    const app = renderApp('/consent')
+    fireEvent.click(await screen.findByRole('link', { name: '프로필로' }))
+    await waitFor(() => expect(app.path()).toBe('/profile'))
+  })
+})
+
 describe('프로필 화면', () => {
   it('수정 화면에서 이전 버튼으로 내 정보에 돌아간다', async () => {
     const app = renderApp('/profile')

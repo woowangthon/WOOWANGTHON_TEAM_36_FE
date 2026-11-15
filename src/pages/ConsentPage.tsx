@@ -1,7 +1,8 @@
+import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import { nextPathFor, useConsent, useMe } from '@/api/hooks/auth'
+import { nextPathFor, useConsent, useLogout, useMe } from '@/api/hooks/auth'
 import { AuthLayout } from '@/components/auth/AuthLayout'
 import { FormError } from '@/components/form/Field'
 import { Button } from '@/components/ui/button'
@@ -27,6 +28,7 @@ export default function ConsentPage() {
     <AuthLayout
       title="개인정보 수집·이용 동의"
       description="맞춤 장학금 판정에 필요한 정보만 받습니다."
+      back={<BackLink agreed={me?.privacy_agreed ?? false} />}
     >
       <form onSubmit={submit} className="grid gap-4">
         <section className="rounded-xl border border-border p-4 sm:p-5">
@@ -100,5 +102,35 @@ export default function ConsentPage() {
         </Button>
       </form>
     </AuthLayout>
+  )
+}
+
+// 이전 버튼. 이미 동의한 사용자(프로필에서 민감정보 동의하러 온 경우)는 프로필로 돌아갑니다.
+// 아직 동의하지 않았으면 가드가 다시 /consent로 보내므로, 로그아웃하고 로그인 화면으로 갑니다.
+function BackLink({ agreed }: { agreed: boolean }) {
+  const navigate = useNavigate()
+  const logout = useLogout()
+  const className =
+    'inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-brand-800 disabled:opacity-50'
+  if (agreed) {
+    return (
+      <Link to="/profile" className={className}>
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        프로필로
+      </Link>
+    )
+  }
+  return (
+    <button
+      type="button"
+      className={className}
+      disabled={logout.isPending}
+      onClick={() =>
+        logout.mutate(undefined, { onSuccess: () => navigate('/login', { replace: true }) })
+      }
+    >
+      <ArrowLeft className="size-4" aria-hidden="true" />
+      로그인 화면으로
+    </button>
   )
 }
