@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router'
 
 import { nextPathFor, useConsent, useLogout, useMe } from '@/api/hooks/auth'
 import { AuthLayout } from '@/components/auth/AuthLayout'
+import { SensitiveConsentDetail } from '@/components/auth/SensitiveConsentDetail'
 import { FormError } from '@/components/form/Field'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/input'
@@ -71,18 +72,10 @@ export default function ConsentPage() {
               [선택] 민감정보 수집·이용에 동의합니다
             </span>
           </label>
-          <ul
+          <SensitiveConsentDetail
             id="sensitive-detail"
             className="mt-3 grid gap-1.5 pl-[1.875rem] text-[13px] leading-relaxed break-keep text-muted-foreground"
-          >
-            <li>항목: 특수자격(다자녀·보훈·장애)</li>
-            <li>목적: 해당 자격 전용 장학금 판정</li>
-            <li>
-              동의하지 않아도 서비스를 쓸 수 있고, 특수자격 조건은 &lsquo;확인 필요&rsquo;로
-              표시됩니다.
-            </li>
-            <li>프로필 화면에서 언제든 철회할 수 있으며, 철회하면 값을 즉시 삭제합니다.</li>
-          </ul>
+          />
         </section>
 
         <p className="text-[13px] break-keep text-muted-foreground">
