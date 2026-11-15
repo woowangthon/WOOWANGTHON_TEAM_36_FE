@@ -176,6 +176,40 @@ export const handlers: RequestHandler[] = [
       expires_in: 1800,
     } satisfies Schemas['SignupVerifyResponse'])
   }),
+  // 비밀번호 찾기: 목에서는 mockMe의 이메일만 가입된 것으로 봅니다.
+  http.post('/api/auth/password-reset/code', async ({ request }) => {
+    const { email } = (await request.json()) as Schemas['PasswordResetCodeRequest']
+    const normalized = email.trim().toLowerCase()
+    if (normalized !== mockMe.email) {
+      return HttpResponse.json({ detail: '가입되지 않은 이메일입니다' }, { status: 404 })
+    }
+    return HttpResponse.json({
+      code_token: `mock-reset-code:${normalized}`,
+      expires_in: 600,
+      resend_after: 60,
+    } satisfies Schemas['SignupCodeResponse'])
+  }),
+  http.post('/api/auth/password-reset/verify', async ({ request }) => {
+    const body = (await request.json()) as Schemas['SignupVerifyRequest']
+    if (!body.code_token.startsWith('mock-reset-code:')) {
+      return HttpResponse.json({ detail: '이메일 인증을 처음부터 다시 해 주세요' }, { status: 400 })
+    }
+    if (body.code !== MOCK_SIGNUP_CODE) {
+      return HttpResponse.json({ detail: '인증번호가 맞지 않아요' }, { status: 400 })
+    }
+    return HttpResponse.json({
+      reset_token: `mock-reset:${body.code_token.slice('mock-reset-code:'.length)}`,
+      expires_in: 1800,
+    } satisfies Schemas['PasswordResetVerifyResponse'])
+  }),
+  http.post('/api/auth/password-reset', async ({ request }) => {
+    const body = (await request.json()) as Schemas['PasswordResetRequest']
+    if (!body.reset_token.startsWith('mock-reset:')) {
+      return HttpResponse.json({ detail: '이메일 인증을 처음부터 다시 해 주세요' }, { status: 400 })
+    }
+    me = { ...mockMe, has_password: true }
+    return HttpResponse.json(me)
+  }),
   http.post('/api/auth/signup', async ({ request }) => {
     const body = (await request.json()) as Schemas['SignupRequest']
     if (!body.signup_token.startsWith('mock-signup:')) {

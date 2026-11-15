@@ -101,6 +101,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/password-reset/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Password Reset Code
+         * @description 비밀번호 찾기 1단계: 가입한 이메일로 인증번호 메일을 보냅니다(7.3).
+         *
+         *     가입 여부는 회원가입 화면(409)에서도 알 수 있으므로, 가입하지 않은 이메일은 404로 알립니다.
+         */
+        post: operations["password_reset_code_auth_password_reset_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Password Reset Verify
+         * @description 비밀번호 찾기 2단계: 번호가 맞으면 30분 동안 새 비밀번호를 정할 수 있는 토큰을 줍니다.
+         */
+        post: operations["password_reset_verify_auth_password_reset_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Password Reset
+         * @description 비밀번호 찾기 3단계: 새 비밀번호로 바꾸고 다른 기기 로그인을 끊습니다. 이 기기는 로그인.
+         */
+        post: operations["password_reset_auth_password_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/logout": {
         parameters: {
             query?: never;
@@ -745,6 +807,31 @@ export interface components {
             new_password: string;
         };
         /**
+         * PasswordResetCodeRequest
+         * @description 비밀번호 찾기 1단계: 가입한 이메일로 인증번호 받기 (7.3).
+         */
+        PasswordResetCodeRequest: {
+            /** Email */
+            email: string;
+        };
+        /**
+         * PasswordResetRequest
+         * @description 비밀번호 찾기 3단계: 확인된 이메일(`reset_token`)의 새 비밀번호. 규칙은 가입과 같습니다.
+         */
+        PasswordResetRequest: {
+            /** Reset Token */
+            reset_token: string;
+            /** New Password */
+            new_password: string;
+        };
+        /** PasswordResetVerifyResponse */
+        PasswordResetVerifyResponse: {
+            /** Reset Token */
+            reset_token: string;
+            /** Expires In */
+            expires_in: number;
+        };
+        /**
          * Profile
          * @description GET 응답·판정용. 선택 항목의 null은 '입력 안 함·모름'입니다.
          */
@@ -1386,6 +1473,147 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    password_reset_code_auth_password_reset_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignupCodeResponse"];
+                };
+            };
+            /** @description 가입되지 않은 이메일 */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 발송 제한 초과 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 메일 발송 실패 */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    password_reset_verify_auth_password_reset_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetVerifyResponse"];
+                };
+            };
+            /** @description 인증번호 불일치·만료 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description 확인 시도 제한 초과 */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    password_reset_auth_password_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description 인증이 만료됐거나 유효하지 않음 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
