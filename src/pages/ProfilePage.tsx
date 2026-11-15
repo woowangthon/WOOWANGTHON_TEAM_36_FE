@@ -453,12 +453,12 @@ function ProfileForm({
         </section>
 
         <FormError message={serverMessage ?? save.error?.message} />
-        {/* 넓은 화면에서는 칸 전체를 채우지 않고 오른쪽 아래에 알맞은 크기로 둡니다. 휴대폰은 가득 채웁니다. */}
+        {/* 넓은 화면에서는 칸 전체를 채우지 않고 가운데에 알맞은 크기로 둡니다. 휴대폰은 가득 채웁니다. */}
         <Button
           type="submit"
           size="lg"
           disabled={save.isPending}
-          className="rounded-xl sm:min-w-56 sm:justify-self-end sm:px-8"
+          className="rounded-xl sm:min-w-64 sm:justify-self-center sm:px-8"
         >
           {save.isPending ? '저장 중…' : '저장하고 장학금 보기'}
         </Button>
@@ -474,43 +474,74 @@ function AccountActions({ me }: { me: Me }) {
   const toLogin = () => navigate('/login?withdrawn=1', { replace: true })
 
   return (
-    <section className="mt-10 grid gap-5 border-t border-border pt-7">
-      <div>
-        <h2 className="text-base font-bold">계정</h2>
-        <p className="mt-1 text-sm break-all text-muted-foreground">{me.email}</p>
+    // 이메일·알림·비밀번호는 설정 목록처럼 한 상자에 한 줄씩 두고,
+    // 되돌리기 어려운 동의 철회·탈퇴는 상자 밖 아래에 작게 둡니다.
+    <section
+      aria-labelledby="account-heading"
+      className="mt-10 grid gap-3 border-t border-border pt-7"
+    >
+      <h2 id="account-heading" className="text-base font-bold">
+        계정
+      </h2>
+      <div className="divide-y divide-border rounded-xl border border-border">
+        <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+          <span className="shrink-0 text-sm font-semibold">이메일</span>
+          <span className="min-w-0 text-right text-sm break-all text-muted-foreground">
+            {me.email}
+          </span>
+        </div>
+        <div className="px-4 py-3.5">
+          <NotificationToggle me={me} />
+        </div>
+        <div className="px-4 py-3.5">
+          <PasswordChange me={me} />
+        </div>
       </div>
-      <NotificationToggle me={me} />
-      <PasswordChange me={me} />
-      <div className="flex flex-wrap gap-2 border-t border-border pt-5">
-        {me.sensitive_agreed && (
+      {/* 상자 아래 한 줄: 왼쪽에 개인정보처리방침, 오른쪽에 동의 철회·탈퇴 */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* 같은 탭으로 이동하면 입력하던 프로필 폼이 사라지므로 동의 화면처럼 새 탭으로 엽니다. */}
+        <Link
+          to="/privacy"
+          target="_blank"
+          rel="noreferrer"
+          className="w-fit rounded-md px-1 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          개인정보처리방침
+        </Link>
+        <div className="flex flex-wrap items-center gap-1">
+          {me.sensitive_agreed && (
+            <ConfirmDialog
+              trigger={
+                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                  민감정보 동의 철회
+                </Button>
+              }
+              title="민감정보 동의를 철회할까요?"
+              description="입력한 특수자격(다자녀·보훈·장애)을 즉시 삭제합니다. 다시 동의하면 새로 입력할 수 있습니다."
+              confirmLabel="철회"
+              pending={withdraw.isPending}
+              onConfirm={() => withdraw.mutate()}
+            />
+          )}
           <ConfirmDialog
-            trigger={<Button variant="outline">민감정보 동의 철회</Button>}
-            title="민감정보 동의를 철회할까요?"
-            description="입력한 특수자격(다자녀·보훈·장애)을 즉시 삭제합니다. 다시 동의하면 새로 입력할 수 있습니다."
-            confirmLabel="철회"
-            pending={withdraw.isPending}
-            onConfirm={() => withdraw.mutate()}
+            trigger={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                회원 탈퇴
+              </Button>
+            }
+            title="정말 탈퇴할까요?"
+            description="계정·프로필·관심/신청완료 기록을 즉시 삭제하며 되돌릴 수 없습니다."
+            confirmLabel="탈퇴"
+            pending={deleteAccount.isPending}
+            onConfirm={() => deleteAccount.mutate(undefined, { onSuccess: toLogin })}
           />
-        )}
-        <ConfirmDialog
-          trigger={<Button variant="destructive">회원 탈퇴</Button>}
-          title="정말 탈퇴할까요?"
-          description="계정·프로필·관심/신청완료 기록을 즉시 삭제하며 되돌릴 수 없습니다."
-          confirmLabel="탈퇴"
-          pending={deleteAccount.isPending}
-          onConfirm={() => deleteAccount.mutate(undefined, { onSuccess: toLogin })}
-        />
+        </div>
       </div>
       <FormError message={withdraw.error?.message ?? deleteAccount.error?.message} />
-      {/* 같은 탭으로 이동하면 입력하던 프로필 폼이 사라지므로 동의 화면처럼 새 탭으로 엽니다. */}
-      <Link
-        to="/privacy"
-        target="_blank"
-        rel="noreferrer"
-        className="w-fit text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-      >
-        개인정보처리방침
-      </Link>
     </section>
   )
 }
