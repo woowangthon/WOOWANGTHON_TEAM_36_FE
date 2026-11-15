@@ -28,19 +28,39 @@ export function PasswordChange({ me }: { me: Me }) {
   const [open, setOpen] = useState(false)
   const [done, setDone] = useState(false)
 
-  if (!me.has_password) {
-    return (
-      <p className="text-[13px] text-muted-foreground">Google 계정으로 로그인하는 계정이에요</p>
-    )
-  }
+  // 계정 상자의 한 줄: 왼쪽에 이름과 설명, 오른쪽에 변경 버튼. 누르면 줄 아래에 폼이 펼쳐집니다.
   return (
     <div className="grid gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">비밀번호</p>
+          <p className="mt-0.5 text-[13px] break-keep text-muted-foreground">
+            {me.has_password
+              ? '바꾸면 다른 기기에서는 다시 로그인해야 해요'
+              : 'Google 계정으로 로그인하는 계정이에요'}
+          </p>
+        </div>
+        {me.has_password && !open && (
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="비밀번호 변경"
+            className="shrink-0"
+            onClick={() => {
+              setDone(false)
+              setOpen(true)
+            }}
+          >
+            변경
+          </Button>
+        )}
+      </div>
       {done && (
         <p role="status" className="rounded-xl bg-muted px-3.5 py-2.5 text-sm break-keep">
           비밀번호를 바꿨어요. 다른 기기에서는 다시 로그인해야 해요
         </p>
       )}
-      {open ? (
+      {open && (
         <PasswordChangeForm
           onCancel={() => setOpen(false)}
           onDone={() => {
@@ -48,17 +68,6 @@ export function PasswordChange({ me }: { me: Me }) {
             setDone(true)
           }}
         />
-      ) : (
-        <Button
-          variant="outline"
-          className="justify-self-start"
-          onClick={() => {
-            setDone(false)
-            setOpen(true)
-          }}
-        >
-          비밀번호 변경
-        </Button>
       )}
     </div>
   )

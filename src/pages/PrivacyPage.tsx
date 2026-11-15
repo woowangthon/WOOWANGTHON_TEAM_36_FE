@@ -1,3 +1,6 @@
+import { ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router'
+
 import { AuthLayout } from '@/components/auth/AuthLayout'
 
 // 개인정보처리방침 (계획서 4.2). 로그인 없이 볼 수 있는 정적 페이지이며 Google OAuth 동의 화면에도 링크합니다.
@@ -93,7 +96,12 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
 
 export default function PrivacyPage() {
   return (
-    <AuthLayout title="개인정보처리방침" description={`시행일 ${UPDATED_AT}`} wide>
+    <AuthLayout
+      title="개인정보처리방침"
+      description={`시행일 ${UPDATED_AT}`}
+      wide
+      back={<BackButton />}
+    >
       <article className="grid gap-7 text-sm leading-relaxed break-keep">
         {SECTIONS.map((section) => (
           <section key={section.title}>
@@ -103,5 +111,32 @@ export default function PrivacyPage() {
         ))}
       </article>
     </AuthLayout>
+  )
+}
+
+/**
+ * 이전 버튼. 동의·프로필 화면은 이 페이지를 새 탭으로 열므로(입력하던 폼 유지) 그때는 탭을 닫아
+ * 원래 화면으로 돌아갑니다. 같은 탭에서 들어왔으면 뒤로 가고, 탭을 닫지 못하면 홈으로 갑니다.
+ */
+function BackButton() {
+  const navigate = useNavigate()
+  const goBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    window.close()
+    // 브라우저가 탭 닫기를 막으면 이 화면이 남아 있으므로 홈으로 보냅니다.
+    setTimeout(() => navigate('/', { replace: true }), 150)
+  }
+  return (
+    <button
+      type="button"
+      onClick={goBack}
+      className="inline-flex items-center gap-1 rounded-md text-sm text-muted-foreground hover:text-brand-800 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+    >
+      <ArrowLeft className="size-4" aria-hidden="true" />
+      이전으로
+    </button>
   )
 }
