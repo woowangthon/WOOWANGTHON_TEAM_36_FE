@@ -50,10 +50,10 @@ function AdminOverview() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="text-xl font-semibold">관리자</h1>
+      <h1 className="text-2xl font-bold tracking-tight">관리자</h1>
 
       <section className="grid gap-3" aria-labelledby="runs-heading">
-        <h2 id="runs-heading" className="font-semibold">
+        <h2 id="runs-heading" className="text-base font-bold">
           사이트별 마지막 수집
         </h2>
         <ul className="grid gap-3 sm:grid-cols-3">
@@ -86,11 +86,13 @@ function AdminOverview() {
 
 function LastRun({ name, run }: { name: string; run?: CrawlRun }) {
   return (
-    <li className="rounded-xl border bg-background p-4 text-sm">
+    <li className="surface p-4 text-sm">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-medium">{name}</h3>
+        <h3 className="font-semibold">{name}</h3>
         {run && (
-          <span className={`rounded-md px-2 py-0.5 text-xs ${RUN_STATUS[run.status].style}`}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${RUN_STATUS[run.status].style}`}
+          >
             {RUN_STATUS[run.status].label}
           </span>
         )}
@@ -100,7 +102,7 @@ function LastRun({ name, run }: { name: string; run?: CrawlRun }) {
           <p className="mt-2 text-muted-foreground">{formatDateTime(run.started_at)}</p>
           <p className="text-muted-foreground">새 공지 {run.new_count}건</p>
           {run.error && (
-            <p className="mt-2 rounded bg-red-50 px-2 py-1 text-xs break-all text-red-700">
+            <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs break-all text-red-700">
               {run.error}
             </p>
           )}
@@ -128,13 +130,16 @@ function NoticeSection({
   return (
     <section className="grid gap-3" aria-labelledby={`${id}-heading`}>
       <div>
-        <h2 id={`${id}-heading`} className="font-semibold">
-          {title} <span className="font-normal text-muted-foreground">{notices.length}</span>
+        <h2 id={`${id}-heading`} className="text-base font-bold">
+          {title}{' '}
+          <span className="ml-0.5 inline-grid h-5 min-w-5 place-items-center rounded-full bg-foreground/[0.07] px-1.5 align-middle text-xs font-semibold text-muted-foreground tabular-nums">
+            {notices.length}
+          </span>
         </h2>
-        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+        {description && <p className="mt-1 text-[13px] text-muted-foreground">{description}</p>}
       </div>
       {notices.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
           {empty}
         </p>
       ) : (
@@ -153,19 +158,21 @@ function NoticeRow({ notice }: { notice: AdminNotice }) {
   const pending = notice.extract_status === 'PENDING'
   const status = EXTRACT_STATUS[notice.extract_status]
   return (
-    <li className="grid gap-2 rounded-xl border bg-background p-4 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+    <li className="grid gap-3 surface p-4 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <div className="min-w-0">
         <a
           href={notice.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-start gap-1 font-medium break-words hover:underline"
+          className="inline-flex items-start gap-1 font-semibold break-words hover:underline"
         >
           {notice.title}
           <ExternalLink aria-hidden className="mt-0.5 size-3.5 shrink-0" />
         </a>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span className={`rounded px-1.5 py-0.5 ${status.style}`}>{status.label}</span>
+          <span className={`rounded-full px-2 py-0.5 font-semibold ${status.style}`}>
+            {status.label}
+          </span>
           <span>{SOURCE_NAME[notice.source_code]}</span>
           <span>게시 {formatDate(notice.posted_at)}</span>
           {notice.notice_kind && <span>{notice.notice_kind}</span>}
@@ -189,13 +196,13 @@ function NoticeRow({ notice }: { notice: AdminNotice }) {
 function AdminSkeleton() {
   return (
     <div className="grid gap-4" aria-busy="true" aria-label="불러오는 중">
-      <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+      <div className="h-7 w-24 animate-pulse rounded-lg bg-foreground/[0.06]" />
       <div className="grid gap-3 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-28 animate-pulse rounded-xl bg-muted/60" />
+          <div key={i} className="h-28 animate-pulse rounded-2xl bg-foreground/[0.06]" />
         ))}
       </div>
-      <div className="h-40 animate-pulse rounded-xl bg-muted/60" />
+      <div className="h-40 animate-pulse rounded-2xl bg-foreground/[0.06]" />
     </div>
   )
 }

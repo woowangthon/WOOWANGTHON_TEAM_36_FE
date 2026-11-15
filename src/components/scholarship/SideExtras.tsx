@@ -1,4 +1,3 @@
-import { AlarmClock, Lightbulb } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
 
@@ -28,8 +27,8 @@ function useIsWide() {
 }
 
 // min-w-0·minmax(0,1fr): 긴 장학금 이름이 상자를 넓혀 사이드바 밖으로 잘리지 않게 합니다 (T67, Safari)
-const BOX =
-  'grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-xl border border-brand-200 bg-background p-3 sm:p-4'
+const BOX = 'grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 surface p-4'
+const TITLE = 'text-[13px] font-bold'
 
 /**
  * 곧 마감되는 장학금 3개 (T57). 이미 받은 목록에서 뽑아 API를 더 부르지 않습니다(계획서 9.8).
@@ -56,35 +55,35 @@ export function DeadlineSoon({
 
   return (
     <section aria-labelledby={id} className={BOX}>
-      <h2 id={id} className="flex items-center gap-1.5 text-sm font-semibold text-brand-900">
-        <AlarmClock aria-hidden="true" className="size-4 text-brand-700" />곧 마감되는 장학금
+      <h2 id={id} className={TITLE}>
+        곧 마감되는 장학금
       </h2>
       {soon.length === 0 ? (
-        <div className="grid gap-2 rounded-lg bg-brand-50 p-3 text-xs text-muted-foreground">
+        <div className="grid gap-2 text-[13px] text-muted-foreground">
           <p>지금 목록에는 가까운 마감이 없어요.</p>
           {onShowAll && (
             <button
               type="button"
               onClick={onShowAll}
-              className="w-fit font-medium text-brand-800 underline underline-offset-4"
+              className="w-fit font-semibold text-brand-800 underline underline-offset-4"
             >
               전체 탭에서 보기 →
             </button>
           )}
         </div>
       ) : (
-        <ul className="grid grid-cols-[minmax(0,1fr)] gap-1.5 text-sm">
+        <ul className="-mx-2 grid grid-cols-[minmax(0,1fr)] text-sm">
           {soon.map((item) => {
             const deadline = deadlineOf(item)
             return (
               <li key={item.id} className="min-w-0">
                 <Link
                   to={`/scholarships/${item.id}`}
-                  className="flex items-center justify-between gap-2 rounded-md hover:text-brand-800"
+                  className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted"
                 >
                   <span className="min-w-0 truncate">{item.display_name}</span>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${deadline.tone === 'urgent' ? 'bg-red-50 text-destructive' : 'bg-brand-50 text-brand-800'}`}
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs tabular-nums ${deadline.tone === 'urgent' ? 'bg-red-50 font-bold text-red-700' : 'bg-foreground/[0.06] font-semibold'}`}
                   >
                     {deadline.label}
                   </span>
@@ -112,23 +111,22 @@ export function ResultGuide() {
   const id = useId()
   return (
     <section aria-labelledby={id} className={BOX}>
-      <h2 id={id} className="flex items-center gap-1.5 text-sm font-semibold text-brand-900">
-        <Lightbulb aria-hidden="true" className="size-4 text-brand-700" />
+      <h2 id={id} className={TITLE}>
         판정 결과 읽는 법
       </h2>
-      <dl className="grid gap-2 text-xs">
+      <dl className="grid gap-3 text-[13px]">
         {GUIDE.map(({ result, text }) => (
-          <div key={result} className="grid gap-1">
+          <div key={result} className="grid justify-items-start gap-1.5">
             <dt>
               <ResultBadge result={result} />
             </dt>
-            <dd className="text-muted-foreground">{text}</dd>
+            <dd className="text-muted-foreground break-keep">{text}</dd>
           </div>
         ))}
       </dl>
-      <p className="border-t border-brand-100 pt-2 text-xs text-muted-foreground">
+      <p className="border-t border-border pt-3 text-[13px] text-muted-foreground break-keep">
         프로필을 자세히 채울수록 &lsquo;확인 필요&rsquo;가 줄어요.{' '}
-        <Link to="/profile" className="font-medium text-brand-800 underline underline-offset-4">
+        <Link to="/profile" className="font-semibold text-brand-800 underline underline-offset-4">
           프로필 수정
         </Link>
       </p>

@@ -30,16 +30,50 @@ describe('대시보드', () => {
     expect(screen.queryByText('논산시 인재육성 장학금')).not.toBeInTheDocument()
     expect(screen.queryByText('국가근로장학금')).not.toBeInTheDocument() // 마감
 
-    fireEvent.click(screen.getByRole('tab', { name: '확인 필요' }))
+    fireEvent.click(screen.getByRole('tab', { name: /^확인 필요/ }))
     await waitForCards('논산시 인재육성 장학금', '푸른등대 기부장학금')
-    expect(screen.getByRole('tab', { name: '확인 필요' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /^확인 필요/ })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText('마감일 확인 필요')).toBeInTheDocument() // deadline_conflict
     expect(screen.queryByText('두산연강재단 장학금')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('tab', { name: '전체' }))
+    fireEvent.click(screen.getByRole('tab', { name: /^전체/ }))
     await waitForCards('여성공학인 장학금', 'AI부트캠프 양성인재 학업장려금')
     expect(screen.getAllByText('상시').length).toBeGreaterThan(0) // ALWAYS는 카드에서 줄여 씀
     expect(screen.getAllByText('지원 불가').length).toBeGreaterThan(0)
+  })
+
+  it('탭 이름 옆에 판정별 개수를 보여 주고, 탭을 바꿔도 목록을 다시 받지 않는다', async () => {
+    const [eligible, conditional, ineligible] = mockDetails
+      .filter((d) => d.status !== 'CLOSED')
+      .reduce<[number, number, number]>(
+        ([e, c, i], d) =>
+          d.result === 'ELIGIBLE'
+            ? [e + 1, c, i]
+            : d.result === 'CONDITIONAL'
+              ? [e, c + 1, i]
+              : [e, c, i + 1],
+        [0, 0, 0],
+      )
+    const requests: string[] = []
+    server.events.on('request:start', ({ request }) => {
+      const url = new URL(request.url)
+      if (url.pathname === '/api/scholarships') requests.push(url.search)
+    })
+    try {
+      renderApp('/dashboard')
+      expect(await screen.findByRole('tab', { name: `지원 가능 ${eligible}` })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: `확인 필요 ${conditional}` })).toBeInTheDocument()
+      expect(
+        screen.getByRole('tab', { name: `전체 ${eligible + conditional + ineligible}` }),
+      ).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('tab', { name: /^확인 필요/ }))
+      await waitForCards('논산시 인재육성 장학금')
+      expect(requests).toHaveLength(1)
+      expect(requests[0]).toContain('result=all')
+    } finally {
+      server.events.removeAllListeners()
+    }
   })
 
   it('정렬과 필터를 바꾼다', async () => {
@@ -343,7 +377,9 @@ describe('상세', () => {
     expect(within(extra).queryByRole('button', { name: '더 보기' })).not.toBeInTheDocument()
     expect(within(extra).queryByText('기타 조건')).not.toBeInTheDocument()
 
-    // 판정에 쓰지 않는 기본 조건·안내는 체크리스트 밖에 따로 (extract_v5)
+    // 판정에 쓰지 않는 기본 조건·안내는 체크리스트 밖 다른 탭에 따로 (extract_v5)
+    fireEvent.click(screen.getByRole('tab', { name: /알아 둘 내용/ }))
+    expect(screen.queryByRole('list', { name: '조건 체크리스트' })).not.toBeInTheDocument()
     const basic = screen.getByRole('list', { name: '지원 전 확인' })
     expect(within(basic).getByText('대한민국 국적')).toBeInTheDocument() // 요약 없으면 원문
     expect(within(basic).getByText('다른 장학금을 받지 않는 학생')).toBeInTheDocument()
@@ -353,7 +389,9 @@ describe('상세', () => {
     const notes = screen.getByRole('list', { name: '참고 안내' })
     expect(within(notes).getByText('면접 점수 석차순 선발')).toBeInTheDocument()
 
+    fireEvent.click(screen.getByRole('tab', { name: /제출 서류/ }))
     expect(screen.getByText('주민등록등본')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: '원문 공지' }))
     expect(screen.getByRole('link', { name: '두산연강재단 장학금' })).toHaveAttribute(
       'href',
       '/scholarships/1',
@@ -393,6 +431,7 @@ describe('상세', () => {
     ).not.toBeInTheDocument()
     expect(screen.queryByText(/공고문이 길어 뒷부분 일부는 읽지 못했어요/)).not.toBeInTheDocument()
 
+    fireEvent.click(screen.getByRole('tab', { name: '원문 공지' }))
     const original = screen.getByRole('region', { name: '공지 원문' })
     expect(within(original).getByRole('link', { name: '원문 사이트에서 보기' })).toHaveAttribute(
       'href',
@@ -412,12 +451,16 @@ describe('상세', () => {
     expect(within(checklist).getByRole('img', { name: '미충족' })).toBeInTheDocument()
   })
 
-  it('원문 공지 상자는 접혀 있고, 그 안에 공지 본문과 첨부를 따로 접지 않고 보여 준다', async () => {
+  it('원문 공지 탭을 누르면 그 내용만 보이고, 공지 본문과 첨부를 접지 않고 보여 준다', async () => {
     renderApp('/scholarships/1')
-    const heading = await screen.findByRole('heading', { level: 2, name: '원문 공지' })
-    // 제출 서류처럼 상자 전체를 접어 둡니다. 안쪽에 '원문 보기' 버튼은 따로 없습니다.
-    const box = heading.closest('details')
-    expect(box).not.toHaveAttribute('open')
+    // 처음에는 조건 확인 탭이고, 원문 공지는 탭을 눌러야 보입니다.
+    const noticeTab = await screen.findByRole('tab', { name: '원문 공지' })
+    expect(screen.getByRole('tab', { name: '조건 확인' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
+    fireEvent.click(noticeTab)
+    expect(noticeTab).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByRole('list', { name: '조건 체크리스트' })).not.toBeInTheDocument()
+    const box = screen.getByRole('tabpanel', { name: '원문 공지' })
     expect(screen.queryByRole('button', { name: '원문 보기' })).not.toBeInTheDocument()
 
     const original = within(box as HTMLElement).getByRole('region', { name: '공지 원문' })
@@ -437,7 +480,7 @@ describe('상세', () => {
       'href',
       expect.stringContaining('software.cbnu.ac.kr'),
     )
-    // 같은 공지의 다른 장학금과 안내 문구도 같은 상자 안에 접힙니다.
+    // 같은 공지의 다른 장학금과 안내 문구도 같은 탭 안에 있습니다.
     expect(within(box as HTMLElement).getByText('같은 공지의 다른 장학금')).toBeInTheDocument()
   })
 
@@ -453,6 +496,12 @@ describe('상세', () => {
     )
     renderApp('/scholarships/1')
     await screen.findByRole('list', { name: '조건 체크리스트' })
+    // 요약 상자의 원문 공지 버튼은 저장된 본문이 없어도 원문 사이트로 갑니다.
+    expect(screen.getByRole('link', { name: '원문 공지 보기' })).toHaveAttribute(
+      'href',
+      first.notice.url,
+    )
+    fireEvent.click(screen.getByRole('tab', { name: '원문 공지' }))
     expect(screen.queryByRole('region', { name: '공지 원문' })).not.toBeInTheDocument()
     // 공지 원문 상자가 없으면 제목이 원문 링크가 됩니다.
     expect(screen.getByRole('link', { name: /교외장학금 3종 모집/ })).toHaveAttribute(
@@ -486,6 +535,7 @@ describe('상세', () => {
     // 요약이 없으면 이름만으로 답할 수 없으므로 원문을 접지 않습니다 (T53)
     expect(within(extra).getByText('직전학기 봉사활동 20시간 이상')).toBeInTheDocument()
     expect(within(extra).queryByText('근거 보기')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('tab', { name: /알아 둘 내용/ }))
     const basic = screen.getByRole('list', { name: '지원 전 확인' })
     expect(within(basic).getByText('타 장학금과 중복 수혜 불가')).toBeInTheDocument()
     expect(within(basic).queryByText('공지 문장 보기')).not.toBeInTheDocument()
@@ -1026,7 +1076,7 @@ describe('곧 마감 빈 상태 (QA 사이드-1)', () => {
       const soon = await screen.findByRole('region', { name: '곧 마감되는 장학금' })
       fireEvent.click(within(soon).getByRole('button', { name: '전체 탭에서 보기 →' }))
       await waitFor(() => expect(app.router.state.location.search).toBe('?tab=all'))
-      expect(screen.getByRole('tab', { name: '전체' })).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByRole('tab', { name: /^전체/ })).toHaveAttribute('aria-selected', 'true')
     } finally {
       window.matchMedia = original
     }

@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Award } from 'lucide-react'
 import { useState } from 'react'
 
 import { meKey, useMe, type Me } from '@/api/hooks/auth'
@@ -61,8 +60,11 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
   if (!question) {
     if (!finished) return null
     return (
-      <section aria-label="빠른 확인" className={CARD}>
-        <p className="font-medium text-brand-900">빠르게 확인할 질문을 다 끝냈어요.</p>
+      <section
+        aria-label="빠른 확인"
+        className="surface border-l-4 border-l-primary px-4 py-3.5 text-sm sm:px-5"
+      >
+        <p className="font-medium">빠르게 확인할 질문을 다 끝냈어요.</p>
       </section>
     )
   }
@@ -101,61 +103,65 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
     setAttempt(null)
   }
 
+  const total = handled + remaining
   return (
-    <section aria-label="빠른 확인" className={CARD}>
-      <p className="flex items-center justify-between text-xs text-muted-foreground">
-        빠른 확인
-        <span aria-label={`${remaining}개 남음`} className="tabular-nums">
-          {handled + 1}/{handled + remaining}
-        </span>
-      </p>
-      {/* 답하면 판정이 정해지는 장학금을 질문 바로 위에 크게 보여 줍니다 */}
-      <p className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-lg bg-brand-100 px-2.5 py-1 text-sm font-semibold text-brand-800">
-        <Award aria-hidden="true" className="size-4 shrink-0" />
-        <span className="break-keep">{targetLabel(question)}</span>
-      </p>
-      <p className="mt-2 text-xs text-muted-foreground">이 조건에 맞나요?</p>
-      <p className="mt-0.5 text-lg font-semibold text-brand-900 break-keep sm:text-xl">
-        {question.condition.summary ?? question.condition.text}
-      </p>
-      {question.condition.summary && (
-        // 요약이 틀렸을 때 대조할 수 있게 공지 원문을 2줄까지 함께 보여 줍니다(T44)
-        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground break-keep">
-          {question.condition.text}
-        </p>
-      )}
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => void next('YES')}
-          disabled={saving}
-          className={`${ANSWER} border-emerald-300 hover:bg-emerald-50`}
-        >
-          맞아요
-          <span aria-hidden="true" className="block text-xs font-normal text-emerald-700">
-            → 지원 가능으로 바뀌어요
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => void next('NO')}
-          disabled={saving}
-          className={`${ANSWER} border-brand-200 hover:bg-brand-100`}
-        >
-          안 맞아요
-          <span aria-hidden="true" className="block text-xs font-normal text-muted-foreground">
-            → 지원 불가로 정리돼요
-          </span>
-        </button>
+    // 얇은 한 줄 띠: 왼쪽에 질문, 오른쪽에 답 버튼. 좁은 화면에서는 버튼이 아래로 내려갑니다
+    <section
+      aria-label="빠른 확인"
+      className="surface border-l-4 border-l-primary px-4 py-3.5 text-sm sm:px-5"
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+            <span className="font-bold text-brand-700">빠른 확인</span>
+            <span
+              aria-label={`${remaining}개 남음`}
+              className="font-bold text-brand-700 tabular-nums"
+            >
+              {handled + 1}/{total}
+            </span>
+            <span aria-hidden="true">·</span>
+            {/* 답하면 판정이 정해지는 장학금 */}
+            <span className="min-w-0 break-keep">{targetLabel(question)}</span>
+          </p>
+          <p className="mt-1 text-base leading-snug font-bold break-keep">
+            {question.condition.summary ?? question.condition.text}
+            <span className="font-medium text-muted-foreground">, 맞나요?</span>
+          </p>
+          {question.condition.summary && (
+            // 요약이 틀렸을 때 대조할 수 있게 공지 원문을 한 줄 함께 보여 줍니다(T44)
+            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground break-keep">
+              {question.condition.text}
+            </p>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => void next('YES')}
+            disabled={saving}
+            className={`${ANSWER} bg-primary text-primary-foreground hover:bg-brand-600`}
+          >
+            맞아요
+          </button>
+          <button
+            type="button"
+            onClick={() => void next('NO')}
+            disabled={saving}
+            className={`${ANSWER} bg-muted text-foreground hover:bg-foreground/10`}
+          >
+            안 맞아요
+          </button>
+          <button
+            type="button"
+            onClick={() => void next(null)}
+            disabled={saving}
+            className="h-10 rounded-md px-2 text-[13px] whitespace-nowrap text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            모르겠어요
+          </button>
+        </div>
       </div>
-      <button
-        type="button"
-        onClick={() => void next(null)}
-        disabled={saving}
-        className="mt-1 h-8 px-0 text-sm text-muted-foreground underline underline-offset-4"
-      >
-        모르겠어요
-      </button>
       <FormError
         message={
           attempt?.status === 'failed' ? '저장하지 못했습니다. 잠시 후 다시 시도하세요.' : null
@@ -165,7 +171,5 @@ function QuickCheck({ userId, items }: { userId: number; items: ScholarshipSumma
   )
 }
 
-const CARD = 'rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm sm:p-4'
-// 답 버튼에는 누르면 판정이 어떻게 바뀌는지를 함께 적습니다
 const ANSWER =
-  'rounded-lg border bg-white px-4 py-2.5 text-left text-sm font-medium text-brand-900 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
+  'h-10 flex-1 rounded-[10px] px-4 text-sm font-bold whitespace-nowrap transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60 md:flex-none'

@@ -29,12 +29,14 @@ export function PasswordChange({ me }: { me: Me }) {
   const [done, setDone] = useState(false)
 
   if (!me.has_password) {
-    return <p className="text-xs text-muted-foreground">Google 계정으로 로그인하는 계정이에요</p>
+    return (
+      <p className="text-[13px] text-muted-foreground">Google 계정으로 로그인하는 계정이에요</p>
+    )
   }
   return (
     <div className="grid gap-3">
       {done && (
-        <p role="status" className="text-sm">
+        <p role="status" className="rounded-xl bg-muted px-3.5 py-2.5 text-sm break-keep">
           비밀번호를 바꿨어요. 다른 기기에서는 다시 로그인해야 해요
         </p>
       )}
@@ -92,7 +94,11 @@ function PasswordChangeForm({ onCancel, onDone }: { onCancel: () => void; onDone
   const serverMessage = change.error?.message === WRONG_CURRENT ? null : change.error?.message
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-3 rounded-lg border p-3" noValidate>
+    <form
+      onSubmit={onSubmit}
+      className="grid gap-4 rounded-xl border border-border bg-canvas/60 p-4"
+      noValidate
+    >
       <Field id="current_password" label="현재 비밀번호" error={errors.current?.message}>
         <PasswordInput
           id="current_password"

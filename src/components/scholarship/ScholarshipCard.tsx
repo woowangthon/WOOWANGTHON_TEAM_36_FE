@@ -1,15 +1,4 @@
-import {
-  Building2,
-  CalendarClock,
-  CircleCheck,
-  CircleHelp,
-  CircleX,
-  ClipboardCheck,
-  Heart,
-  School,
-  Wallet,
-  X,
-} from 'lucide-react'
+import { Heart, X } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { useSetScholarshipState, type ScholarshipSummary } from '@/api/hooks/scholarships'
@@ -18,26 +7,23 @@ import { FormError } from '@/components/form/Field'
 import { deadlineOf, RESULT_LABEL, STATE_LABEL } from './format'
 
 const RESULT_STYLE = {
-  ELIGIBLE: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  CONDITIONAL: 'bg-amber-50 text-amber-800 ring-amber-600/20',
-  INELIGIBLE: 'bg-muted text-muted-foreground ring-border',
+  ELIGIBLE: 'bg-emerald-50 text-emerald-700',
+  CONDITIONAL: 'bg-amber-50 text-amber-800',
+  INELIGIBLE: 'bg-muted text-muted-foreground',
 } as const
 
-const RESULT_ICON = {
-  ELIGIBLE: CircleCheck,
-  CONDITIONAL: CircleHelp,
-  INELIGIBLE: CircleX,
-} as const
-
-/** 판정 배지와 신청완료 배지가 함께 쓰는 모양. */
+/** 판정 배지와 신청완료 배지가 함께 쓰는 모양: 색 점 + 글자. 색만으로 구분하지 않게 글자를 항상 함께 둡니다. */
 const BADGE_CLASS =
-  'inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset'
+  'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold whitespace-nowrap'
+
+function BadgeDot() {
+  return <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+}
 
 export function ResultBadge({ result }: { result: ScholarshipSummary['result'] }) {
-  const Icon = RESULT_ICON[result]
   return (
     <span className={`${BADGE_CLASS} ${RESULT_STYLE[result]}`}>
-      <Icon aria-hidden="true" className="size-3.5" />
+      <BadgeDot />
       {RESULT_LABEL[result]}
     </span>
   )
@@ -46,11 +32,8 @@ export function ResultBadge({ result }: { result: ScholarshipSummary['result'] }
 /** 신청완료 배지. 판정 배지와 같은 모양이고, 판정 3종(초록·노랑·회색)과 겹치지 않게 파란색을 씁니다. */
 export function AppliedBadge() {
   return (
-    <span
-      data-testid="applied-badge"
-      className={`${BADGE_CLASS} bg-sky-50 text-sky-700 ring-sky-600/20`}
-    >
-      <ClipboardCheck aria-hidden="true" className="size-3.5" />
+    <span data-testid="applied-badge" className={`${BADGE_CLASS} bg-sky-50 text-sky-700`}>
+      <BadgeDot />
       {STATE_LABEL.applied}
     </span>
   )
@@ -62,29 +45,45 @@ function StatusBadge({ item }: { item: Pick<ScholarshipSummary, 'result' | 'appl
 }
 
 const DEADLINE_STYLE = {
-  urgent: 'text-destructive font-semibold',
+  urgent: 'text-red-700 font-bold',
   normal: 'text-foreground font-semibold',
   muted: 'text-muted-foreground font-medium',
 } as const
 
 export function DeadlineText({ item }: { item: Pick<ScholarshipSummary, 'status' | 'apply_end'> }) {
   const deadline = deadlineOf(item)
-  return <span className={`text-sm ${DEADLINE_STYLE[deadline.tone]}`}>{deadline.label}</span>
+  return (
+    <span className={`text-sm tabular-nums ${DEADLINE_STYLE[deadline.tone]}`}>
+      {deadline.label}
+    </span>
+  )
 }
 
+const DEADLINE_CHIP = {
+  urgent: 'bg-red-50 px-2.5 text-red-700 font-bold',
+  normal: 'bg-foreground/[0.06] px-2.5 text-foreground font-semibold',
+  muted: 'text-muted-foreground font-medium',
+} as const
+
 /**
- * 카드의 장학금명 바로 아래 마감 표시 (2026-11-14, 7.1). 상시 공고는 "상시"로 줄이고
- * 자세한 "상시·확인 필요"는 상세에서 보여 줍니다. 판정의 '확인 필요' 배지와 헷갈리지 않게 하려는 것입니다.
+ * 마감 알약 (D-7, D-Day, 상시, 마감). 급한 마감만 빨간 바탕으로 띄웁니다.
+ * compact면 상시 공고를 "상시"로 줄입니다. 자세한 "상시·확인 필요"는 내 정보와 상세에서 보여 줍니다.
+ * 판정의 '확인 필요' 배지와 헷갈리지 않게 하려는 것입니다 (2026-11-14, 7.1).
  */
-function CompactDeadline({ item }: { item: Pick<ScholarshipSummary, 'status' | 'apply_end'> }) {
+function DeadlineChip({
+  item,
+  compact = false,
+}: {
+  item: Pick<ScholarshipSummary, 'status' | 'apply_end'>
+  compact?: boolean
+}) {
   const deadline = deadlineOf(item)
-  const label = item.status === 'ALWAYS' ? '상시' : deadline.label
+  const label = compact && item.status === 'ALWAYS' ? '상시' : deadline.label
   return (
     <span
       title={deadline.label}
-      className={`inline-flex shrink-0 items-center gap-1 text-sm whitespace-nowrap ${DEADLINE_STYLE[deadline.tone]}`}
+      className={`inline-flex h-6 shrink-0 items-center rounded-full text-xs whitespace-nowrap tabular-nums ${DEADLINE_CHIP[deadline.tone]}`}
     >
-      <CalendarClock aria-hidden="true" className="size-4 shrink-0" />
       {label}
     </span>
   )
@@ -94,34 +93,25 @@ function CompactDeadline({ item }: { item: Pick<ScholarshipSummary, 'status' | '
 function AmountLine({ text }: { text: string | null | undefined }) {
   if (!text) return <span className="flex-1" />
   return (
-    <span className="flex min-w-0 flex-1 items-center gap-1 text-sm text-muted-foreground">
-      <Wallet aria-hidden="true" className="size-4 shrink-0 text-brand-600" />
-      <span title={text} className="truncate">
-        {text}
-      </span>
+    <span title={text} className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+      {text}
     </span>
   )
 }
 
-/** 출처 · 교내/교외 · 지원 형태 한 줄. 교내는 학교, 교외는 건물 아이콘 (T38). */
+/** 출처 · 교내/교외 · 지원 형태 한 줄. */
 export function SourceLine({
   item,
   className = '',
-  iconClassName = 'size-3.5',
 }: {
   item: Pick<ScholarshipSummary, 'source_name' | 'is_internal' | 'benefit_type'>
   className?: string
-  iconClassName?: string
 }) {
-  const Icon = item.is_internal ? School : Building2
   return (
-    <p className={`flex items-center gap-1 text-muted-foreground ${className}`}>
-      <Icon aria-hidden="true" className={`shrink-0 ${iconClassName}`} />
-      {/* 단어 중간에서 줄이 바뀌지 않게 ('생활비 / 성' 방지, T67) */}
-      <span className="min-w-0 break-keep">
-        {item.source_name} · {item.is_internal ? '교내' : '교외'}
-        {item.benefit_type && ` · ${item.benefit_type}`}
-      </span>
+    // 단어 중간에서 줄이 바뀌지 않게 ('생활비 / 성' 방지, T67)
+    <p className={`min-w-0 text-muted-foreground break-keep ${className}`}>
+      {item.source_name} · {item.is_internal ? '교내' : '교외'}
+      {item.benefit_type && ` · ${item.benefit_type}`}
     </p>
   )
 }
@@ -134,7 +124,7 @@ export function AlsoPostedNote({ sources }: { sources: string[] }) {
 
 export function DeadlineConflictNote() {
   return (
-    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800">
+    <span className="inline-flex h-6 items-center rounded-full bg-amber-50 px-2.5 text-xs font-medium whitespace-nowrap text-amber-800">
       마감일 확인 필요
     </span>
   )
@@ -146,7 +136,8 @@ type ScholarshipItemProps = {
 }
 
 /**
- * 대시보드·내 정보 카드 1장 (장학금 단위, 7.1). 넓은 화면에서는 한 줄에 2장씩 놓습니다.
+ * 대시보드 카드 1장 (장학금 단위, 7.1). 넓은 화면에서는 한 줄에 2장씩 놓습니다.
+ * 위에서부터 판정·마감 → 이름 → 출처 → 금액·하트 순서로, 훑어볼 때 먼저 찾는 것부터 둡니다.
  * 카드 전체를 누르면 상세로 가고(제목 링크를 카드 크기로 넓힘), 하트는 따로 눌러 관심을 켜고 끕니다.
  */
 function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
@@ -158,29 +149,30 @@ function ScholarshipCard({ item, onBookmarkError }: ScholarshipItemProps) {
       : ''
   return (
     <li
-      className={`relative isolate flex min-w-0 flex-col gap-1 rounded-xl border border-brand-200 bg-background p-3 transition focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md motion-reduce:transform-none sm:p-4 ${dim}`}
+      className={`relative isolate flex min-w-0 flex-col surface p-4 transition duration-200 focus-within:ring-3 focus-within:ring-ring/50 hover:-translate-y-0.5 hover:shadow-lift motion-reduce:transform-none sm:p-5 ${dim}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="min-w-0 font-semibold break-keep">
-          <Link
-            to={`/scholarships/${item.id}`}
-            className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
-          >
-            {item.display_name}
-          </Link>
-        </h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <StatusBadge item={item} />
+        <div className="flex items-center gap-1.5">
+          {item.deadline_conflict && <DeadlineConflictNote />}
+          <DeadlineChip item={item} compact />
+        </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <CompactDeadline item={item} />
-        {item.deadline_conflict && <DeadlineConflictNote />}
-      </div>
-      {/* 마감·출처·금액 세 줄은 글씨와 아이콘 크기를 맞춥니다 (2026-11-14) */}
-      <SourceLine item={item} className="text-sm" iconClassName="size-4" />
+      <h3 className="mt-3 min-w-0 text-[17px] leading-snug font-bold break-keep">
+        <Link
+          to={`/scholarships/${item.id}`}
+          className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none"
+        >
+          {item.display_name}
+        </Link>
+      </h3>
+      <SourceLine item={item} className="mt-1 text-sm" />
       <AlsoPostedNote sources={item.also_posted_in} />
-      <div className="mt-auto flex items-center gap-2 pt-2">
-        <AmountLine text={item.benefit_amount_text} />
-        <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
+      <div className="mt-auto pt-4">
+        <div className="flex min-h-9 items-center gap-2 border-t border-border pt-3">
+          <AmountLine text={item.benefit_amount_text} />
+          <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
+        </div>
       </div>
     </li>
   )
@@ -207,9 +199,9 @@ function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
           onBookmarkError(`${action} 다시 시도해 주세요.`)
         })
       }}
-      className="relative z-10 -my-1 -mr-1 grid size-8 shrink-0 place-items-center rounded-full text-rose-500 transition-colors hover:bg-rose-50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+      className={`relative z-10 -my-1.5 -mr-2 grid size-10 shrink-0 place-items-center rounded-full transition-colors hover:bg-rose-50 hover:text-rose-500 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none ${on ? 'text-rose-500' : 'text-foreground/35'}`}
     >
-      <Heart aria-hidden="true" className={`size-5 ${on ? 'fill-current' : ''}`} />
+      <Heart aria-hidden="true" className={`size-[1.375rem] ${on ? 'fill-current' : ''}`} />
     </button>
   )
 }
@@ -220,39 +212,27 @@ function BookmarkHeart({ item, onBookmarkError }: ScholarshipItemProps) {
  */
 function ScholarshipRow({ item, onBookmarkError }: ScholarshipItemProps) {
   return (
-    <li className="relative isolate flex items-start gap-3 rounded-lg px-2 py-3 transition-colors focus-within:ring-3 focus-within:ring-ring/50 hover:bg-brand-50">
-      <div className="grid min-w-0 flex-1 gap-1">
-        <h3 className="font-medium break-keep">
+    <li className="relative isolate flex items-center gap-3 rounded-xl px-2 py-4 transition-colors focus-within:ring-3 focus-within:ring-ring/50 hover:bg-muted/70 sm:px-3">
+      <div className="grid min-w-0 flex-1 gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <StatusBadge item={item} />
+          <DeadlineChip item={item} />
+          {item.deadline_conflict && <DeadlineConflictNote />}
+        </div>
+        <h3 className="font-semibold break-keep">
           <Link
             to={`/scholarships/${item.id}`}
-            className="after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none"
+            className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
           >
             {item.display_name}
           </Link>
         </h3>
-        <SourceLine item={item} className="text-xs" />
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="inline-flex items-start gap-1">
-            <CalendarClock
-              aria-hidden="true"
-              className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-            />
-            <DeadlineText item={item} />
-          </span>
-          {item.deadline_conflict && <DeadlineConflictNote />}
-          {item.benefit_amount_text && (
-            <span className="inline-flex items-start gap-1 text-sm font-medium text-brand-700">
-              {/* 글이 길어 여러 줄이 되어도 아이콘이 줄어들지 않고 첫 줄 옆에 붙게 (T68) */}
-              <Wallet aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-              {item.benefit_amount_text}
-            </span>
-          )}
-        </div>
+        <SourceLine item={item} className="text-[13px]" />
+        {item.benefit_amount_text && (
+          <p className="text-sm font-medium break-keep">{item.benefit_amount_text}</p>
+        )}
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <StatusBadge item={item} />
-        <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
-      </div>
+      <BookmarkHeart item={item} onBookmarkError={onBookmarkError} />
     </li>
   )
 }
@@ -265,7 +245,11 @@ export function ListSkeleton({ variant = 'card' }: { variant?: 'card' | 'row' })
       aria-label="불러오는 중"
     >
       {[0, 1, 2, 3].map((i) => (
-        <li key={i} className="h-28 animate-pulse rounded-xl border border-brand-200 bg-muted/60" />
+        <li key={i} className="grid animate-pulse gap-3 surface p-4 sm:p-5">
+          <span className="h-6 w-20 rounded-full bg-muted" />
+          <span className="h-5 w-3/4 rounded bg-muted" />
+          <span className="h-4 w-1/2 rounded bg-muted" />
+        </li>
       ))}
     </ul>
   )
@@ -285,13 +269,21 @@ export function ScholarshipList({
 }) {
   const Item = variant === 'row' ? ScholarshipRow : ScholarshipCard
   const listClass =
-    variant === 'row' ? 'grid divide-y divide-brand-100' : 'grid gap-3 sm:grid-cols-2'
+    variant === 'row' ? 'grid divide-y divide-border' : 'grid gap-3 sm:grid-cols-2 sm:gap-4'
 
   if (items.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-brand-200 p-8 text-center text-sm text-muted-foreground">
-        {empty}
-      </p>
+      <div className="grid justify-items-center gap-2 rounded-2xl border border-dashed border-input px-6 py-10 text-center">
+        {/* 빈 목록을 덜 허전하게: 장학금을 찾는 우왕이 (꾸밈용 그림) */}
+        <img
+          src="/avatars/avatar-search.png"
+          alt=""
+          width={360}
+          height={360}
+          className="size-24 object-contain opacity-90"
+        />
+        <p className="max-w-xs text-sm text-muted-foreground break-keep">{empty}</p>
+      </div>
     )
   }
 
@@ -314,7 +306,7 @@ export function BookmarkError({
   if (!message) return null
 
   return (
-    <div className="fixed inset-x-4 bottom-4 z-20 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-brand-200 bg-background p-2 shadow-lg">
+    <div className="fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-md items-center gap-2 rounded-2xl border border-border bg-background p-2 shadow-lift">
       <div className="min-w-0 flex-1">
         <FormError message={message} />
       </div>

@@ -79,7 +79,10 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     body: (
       <p>
         개인정보 관련 문의와 열람·정정·삭제 요청은{' '}
-        <a href={`mailto:${CONTACT}`} className="underline underline-offset-4">
+        <a
+          href={`mailto:${CONTACT}`}
+          className="font-semibold text-foreground underline underline-offset-4"
+        >
           {CONTACT}
         </a>
         로 보내 주세요.
@@ -91,10 +94,10 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
 export default function PrivacyPage() {
   return (
     <AuthLayout title="개인정보처리방침" description={`시행일 ${UPDATED_AT}`} wide>
-      <article className="grid gap-6 text-sm leading-relaxed">
+      <article className="grid gap-7 text-sm leading-relaxed break-keep">
         {SECTIONS.map((section) => (
           <section key={section.title}>
-            <h2 className="mb-2 font-semibold">{section.title}</h2>
+            <h2 className="mb-2 text-base font-bold">{section.title}</h2>
             <div className="text-muted-foreground">{section.body}</div>
           </section>
         ))}

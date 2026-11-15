@@ -6,9 +6,9 @@ type HelpText = { label: string; description: string }
 type HelpLink = { href: string; label: string }
 
 const triggerClass =
-  'inline-grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+  'inline-grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
 const contentClass =
-  'z-50 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-brand-200 bg-background p-3 text-xs leading-relaxed break-keep shadow-md'
+  'z-50 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-white p-3.5 text-[13px] leading-relaxed break-keep text-foreground shadow-lift'
 
 export function HelpIcon({ label, description, link }: HelpText & { link?: HelpLink }) {
   if (link) return <LinkedHelp label={label} description={description} link={link} />
@@ -110,7 +110,7 @@ function LinkedHelp({ label, description, link }: HelpText & { link: HelpLink })
             href={link.href}
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-brand-800 underline underline-offset-4"
+            className="font-semibold text-brand-800 underline underline-offset-4"
           >
             {link.label}
           </a>

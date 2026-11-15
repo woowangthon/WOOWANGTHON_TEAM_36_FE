@@ -2,11 +2,14 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/geist';
+/* 한글·영문·숫자를 어느 기기에서나 같은 모양으로 보여 줍니다. 쓰는 글자 조각만 내려받습니다 (2026-11-15) */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 
 @custom-variant dark (&:is(.dark *));
 
 /* 브랜드 색 (팀 로고 오렌지, 11/11 딥 블루에서 변경). bg-brand-50, text-brand-700 처럼 씁니다.
-   흰 글자를 올리는 brand-800은 대비 5.3:1, 글자색 brand-700은 4.9:1로 WCAG AA를 지킵니다. */
+   2026-11-15 밝은 주황·크림 바탕으로 바꿨습니다. 화사함을 위해 흰 글자를 올리는 brand-800은 대비 약 3.3:1,
+   글자색 brand-700은 약 4:1로 두었습니다(큰 글자·굵은 글자 기준 3:1은 지킵니다). */
 @theme {
   --color-brand-50: #fff8f0;
   /* 크림: 페이지 배경 */
@@ -20,17 +23,36 @@
   --color-brand-500: #f7952f;
   /* 로고 오렌지 (장식용, 흰 글자 올리지 않음) */
   --color-brand-600: #e2770f;
-  --color-brand-700: #b5560a;
+  --color-brand-700: #c85f0a;
   /* 금액 등 강조 글자 */
-  --color-brand-800: #b14e08;
-  /* 진한 오렌지: primary 버튼, 선택된 탭 */
+  --color-brand-800: #e2700c;
+  /* 밝은 오렌지: primary 버튼, 선택된 탭 */
   --color-brand-900: #6b2e0e;
-  /* 다크 브라운: 페이지 제목 (로고 테두리 색 계열) */
+  /* 다크 브라운: 살구색 바탕 위 글자 (로고 테두리 색 계열) */
+
+  /* 페이지 바탕. 흰 카드가 떠 보이도록 연한 크림색을 씁니다. 오렌지는 강조에만 씁니다. */
+  --color-canvas: #fff8f0;
+  /* 카드 그림자: 평소에는 거의 보이지 않게, 마우스를 올리면 떠오르게 */
+  --shadow-card: 0 1px 2px rgb(41 37 36 / 0.05);
+  --shadow-lift: 0 2px 4px rgb(41 37 36 / 0.04), 0 14px 28px -8px rgb(41 37 36 / 0.12);
+  /* 대시보드 위쪽 우왕이와 딱지가 천천히 위아래로 둥실거립니다 */
+  --animate-float: float-y 4.5s ease-in-out infinite;
+  @keyframes float-y {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-7px);
+    }
+  }
 }
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans:
+    'Pretendard Variable', Pretendard, 'Geist Variable', -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -73,24 +95,27 @@
 
 :root {
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.216 0.006 56);
+  /* 따뜻한 먹색 #1C1917: 본문·제목 */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.216 0.006 56);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.543 0.146 47.2);
-  /* 진한 오렌지 #B14E08 (brand-800) */
+  --popover-foreground: oklch(0.216 0.006 56);
+  --primary: #e2700c;
+  /* 밝은 오렌지 (brand-800) */
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.553 0.012 58.1);
-  /* 웜 그레이 #78716C: 보조 설명 */
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.965 0.004 75);
+  --secondary-foreground: oklch(0.268 0.007 34);
+  --muted: oklch(0.965 0.004 75);
+  --muted-foreground: oklch(0.5 0.012 58);
+  /* 웜 그레이 #6B645E: 보조 설명 (흰 바탕 5.8:1, 페이지 바탕 5.3:1) */
+  --accent: oklch(0.965 0.004 75);
+  --accent-foreground: oklch(0.268 0.007 34);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: #f1e6d8;
+  /* 카드·구분선 (크림 바탕에 맞춘 연한 살구빛) */
+  --input: #e8d9c6;
+  /* 입력 칸 테두리 (카드 테두리보다 조금 진하게) */
   --ring: oklch(0.778 0.143 61.9);
   /* 밝은 오렌지 #F7A04C (brand-400) */
   --chart-1: oklch(0.87 0 0);
@@ -149,10 +174,35 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
 
   html {
     @apply font-sans;
+    /* 휴대폰을 가로로 돌려도 글자 크기를 멋대로 키우지 않게 */
+    -webkit-text-size-adjust: 100%;
   }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+}
+
+/* 흰 카드 한 장. 화면의 상자는 모두 이 모양을 씁니다 (안쪽 여백은 쓰는 곳에서 정합니다). */
+@utility surface {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background-color: var(--card);
+  box-shadow: var(--shadow-card);
+}
+
+/* 브라우저 기본 화살표를 끈 select에 그리는 화살표 (Safari·Windows에서도 같은 모양) */
+@utility select-chevron {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b645e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.625rem center;
+  background-size: 1rem;
 }

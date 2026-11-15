@@ -12,7 +12,7 @@ export function PasswordRules({ value }: { value: string }) {
           <li
             key={rule.key}
             data-met={met}
-            className={`flex items-center gap-1 ${met ? 'text-brand-700' : 'text-muted-foreground'}`}
+            className={`flex items-center gap-1 ${met ? 'font-medium text-emerald-700' : 'text-muted-foreground'}`}
           >
             <Check aria-hidden="true" className={`size-3.5 ${met ? '' : 'opacity-30'}`} />
             {rule.label}

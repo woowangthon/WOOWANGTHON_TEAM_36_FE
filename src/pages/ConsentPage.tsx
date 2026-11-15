@@ -29,17 +29,22 @@ export default function ConsentPage() {
       description="맞춤 장학금 판정에 필요한 정보만 받습니다."
     >
       <form onSubmit={submit} className="grid gap-4">
-        <section className="rounded-lg border p-4">
-          <label className="flex items-start gap-3">
+        <section className="rounded-xl border border-border p-4 sm:p-5">
+          <label className="flex cursor-pointer items-start gap-3">
             <Checkbox
               checked={privacy}
               onChange={(e) => setPrivacy(e.target.checked)}
               className="mt-0.5"
               aria-describedby="privacy-detail"
             />
-            <span className="text-sm font-medium">[필수] 개인정보 수집·이용에 동의합니다</span>
+            <span className="text-sm font-semibold break-keep">
+              [필수] 개인정보 수집·이용에 동의합니다
+            </span>
           </label>
-          <ul id="privacy-detail" className="mt-3 grid gap-1 pl-7 text-xs text-muted-foreground">
+          <ul
+            id="privacy-detail"
+            className="mt-3 grid gap-1.5 pl-[1.875rem] text-[13px] leading-relaxed break-keep text-muted-foreground"
+          >
             <li>
               항목: 이메일, 닉네임, 성별, 출생연도, 성적(평점·이수학점, 100점 환산은 평점으로 자동
               계산), 이수학기, 소득분위, 주소(시/군/구까지)
@@ -52,17 +57,22 @@ export default function ConsentPage() {
           </ul>
         </section>
 
-        <section className="rounded-lg border p-4">
-          <label className="flex items-start gap-3">
+        <section className="rounded-xl border border-border p-4 sm:p-5">
+          <label className="flex cursor-pointer items-start gap-3">
             <Checkbox
               checked={sensitive}
               onChange={(e) => setSensitive(e.target.checked)}
               className="mt-0.5"
               aria-describedby="sensitive-detail"
             />
-            <span className="text-sm font-medium">[선택] 민감정보 수집·이용에 동의합니다</span>
+            <span className="text-sm font-semibold break-keep">
+              [선택] 민감정보 수집·이용에 동의합니다
+            </span>
           </label>
-          <ul id="sensitive-detail" className="mt-3 grid gap-1 pl-7 text-xs text-muted-foreground">
+          <ul
+            id="sensitive-detail"
+            className="mt-3 grid gap-1.5 pl-[1.875rem] text-[13px] leading-relaxed break-keep text-muted-foreground"
+          >
             <li>항목: 특수자격(다자녀·보훈·장애)</li>
             <li>목적: 해당 자격 전용 장학금 판정</li>
             <li>
@@ -73,9 +83,13 @@ export default function ConsentPage() {
           </ul>
         </section>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[13px] break-keep text-muted-foreground">
           자세한 내용은{' '}
-          <Link to="/privacy" target="_blank" className="underline underline-offset-4">
+          <Link
+            to="/privacy"
+            target="_blank"
+            className="font-semibold text-foreground underline underline-offset-4"
+          >
             개인정보처리방침
           </Link>
           을 확인하세요. 입력한 정보는 AI에 보내지 않습니다.

@@ -25,17 +25,24 @@ export function ConfirmDialog({
       <AlertDialog.Trigger asChild>{trigger}</AlertDialog.Trigger>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-        <AlertDialog.Content className="fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-3 rounded-xl border bg-background p-5 shadow-lg">
-          <AlertDialog.Title className="text-base font-semibold">{title}</AlertDialog.Title>
-          <AlertDialog.Description className="text-sm text-muted-foreground">
+        <AlertDialog.Content className="fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-2 rounded-2xl border border-border bg-white p-6 shadow-lift">
+          <AlertDialog.Title className="text-lg font-bold tracking-tight">
+            {title}
+          </AlertDialog.Title>
+          <AlertDialog.Description className="text-sm leading-relaxed break-keep text-muted-foreground">
             {description}
           </AlertDialog.Description>
-          <div className="mt-2 flex justify-end gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <AlertDialog.Cancel asChild>
               <Button variant="outline">취소</Button>
             </AlertDialog.Cancel>
             <AlertDialog.Action asChild>
-              <Button variant="destructive" onClick={onConfirm} disabled={pending}>
+              <Button
+                variant="destructive"
+                className="bg-destructive text-white hover:bg-destructive/90"
+                onClick={onConfirm}
+                disabled={pending}
+              >
                 {confirmLabel}
               </Button>
             </AlertDialog.Action>
