@@ -112,9 +112,11 @@ export interface paths {
         put?: never;
         /**
          * Password Reset Code
-         * @description 비밀번호 찾기 1단계: 가입한 이메일로 인증번호 메일을 보냅니다(7.3).
+         * @description 비밀번호 찾기 1단계: 이메일로 가입한 계정에 인증번호 메일을 보냅니다(7.3).
          *
          *     가입 여부는 회원가입 화면(409)에서도 알 수 있으므로, 가입하지 않은 이메일은 404로 알립니다.
+         *     Google 계정은 비밀번호가 없으므로 메일을 보내지 않고 Google 로그인으로 안내합니다
+         *     (로그인 화면도 같은 안내를 하므로 새로 드러나는 정보는 없습니다).
          */
         post: operations["password_reset_code_auth_password_reset_code_post"];
         delete?: never;
@@ -135,6 +137,8 @@ export interface paths {
         /**
          * Password Reset Verify
          * @description 비밀번호 찾기 2단계: 번호가 맞으면 30분 동안 새 비밀번호를 정할 수 있는 토큰을 줍니다.
+         *
+         *     번호를 받은 뒤 Google을 연결했을 수 있어 Google 계정인지 다시 확인합니다.
          */
         post: operations["password_reset_verify_auth_password_reset_verify_post"];
         delete?: never;
@@ -155,6 +159,8 @@ export interface paths {
         /**
          * Password Reset
          * @description 비밀번호 찾기 3단계: 새 비밀번호로 바꾸고 다른 기기 로그인을 끊습니다. 이 기기는 로그인.
+         *
+         *     토큰을 받은 뒤 Google을 연결했을 수 있어 여기서도 Google 계정이면 거부합니다.
          */
         post: operations["password_reset_auth_password_reset_post"];
         delete?: never;
@@ -1498,6 +1504,13 @@ export interface operations {
                     "application/json": components["schemas"]["SignupCodeResponse"];
                 };
             };
+            /** @description Google 계정 (비밀번호 찾기 대상 아님) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description 가입되지 않은 이메일 */
             404: {
                 headers: {
@@ -1552,7 +1565,7 @@ export interface operations {
                     "application/json": components["schemas"]["PasswordResetVerifyResponse"];
                 };
             };
-            /** @description 인증번호 불일치·만료 */
+            /** @description 인증번호 불일치·만료, Google 계정 */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1599,7 +1612,7 @@ export interface operations {
                     "application/json": components["schemas"]["MeResponse"];
                 };
             };
-            /** @description 인증이 만료됐거나 유효하지 않음 */
+            /** @description 인증이 만료됐거나 유효하지 않음, Google 계정 */
             400: {
                 headers: {
                     [name: string]: unknown;

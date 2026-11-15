@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw'
 
 import { googleLoginUrl, safeNext } from '@/api/hooks/auth'
 import {
+  MOCK_GOOGLE_EMAIL,
   MOCK_PASSWORD,
   MOCK_SIGNUP_CODE,
   resetMockState,
@@ -356,6 +357,17 @@ describe('비밀번호 찾기', () => {
     fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
     const alert = await screen.findByText(/가입되지 않은 이메일입니다/)
     expect(within(alert).getByRole('link', { name: '회원가입' })).toHaveAttribute('href', '/signup')
+    expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
+  })
+
+  it('Google 계정 이메일이면 번호 칸을 열지 않고 Google 로그인으로 안내한다', async () => {
+    startLoggedOut()
+    renderApp('/password-reset')
+    await screen.findByRole('heading', { name: '비밀번호 찾기' })
+    type('이메일', MOCK_GOOGLE_EMAIL)
+    fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Google 계정으로 가입한 이메일')
+    expect(screen.getByRole('button', { name: 'Google로 계속하기' })).toBeInTheDocument()
     expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
   })
 

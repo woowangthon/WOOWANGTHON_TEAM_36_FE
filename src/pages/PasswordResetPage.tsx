@@ -1,5 +1,6 @@
 // 비밀번호 찾기 (계획서 7.3): 이메일 → 메일로 받은 6자리 인증번호 확인 → 새 비밀번호.
 // 번호를 확인해야 새 비밀번호 칸이 나타납니다. 저장하면 다른 기기는 로그아웃되고 이 기기는 로그인됩니다.
+// 이메일로 가입한 계정만 쓸 수 있습니다. Google 계정이면 backend가 400을 주고, Google 로그인으로 안내합니다.
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
@@ -9,6 +10,7 @@ import { z } from 'zod'
 import { usePasswordReset, usePasswordResetCode, usePasswordResetVerify } from '@/api/hooks/auth'
 import { ApiError } from '@/api/hooks/request'
 import { AuthLayout } from '@/components/auth/AuthLayout'
+import { GoogleButton } from '@/components/auth/GoogleButton'
 import { Field, FormError } from '@/components/form/Field'
 import { PasswordInput } from '@/components/form/PasswordInput'
 import { PasswordRules } from '@/components/form/PasswordRules'
@@ -124,6 +126,8 @@ export default function PasswordResetPage() {
 
   const sendError = sendCode.error
   const notSignedUp = sendError instanceof ApiError && sendError.status === 404
+  // 인증번호 받기의 400은 Google 계정뿐입니다(형식 오류는 422).
+  const googleAccount = sendError instanceof ApiError && sendError.status === 400
 
   return (
     <AuthLayout
@@ -182,6 +186,13 @@ export default function PasswordResetPage() {
             </Link>
             을 해 주세요.
           </p>
+        ) : googleAccount ? (
+          <div className="grid gap-3">
+            <p role="alert" className="rounded-xl bg-muted px-3.5 py-2.5 text-sm break-keep">
+              Google 계정으로 가입한 이메일이에요. 비밀번호 없이 Google로 로그인하세요.
+            </p>
+            <GoogleButton next={null} />
+          </div>
         ) : (
           <FormError message={sendError?.message ?? notice} />
         )}

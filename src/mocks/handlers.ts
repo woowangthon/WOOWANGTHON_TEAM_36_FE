@@ -31,6 +31,8 @@ export const MOCK_PASSWORD = 'password123'
 export const MOCK_UNSUBSCRIBE_TOKEN = 'mock-unsub'
 /** 목 API의 가입 인증번호 (backend MAIL_MOCK=1과 같음) */
 export const MOCK_SIGNUP_CODE = '000000'
+// Google로 가입한 목 계정의 이메일. 비밀번호가 없어 비밀번호 찾기를 쓸 수 없습니다(7.3).
+export const MOCK_GOOGLE_EMAIL = 'google@gmail.com'
 
 // 화면에서 상태를 바꿔 볼 수 있게 메모리에 복사본을 둡니다. resetMockState()로 되돌립니다.
 // 기본은 동의·프로필까지 마친 로그인 상태이고, startLoggedOut()으로 가입 흐름을 시작할 수 있습니다.
@@ -176,10 +178,17 @@ export const handlers: RequestHandler[] = [
       expires_in: 1800,
     } satisfies Schemas['SignupVerifyResponse'])
   }),
-  // 비밀번호 찾기: 목에서는 mockMe의 이메일만 가입된 것으로 봅니다.
+  // 비밀번호 찾기: 목에서는 mockMe의 이메일(이메일 가입)과 MOCK_GOOGLE_EMAIL(Google 가입)만
+  // 가입된 것으로 봅니다. Google 계정은 비밀번호 찾기 대상이 아니라 400입니다(7.3).
   http.post('/api/auth/password-reset/code', async ({ request }) => {
     const { email } = (await request.json()) as Schemas['PasswordResetCodeRequest']
     const normalized = email.trim().toLowerCase()
+    if (normalized === MOCK_GOOGLE_EMAIL) {
+      return HttpResponse.json(
+        { detail: 'Google 계정으로 가입한 이메일입니다. Google로 로그인하세요' },
+        { status: 400 },
+      )
+    }
     if (normalized !== mockMe.email) {
       return HttpResponse.json({ detail: '가입되지 않은 이메일입니다' }, { status: 404 })
     }
