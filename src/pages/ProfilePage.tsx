@@ -30,6 +30,7 @@ import {
 } from '@/components/profile/profileForm'
 import { NotificationToggle } from '@/components/profile/NotificationToggle'
 import { RegionSelect } from '@/components/profile/RegionSelect'
+import { SensitiveConsentDialog } from '@/components/profile/SensitiveConsentDialog'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { HelpIcon } from '@/components/ui/help-icon'
@@ -430,12 +431,17 @@ function ProfileForm({
             ) : (
               <p className="text-xs text-muted-foreground">
                 장애·보훈은 민감정보라 따로 동의해야 입력할 수 있습니다.{' '}
-                <Link
-                  to="/consent"
-                  className="font-semibold text-foreground underline underline-offset-4 whitespace-nowrap"
-                >
-                  동의 화면으로
-                </Link>
+                {/* 동의 화면으로 이동하면 입력하던 폼이 사라지므로 이 화면 안의 창에서 동의받습니다. */}
+                <SensitiveConsentDialog
+                  trigger={
+                    <button
+                      type="button"
+                      className="font-semibold text-foreground underline underline-offset-4 whitespace-nowrap"
+                    >
+                      민감정보 동의하기
+                    </button>
+                  }
+                />
               </p>
             )}
             {errors.special_flags && (

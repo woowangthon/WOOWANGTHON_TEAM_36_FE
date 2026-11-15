@@ -640,6 +640,30 @@ describe('프로필 화면', () => {
     expect(app.path()).toBe('/profile')
   })
 
+  it('민감정보 동의는 프로필 화면 안에서 받아 입력하던 내용을 잃지 않는다', async () => {
+    let consentBody: unknown = null
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'POST' && request.url.endsWith('/api/auth/consent')) {
+        consentBody = await request.clone().json()
+      }
+    })
+    const app = renderApp('/profile')
+    await screen.findByRole('heading', { name: '내 프로필' })
+    type('닉네임', '고친닉네임')
+    expect(screen.queryByLabelText('보훈')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '민감정보 동의하기' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText(/특수자격\(다자녀·보훈·장애\)/)).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: '동의' }))
+
+    expect(await screen.findByLabelText('보훈')).toBeInTheDocument()
+    expect(consentBody).toEqual({ privacy: true, sensitive: true })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(app.path()).toBe('/profile')
+    expect(screen.getByLabelText('닉네임')).toHaveValue('고친닉네임')
+  })
+
   it('민감정보 동의 철회는 확인 후 진행한다', async () => {
     server.use(
       http.get(
