@@ -298,12 +298,15 @@ describe('로그인', () => {
     await waitFor(() => expect(app.path()).toBe('/profile'))
   })
 
-  it('Google 로그인 실패와 비밀번호 분실 안내를 보여 준다', async () => {
+  it('Google 로그인 실패와 비밀번호 찾기 링크를 보여 준다', async () => {
     startLoggedOut()
     renderApp('/login?error=google')
     expect(await screen.findByText(/Google 로그인에 실패했습니다/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Google로 계속하기' })).toBeInTheDocument()
-    expect(screen.getByText(/같은 이메일의 Google 계정으로 로그인하세요/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '비밀번호 찾기' })).toHaveAttribute(
+      'href',
+      '/password-reset',
+    )
   })
 
   it('Google 로그인 주소에는 내부 경로만 붙인다', () => {
@@ -318,6 +321,54 @@ describe('로그인', () => {
   it('이미 로그인했으면 로그인 화면 대신 다음 단계로 보낸다', async () => {
     const app = renderApp('/login')
     await waitFor(() => expect(app.path()).toBe('/dashboard'))
+  })
+})
+
+describe('비밀번호 찾기', () => {
+  it('인증번호를 확인해야 새 비밀번호 칸이 나타나고, 저장하면 로그인된다', async () => {
+    startLoggedOut()
+    const app = renderApp('/password-reset')
+    await screen.findByRole('heading', { name: '비밀번호 찾기' })
+    expect(screen.queryByLabelText('새 비밀번호')).not.toBeInTheDocument()
+
+    type('이메일', 'student@example.com')
+    fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+    await screen.findByLabelText('인증번호')
+    type('인증번호', '123456')
+    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+    expect(await screen.findByText('인증번호가 맞지 않아요')).toBeInTheDocument()
+    expect(screen.queryByLabelText('새 비밀번호')).not.toBeInTheDocument()
+
+    type('인증번호', MOCK_SIGNUP_CODE)
+    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+    await screen.findByLabelText('새 비밀번호')
+    type('새 비밀번호', 'newpass34!')
+    type('새 비밀번호 확인', 'newpass34!')
+    fireEvent.click(screen.getByRole('button', { name: '새 비밀번호 저장' }))
+    await waitFor(() => expect(app.path()).toBe('/dashboard'))
+  })
+
+  it('가입되지 않은 이메일이면 회원가입으로 안내하고 번호 칸을 열지 않는다', async () => {
+    startLoggedOut()
+    renderApp('/password-reset')
+    await screen.findByRole('heading', { name: '비밀번호 찾기' })
+    type('이메일', 'nobody@example.com')
+    fireEvent.click(screen.getByRole('button', { name: '인증번호 받기' }))
+    const alert = await screen.findByText(/가입되지 않은 이메일입니다/)
+    expect(within(alert).getByRole('link', { name: '회원가입' })).toHaveAttribute('href', '/signup')
+    expect(screen.queryByLabelText('인증번호')).not.toBeInTheDocument()
+  })
+
+  it('새 비밀번호 규칙과 확인 불일치를 알려 준다', async () => {
+    startLoggedOut()
+    renderApp('/password-reset')
+    await screen.findByRole('heading', { name: '비밀번호 찾기' })
+    await verifyEmail('student@example.com')
+    await screen.findByLabelText('새 비밀번호')
+    type('새 비밀번호', 'newpass34!')
+    type('새 비밀번호 확인', 'newpass35!')
+    fireEvent.click(screen.getByRole('button', { name: '새 비밀번호 저장' }))
+    expect(await screen.findByText('비밀번호가 서로 달라요')).toBeInTheDocument()
   })
 })
 

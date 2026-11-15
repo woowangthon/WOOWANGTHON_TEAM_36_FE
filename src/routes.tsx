@@ -9,6 +9,7 @@ import DetailPage from '@/pages/DetailPage'
 import LoginPage from '@/pages/LoginPage'
 import MyListPage from '@/pages/MyListPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import PasswordResetPage from '@/pages/PasswordResetPage'
 import PrivacyPage from '@/pages/PrivacyPage'
 import ProfilePage from '@/pages/ProfilePage'
 import SignupPage from '@/pages/SignupPage'
@@ -25,6 +26,7 @@ export const routes: RouteObject[] = [
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
+      { path: '/password-reset', element: <PasswordResetPage /> },
     ],
   },
   {

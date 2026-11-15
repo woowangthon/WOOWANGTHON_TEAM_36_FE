@@ -69,15 +69,19 @@ export default function LoginPage() {
               {...form.register('password')}
             />
           </Field>
+          <div className="-mt-2 flex justify-end">
+            <Link
+              to="/password-reset"
+              className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              비밀번호 찾기
+            </Link>
+          </div>
           <FormError message={login.error?.message} />
           <Button type="submit" size="lg" disabled={login.isPending}>
             {login.isPending ? '로그인 중…' : '로그인'}
           </Button>
         </form>
-        <p className="text-xs leading-relaxed break-keep text-muted-foreground">
-          비밀번호를 잊었다면 같은 이메일의 Google 계정으로 로그인하세요. 이후에는 Google
-          로그인으로만 들어올 수 있습니다.
-        </p>
         <p className="border-t border-border pt-4 text-center text-sm text-muted-foreground">
           처음이신가요?{' '}
           <Link to="/signup" className="font-semibold text-foreground underline underline-offset-4">

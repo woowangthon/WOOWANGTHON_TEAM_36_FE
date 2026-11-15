@@ -77,6 +77,36 @@ export function useSignup() {
   })
 }
 
+/** 비밀번호 찾기 1단계: 가입한 이메일로 인증번호 받기. 가입하지 않은 이메일이면 404. */
+export function usePasswordResetCode() {
+  return useMutation({
+    mutationFn: (body: Schemas['PasswordResetCodeRequest']) =>
+      apiRequest<Schemas['SignupCodeResponse']>('/auth/password-reset/code', 'POST', body),
+  })
+}
+
+/** 비밀번호 찾기 2단계: 번호 확인 → reset_token. */
+export function usePasswordResetVerify() {
+  return useMutation({
+    mutationFn: (body: Schemas['SignupVerifyRequest']) =>
+      apiRequest<Schemas['PasswordResetVerifyResponse']>(
+        '/auth/password-reset/verify',
+        'POST',
+        body,
+      ),
+  })
+}
+
+/** 비밀번호 찾기 3단계: 새 비밀번호 저장. 다른 기기는 로그아웃되고 이 기기는 로그인됩니다. */
+export function usePasswordReset() {
+  const setMe = useSetMe()
+  return useMutation({
+    mutationFn: (body: Schemas['PasswordResetRequest']) =>
+      apiRequest<Me>('/auth/password-reset', 'POST', body),
+    onSuccess: setMe,
+  })
+}
+
 export function useLogin() {
   const setMe = useSetMe()
   return useMutation({

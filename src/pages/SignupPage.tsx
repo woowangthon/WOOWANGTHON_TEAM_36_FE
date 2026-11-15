@@ -1,7 +1,7 @@
 // 이메일 가입 (계획서 7.1, 7.3): 이메일 → 메일로 받은 6자리 인증번호 확인 → 비밀번호.
 // 인증번호를 확인하기 전에는 비밀번호 칸과 가입 버튼이 잠겨 있습니다. 로그인은 지금과 같습니다.
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router'
 import { z } from 'zod'
@@ -16,6 +16,7 @@ import { PasswordInput } from '@/components/form/PasswordInput'
 import { PasswordRules } from '@/components/form/PasswordRules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { formatSeconds, useNow } from '@/lib/countdown'
 import { newPasswordSchema } from '@/lib/password'
 
 const emailSchema = z
@@ -42,22 +43,6 @@ type Values = z.infer<typeof schema>
 
 /** 받은 인증번호의 상태. 시각은 Date.now() 기준 밀리초입니다. */
 type Sent = { email: string; codeToken: string; expiresAt: number; resendAt: number }
-
-/** 1초마다 바뀌는 현재 시각 (남은 시간·다시 받기 표시용). sync()로 바로 맞춥니다. */
-function useNow(active: boolean) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (!active) return
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [active])
-  return [now, () => setNow(Date.now())] as const
-}
-
-function formatSeconds(ms: number) {
-  const total = Math.max(0, Math.ceil(ms / 1000))
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
-}
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -301,10 +286,6 @@ export default function SignupPage() {
             {signup.isPending ? '가입 중…' : '가입하기'}
           </Button>
         </form>
-        <p className="text-xs leading-relaxed break-keep text-muted-foreground">
-          비밀번호를 잊으면 같은 이메일의 Google 계정으로만 되찾을 수 있으니, Gmail 주소로 가입하는
-          것을 권합니다.
-        </p>
         <p className="border-t border-border pt-4 text-center text-sm text-muted-foreground">
           이미 계정이 있나요?{' '}
           <Link to="/login" className="font-semibold text-foreground underline underline-offset-4">
